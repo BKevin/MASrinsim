@@ -1,0 +1,155 @@
+vocabulary V{
+
+    type Object
+    type Parcel isa Object
+    type ParcelDestination isa Object
+    type Vehicle isa Object
+
+    Destination(Parcel):ParcelDestination
+    
+    // Time
+
+    type Time isa float
+    partial TravelTime(Object, Object): Time
+
+    Deliver(Parcel):Time
+    Pickup(Parcel):Time
+    DeliverDeadline(Parcel):Time
+    PickupDeadline(Parcel):Time
+    
+    // Task list 
+
+    Task(Vehicle, Parcel)   
+    First(Vehicle):Parcel
+    partial Next(Vehicle, Parcel):Parcel
+
+    // Utility
+
+    type Utility isa float
+
+    VehiclePenalty(Vehicle):Utility
+    ParcelPenalty(Parcel):Utility
+    
+    DeliverPenalty(Parcel):Utility
+    PickupPenalty(Parcel):Utility
+
+    LinearPenalty:Utility
+
+}
+
+vocabulary Vout{
+    extern V::Task/2
+    extern V::First/1:1
+    extern V::VehiclePenalty/1:1
+    extern V::Next/2:1
+    extern V::ParcelPenalty/1:1
+    extern V::Deliver/1:1
+    extern V::Pickup/1:1
+}
+
+
+theory Base:V {
+
+    //// Constraints
+    // Every Parcel is the task of some Vehicle
+    !p: ?=1 v : Task(v, p).
+    // Every vehicle can only have one parcel first
+    !v: ?=1 p : First(v) = p.
+    // A parcels that comes after another parcel must be different 
+    //!v p1 p2 : Next(v, p1) = p2 => p1 ~= p2.
+    !v p1: ?=<1 p2 : Next(v, p1) = p2.
+    !v : ?p : First(v) = p & !p2 : Next(v, p2) ~= p.
+
+    //!p1 : (?v : First(v) = p1) | (?v p2 : Next(v, p2) = p1).
+    !p1: (~?v : First(v) = p1) => ?v p2: Next(v, p2) = p1.
+    //!p1: (?v : First(v) = p1) 
+
+    //!p : Pickup(p) =< (Deliver(p) - TravelTime(Destination(p), p)).
+
+    
+    //{
+        //Next(v, p1) = p2 <- First(v) = p1 & Task(v, p2) & p1 ~= p2. //& ~?p3 : (p3 ~= p1 => Next(v, p3) = p2).
+        //Next(v, p1) = p2 <- ?p3 : (Next(v, p3) = p1 & p2 ~= p3) & Task(v, p2).
+    //}
+
+    //// Pickup and delivery time calculations
+    {
+        //If p1 is first, we travel straight to it
+        Pickup(p1) = time  <- ?v1 : (First(v1) = p1 & time = TravelTime(p1, v1)).
+
+        //If p2 comes after another parcel, we travel from p1's destination to p2.
+        Pickup(p2) = time <- ?p1 v1: ( Next(v1, p1) = p2 & 
+            time = TravelTime(Destination(p1), p2) + Deliver(p1)).
+
+        Deliver(p1) = TravelTime(p1, Destination(p1)) + Pickup(p1).
+    }
+   
+    //// Utility calculations
+
+    //Utility calculation for a vehicle
+    {
+        VehiclePenalty(v) = 
+            sum{p[Parcel] : Task(v,p) : ParcelPenalty(p) }.
+
+        //Utility calcution for parcel
+        ParcelPenalty(p) = PickupPenalty(p) + DeliverPenalty(p).
+
+        //Penalty calculation.
+        DeliverPenalty(p) = 0 <- Deliver(p) =< DeliverDeadline(p).
+        DeliverPenalty(p) = d <- Deliver(p) > DeliverDeadline(p) & 
+            d = (Deliver(p) - DeliverDeadline(p)) * LinearPenalty(). 
+
+        PickupPenalty(p) = 0 <- Pickup(p) =< PickupDeadline(p).
+        PickupPenalty(p) = d <- Pickup(p) > PickupDeadline(p) & 
+            d = (Pickup(p) - PickupDeadline(p)) * LinearPenalty(). 
+    }
+
+
+
+
+
+
+}
+
+structure Simple:V{
+
+    Object = {v1; d1; p1; p2; p3}
+    Vehicle = {v1} 
+    ParcelDestination = {d1}
+    Parcel = {p1; p2; p3}
+    PickupDeadline = {p1 -> 5; p2 -> 10; p3 -> 8}
+    DeliverDeadline = {p1 -> 10; p2 -> 15; p3 -> 18}
+
+    Destination = {p1 -> d1; p2 -> d1; p3 -> d1}
+    
+    // necessary travel times:
+    //  from each vehicle to each parcel
+    //  from each parcel to every depot
+    Time = {0..30}
+    TravelTime = {v1, p1 -> 3; p1, v1 -> 3; v1, p2 -> 4; p2, v1 -> 4; p1, d1 -> 4; d1, p1 -> 4; d1, p2 -> 5; p2, d1 -> 5; v1, p3 -> 3; p3, v1 -> 3; p3, d1 -> 1; d1, p3 -> 1}
+    //Task<ct> = {v1, p2}
+    //First = {v1 -> p2}
+    
+    //Deliver<ct> = {p1 -> 20}
+
+    
+    Utility = { 0 .. 30}
+
+    LinearPenalty = { -> 1}
+    
+}
+
+Term OptimisedUtility:V{
+	sum{v[Vehicle] : true : VehiclePenalty(v) }
+}
+
+procedure main() {
+    stdoptions.verbosity.solving = 1
+    //print(propagate(Base, Simple))
+    //print(calculatedefinitions(Base, Simple))  
+    //printmodels(allmodels(Base, Simple))
+    //print(explainunsat(Base,Simple,V))
+    //printmodels(modelexpand(Base, Simple))
+    print(minimize(Base,Simple,OptimisedUtility,Vout)[1])
+}
+

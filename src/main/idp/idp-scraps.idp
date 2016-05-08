@@ -1,0 +1,217 @@
+08/05 22:50
+
+    //!p : Pickup(p) < (Deliver(p) - TravelTime(Destination(p), p)).
+
+    //!p : ?=1 t : Pickup(p) = t.
+    //!p : ?=1 t : Deliver(p) = t.
+
+
+    //// Pickup and delivery time calculations
+    {
+        //If p1 is first, we travel straight to it
+        Pickup(p1) = time  <- ?v1 : (First(v1) = p1 & time = TravelTime(p1, v1)).
+
+        //If p2 comes after another parcel, we travel from p1's destination to p2.
+        Pickup(p2) = time <- ?p1 v1: ( Next(v1, p1) = p2 & 
+            time = TravelTime(Destination(p1), p2) + Deliver(p1)).
+
+        Deliver(p1) = TravelTime(p1, Destination(p1)) + Pickup(p1).
+    }
+   
+    //// Utility calculations
+
+    //Utility calculation for a vehicle
+    {
+        VehiclePenalty(v) = 
+            sum{p[Parcel] : Task(v,p) : ParcelPenalty(p) }.
+
+        //Utility calcution for parcel
+        ParcelPenalty(p) = PickupPenalty(p) + DeliverPenalty(p).
+
+        //Penalty calculation.
+        DeliverPenalty(p) = 0 <- Deliver(p) =< DeliverDeadline(p).
+        DeliverPenalty(p) = d <- Deliver(p) > DeliverDeadline(p) & 
+            d = (Deliver(p) - DeliverDeadline(p)) * LinearPenalty(). 
+
+        PickupPenalty(p) = 0 <- Pickup(p) =< PickupDeadline(p).
+        PickupPenalty(p) = d <- Pickup(p) > PickupDeadline(p) & 
+            d = (Pickup(p) - PickupDeadline(p)) * LinearPenalty(). 
+    }
+
+
+
+
+
+
+
+
+08/05 21:26
+
+
+
+
+
+//// Pickup and delivery time calculations
+    {
+        //If p1 is first, we travel straight to it
+        Pickup(p1) = time  <- ?v1 : (First(v1) = p1 & time = TravelTime(p1, v1)).
+
+        //If p2 comes after another parcel, we travel from p1's destination to p2.
+        Pickup(p2) = time <- ?p1 v1: ( Next(v1, p1) = p2 & 
+            time = TravelTime(Destination(p1), p2) + Deliver(p1)).
+        
+        Deliver(p1) = TravelTime(p1, Destination(p1)) + Pickup(p1).
+    
+    }
+   
+    //// Utility calculations
+
+    //Utility calculation for a vehicle
+    {
+        VehiclePenalty(v) = 
+            sum{p[Parcel] : Task(v,p) : ParcelPenalty(p) }.
+
+        //Utility calcution for parcel
+        ParcelPenalty(p) = PickupPenalty(p) + DeliverPenalty(p).
+
+        //Penalty calculation.
+        DeliverPenalty(p) = 0 <- Deliver(p) =< DeliverDeadline(p).
+        DeliverPenalty(p) = d <- Deliver(p) > DeliverDeadline(p) & 
+            d = (Deliver(p) - DeliverDeadline(p)) * LinearPenalty(). 
+
+        PickupPenalty(p) = 0 <- Pickup(p) =< PickupDeadline(p).
+        PickupPenalty(p) = d <- Pickup(p) > PickupDeadline(p) & 
+            d = (Pickup(p) - PickupDeadline(p)) * LinearPenalty(). 
+    }
+
+
+
+
+
+08/05 20:30
+
+
+
+  //// Pickup and delivery time calculations
+    {
+        //If p1 is first, we travel straight to it
+        Pickup(v1, p1) = TravelTime(p1, v1) <- First(v1) = p1.
+
+        //If p2 comes after another parcel, we travel from p1's destination to p2.
+        Pickup(v1, p2) = time <- ?p1: Next(v1, p1) = p2 & 
+            time = TravelTime(Destination(p1), p2) + Deliver(v1, p1).
+    }
+
+    {
+        Deliver(v1, p1) = TravelTime(p1, Destination(p1)) + Pickup(v1, p1) <- 
+            Task(v1, p1).
+    }
+    //// Utility calculations
+
+    //Utility calculation for a vehicle
+    {
+        VehiclePenalty(v) = 
+            sum{p[Parcel] : Task(v,p) : ParcelPenalty(p) }.
+
+        //Utility calcution for parcel
+        ParcelPenalty(p) = PickupPenalty(p) + DeliverPenalty(p).
+
+        //Penalty calculation.
+        DeliverPenalty(p) = 0 <- ?v: (Task(v, p) & 
+            Deliver(v, p) =< DeliverDeadline(p)).
+        DeliverPenalty(p) = d <- ?v: ( Task(v, p) & 
+            Deliver(v, p) > DeliverDeadline(p) & 
+            d = (Deliver(v, p) - DeliverDeadline(p)) * LinearPenalty()). 
+
+        PickupPenalty(p) = 0 <- ?v: (Task(v, p) & 
+            Pickup(v, p) =< PickupDeadline(p)).
+        PickupPenalty(p) = d <- ?v: (Task(v, p) & 
+            Pickup(v, p) > PickupDeadline(p) & 
+            d = (Pickup(v, p) - PickupDeadline(p)) * LinearPenalty()). 
+    }
+
+
+
+
+08/05 18:10
+
+structure Simple:V{
+
+    Object = {v1; d1; p1; p2; p3}
+    Vehicle = {v1} 
+    Depot = {d1}
+    Parcel = {p1; p2; p3}
+    PickupDeadline = {p1 -> 5; p2 -> 10; p3 -> 8}
+    DeliverDeadline = {p1 -> 10; p2 -> 15; p3 -> 18}
+
+    Destination = {p1 -> d1; p2 -> d1; p3 -> d1}
+    
+    // necessary travel times:
+    //  from each vehicle to each parcel
+    //  from each parcel to every depot
+    Time = {0..40}
+    TravelTime = {v1, p1 -> 3; p1, v1 -> 3; v1, p2 -> 4; p2, v1 -> 4; p1, d1 -> 4; d1, p1 -> 4; d1, p2 -> 5; p2, d1 -> 5; v1, p3 -> 3; p3, v1 -> 3; p3, d1 -> 7; d1, p3 -> 7}
+    //Task<ct> = {v1, p2}
+    First = {v1 -> p2}
+
+    
+    Utility = { 0 .. 50}
+
+    LinearPenalty = { -> 1}
+    
+}
+
+
+08/05 17:20
+
+//Penalty calculation.
+    {
+        DeliverPenalty(p) = 0 <- ?v: (Task(v, p) & 
+            Deliver(v, p) =< DeliverDeadline(p)).
+        DeliverPenalty(p) = d <- ?v: ( Task(v, p) & 
+            Deliver(v, p) > DeliverDeadline(p) & 
+            d = (Deliver(v, p) - DeliverDeadline(p)) * LinearPenalty()). // linear for now 
+
+        PickupPenalty(p) = 0 <- ?v: (Task(v, p) & 
+            Pickup(v, p) =< PickupDeadline(p)).
+        PickupPenalty(p) = d <- ?v: (Task(v, p) & 
+            Pickup(v, p) > PickupDeadline(p) & 
+            d = (Pickup(v, p) - PickupDeadline(p)) * LinearPenalty()). // linear for now 
+    }
+
+
+
+
+
+
+
+
+
+    // Task lists
+    //  "Before" relation should be open, it is what we are searching for
+//    {// P1 is handled before P2 if the delivery time is smaller
+  //      !v1 p1 p2: Before(v1, p1, p2) <- Task(v1, p1) & Task(v1, p2) & p1 ~= p2 & First(v1, p1).
+    //    !v1 p1 p2: Before(v1, p1, p2) <- Task(v1, p1) & Task(v1, p2) & p1 ~= p2 & Before(v1, p, p1).
+    //}
+
+    
+
+    //{
+      //  First(v, p) <- Task(v, p)
+    //}
+    
+    // Only one parcel can be first
+    //!v : ?=<1 p : Task(v, p) & First(v, p).
+    //!v p : First(v, p) => !p2: ~Before(v, p2, p).
+    //!v p1 : Task(v, p1) & ?=<1  p2: Task(v, p2) & Before(v, p1, p2).
+
+    
+
+    
+    //!o1[Object] o2[Object]: TravelTime(o1, o2) = TravelTime(o2, o1).
+    
+
+    //unicity constraints
+    
+    //!p1: ?=<1 p2 : Task(v1, p2) & Before(v1, p1, p2).
+
