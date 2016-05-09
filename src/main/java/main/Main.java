@@ -6,9 +6,10 @@ import com.github.rinde.rinsim.core.model.pdp.DefaultPDPModel;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.road.RoadModel;
 import com.github.rinde.rinsim.core.model.road.RoadModelBuilders;
+import com.github.rinde.rinsim.core.model.time.TickListener;
+import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.github.rinde.rinsim.geom.Point;
 import com.github.rinde.rinsim.ui.renderers.CommRenderer;
-import com.github.rinde.rinsim.ui.renderers.PDPModelRenderer;
 import com.github.rinde.rinsim.ui.renderers.PlaneRoadModelRenderer;
 import com.github.rinde.rinsim.ui.renderers.RoadUserRenderer;
 import com.github.rinde.rinsim.ui.View;
@@ -36,7 +37,7 @@ public class Main {
 
     private static final int NUM_PARCELS = 1;
     private static final int SERVICE_DURATION = 10000; // in ms
-
+    private static final double NEW_PARCEL_PROB = 0.007;
 
     public static void main(String[] args) {
         run();
@@ -62,12 +63,39 @@ public class Main {
         initializeParcels(simulator, rng);
         
         configureParcelSpawn(simulator, rng);
-        
+
         simulator.start();
     }
 
 
-    private static void configureParcelSpawn(Simulator simulator, RandomGenerator rng) {
+    private static void configureParcelSpawn(final Simulator simulator, final RandomGenerator rng) {
+        final RoadModel roadModel = simulator.getModelProvider().getModel(
+                RoadModel.class);
+
+        simulator.addTickListener(
+                new TickListener() {
+                    @Override
+                    public void tick(TimeLapse time) {
+//                        if (time.getStartTime() > endTime) {
+//                            simulator.stop();
+//                        } else
+                            if (rng.nextDouble() < NEW_PARCEL_PROB) {
+                            simulator.register(new MyParcel(
+                                        Parcel
+                                            .builder(roadModel.getRandomPosition(rng),
+                                                    roadModel.getRandomPosition(rng))
+                                            .serviceDuration(SERVICE_DURATION)
+                                            .neededCapacity(1)
+                                            .buildDTO(),rng));
+                        }
+                    }
+
+                    @Override
+                    public void afterTick(TimeLapse timeLapse) {
+
+                    }
+                }
+        );
     }
 
     private static List<MyParcel> initializeParcels(Simulator simulator, RandomGenerator rng) {
@@ -82,7 +110,7 @@ public class Main {
                             roadModel.getRandomPosition(rng))
                             .serviceDuration(SERVICE_DURATION)
                             .neededCapacity(1)
-                            .buildDTO());
+                            .buildDTO(), rng);
             simulator.register(parcel);
             parcelList.add(parcel);
         }

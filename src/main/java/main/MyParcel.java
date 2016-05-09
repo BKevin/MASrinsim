@@ -11,6 +11,7 @@ import com.google.common.collect.ImmutableList;
 import comm.AcceptBidMessage;
 import comm.AuctionedParcelMessage;
 import comm.BidMessage;
+import org.apache.commons.math3.random.RandomGenerator;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
@@ -21,16 +22,18 @@ import java.util.List;
  */
 public class MyParcel extends Parcel implements CommUser, TickListener{
 
+    private final RandomGenerator rng;
     private Optional<CommDevice> device;
     private boolean auctioned;
     private boolean broadcasted;
     private List<Message> bids;
 
-    public MyParcel(ParcelDTO parcelDTO) {
+    public MyParcel(ParcelDTO parcelDTO, RandomGenerator random) {
         super(parcelDTO);
         auctioned = false;
         broadcasted = false;
         bids = null;
+        rng = random;
     }
 
     @Override
@@ -76,7 +79,7 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
 
         //handle ending auction:
         //find the best bid
-        Message bestMess = bids.get(0);
+        Message bestMess = bids.get(rng.nextInt(bids.size()));
         for (Message message : bids) {
             BidMessage bestBid = (BidMessage) bestMess.getContents();
             BidMessage bid = (BidMessage) message.getContents();
