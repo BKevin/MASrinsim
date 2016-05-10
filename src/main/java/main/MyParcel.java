@@ -3,6 +3,8 @@ package main;
 import com.github.rinde.rinsim.core.model.comm.*;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.ParcelDTO;
+import com.github.rinde.rinsim.core.model.pdp.TimeWindowPolicy;
+import com.github.rinde.rinsim.core.model.pdp.Vehicle;
 import com.github.rinde.rinsim.core.model.time.TickListener;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.github.rinde.rinsim.geom.Point;
@@ -28,6 +30,23 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
     private boolean broadcasted;
     private List<Message> bids;
 
+    // Time window and penalty information
+
+    private final TimeWindowPolicy policy = TimeWindowPolicy.TimeWindowPolicies.TARDY_ALLOWED;
+
+
+
+
+
+    private List<TimeLapse> movements;
+
+
+    // Delivery details
+    private long pickUpTime = 0;
+    private long deliverTime = 0;
+    private Vehicle vehicle;
+
+
     public MyParcel(ParcelDTO parcelDTO, RandomGenerator random) {
         super(parcelDTO);
         auctioned = false;
@@ -38,8 +57,9 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
 
     @Override
     public Optional<Point> getPosition() {
-        return Optional.absent();
+        return Optional.of(this.getRoadModel().getPosition(this));
     }
+
 
     @Override
     public void setCommDevice(CommDeviceBuilder commDeviceBuilder) {
@@ -94,11 +114,66 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
         for (Message message : bids) {
 
         }
+
         auctioned = true;
     }
 
     @Override
     public void afterTick(TimeLapse timeLapse) {
 
+    }
+
+    @Override
+    public boolean canBePickedUp(Vehicle v, long time){
+        return this.policy.canPickup(this.getPickupTimeWindow(), time, this.getPickupDuration()) && this.vehicle == v;
+    }
+
+    @Override
+    public boolean canBeDelivered(Vehicle v, long time) {
+        return this.policy.canDeliver(this.getDeliveryTimeWindow(), time, this.getDeliveryDuration()) && v == this.vehicle;
+    }
+
+    /**
+     * Change state of parcel to "delivered"
+     * @param v
+     * @param time
+     */
+    public void deliver(Vehicle v, long time){
+        if (!this.canBeDelivered(v, time)){
+            throw new IllegalStateException("Parcel cannot be delivered at time " + time + " by vehicle " + v.toString());
+        }
+        if(this.isDelivered()){
+            throw new IllegalStateException("Parcel is already deliverd.");
+        }
+
+        this.deliverTime = time;
+    }
+
+    /**
+     * Change state of parcel to "picked up"
+     * @param v
+     * @param time
+     */
+    public void pickUp(Vehicle v, long time) {
+        if (!this.canBePickedUp(v, time)){
+            throw new IllegalStateException("Parcel cannot be picked up at time " + time + " by vehicle " + v.toString());
+        }
+        if(this.isPickedUp()){
+            throw new IllegalStateException("Parcel is already picked up.");
+        }
+
+        this.pickUpTime = time;
+    }
+
+    public boolean isPickedUp(){
+        return this.pickUpTime > 0;
+    }
+
+    public boolean isDelivered(){
+        return this.deliverTime > 0;
+    }
+
+    public void setWinningVehicle(Vehicle winningVehicle) {
+        this.vehicle = winningVehicle;
     }
 }

@@ -1,8 +1,8 @@
 package main;
 
-import com.github.rinde.rinsim.core.model.Model;
 import com.github.rinde.rinsim.core.model.comm.*;
 import com.github.rinde.rinsim.core.model.pdp.PDPModel;
+import com.github.rinde.rinsim.core.model.pdp.TimeWindowPolicy;
 import com.github.rinde.rinsim.core.model.pdp.Vehicle;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
 import com.github.rinde.rinsim.core.model.road.RoadModel;
@@ -13,6 +13,7 @@ import comm.AcceptBidMessage;
 import comm.AuctionedParcelMessage;
 import comm.BidMessage;
 
+import java.sql.Time;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -153,5 +154,16 @@ public class MyVehicle extends Vehicle implements CommUser{
     public void setCommDevice(CommDeviceBuilder commDeviceBuilder) {
         device = Optional.of(commDeviceBuilder.build());
     }
+
+
+
+    public List<MyParcel> getPlanning(){
+        return this.parcels;
+    }
+
+    public void getPenalty(){
+
+    }
+
 
 }
