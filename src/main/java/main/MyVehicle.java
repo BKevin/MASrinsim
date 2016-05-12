@@ -26,17 +26,12 @@ public class MyVehicle extends RouteFollowingVehicle implements CommUser{
 
     private Optional<CommDevice> device;
 
-    private Map<Parcel, Integer> calculatedIndexOfParcel;
-
-    public MyVehicle(Point startPosition, int vehicleCapacity, double speed) {
-        super(VehicleDTO.builder()
-                .startPosition(startPosition)
-                .capacity(vehicleCapacity)
-                .speed(speed)
-                .build(),
-                true); //diversion is possible (changing the parcel we move towards mid-movement)
-
+    public MyVehicle(VehicleDTO vehicleDTO) {
+        super(vehicleDTO);
+    
     }
+
+    
 
     /**
      * Pre-tick message handling.

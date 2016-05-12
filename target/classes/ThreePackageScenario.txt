@@ -1,0 +1,6 @@
+info : NewVehicle
+info : NewParcel
+NewVehicle -1 5,8 1 100
+NewParcel -1 2,2 6,2 1000 1
+NewParcel 50000 1,9 9,1 1000 1
+NewParcel 100000 6,6 2,6 1000 1
