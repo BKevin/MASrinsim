@@ -35,12 +35,6 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
     private final TimeWindowPolicy policy = TimeWindowPolicy.TimeWindowPolicies.TARDY_ALLOWED;
 
 
-
-
-
-    private List<TimeLapse> movements;
-
-
     // Delivery details
     private long pickUpTime = 0;
     private long deliverTime = 0;
@@ -176,4 +170,30 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
     public void setWinningVehicle(Vehicle winningVehicle) {
         this.vehicle = winningVehicle;
     }
+
+
+    /**
+     *  Compute the penalty incurred when picking up and delivering a parcel at the given time.
+     */
+    public long computePenalty(Long pickupTime, Long deliveryTime) {
+        // TODO add caching to parcel penalty calculations
+
+        return this.computePickupPenalty(pickupTime) + this.computeDeliveryPenalty(deliveryTime);
+    }
+
+    private long computeDeliveryPenalty(Long deliveryTime) {
+        // Linear penalty calculation
+        return deliveryTime - this.getDeliveryTimeWindow().end() > 0
+                ? deliveryTime - this.getDeliveryTimeWindow().end()
+                : 0;
+    }
+
+    private long computePickupPenalty(Long pickupTime) {
+        // Linear penalty calculation
+        return pickupTime - this.getPickupTimeWindow().end() > 0
+                ? pickupTime - this.getPickupTimeWindow().end()
+                : 0;
+    }
+
+
 }
