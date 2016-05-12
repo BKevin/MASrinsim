@@ -12,4 +12,6 @@ public class AuctionedParcelMessage implements MessageContents {
     public AuctionedParcelMessage(MyParcel myParcel) {
         parcel = myParcel;
     }
+
+
 }
