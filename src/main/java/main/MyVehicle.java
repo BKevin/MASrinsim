@@ -122,57 +122,12 @@ public class MyVehicle extends RouteFollowingVehicle implements CommUser{
 
 
 
-
         //calculate Distances between destinatinons
         return 0;
     }
 
-    private long computeRouteLength(Iterable<Parcel> route){
 
-        Point currentPosition = this.getRoadModel().getPosition(this);
-        Unit<Duration> unit = this.getCurrentTimeLapse().getTimeUnit();
 
-        final Map<Parcel, Long> pickupTimes = new HashMap<>();
-        final Map<Parcel, Long> deliveryTimes = new HashMap<>();
-
-        for(Parcel p : this.getRoute()){
-
-            //From last parcel delivery to current parcel pickup
-            long pickupTravelTime = this.computeTravelTimeFromTo(currentPosition, p.getPickupLocation(), unit);
-            //From current parcel pickup to current parcel delivery
-            long deliveryTravelTime = this.computeTravelTimeFromTo(p.getPickupLocation(), p.getDeliveryLocation(), unit);
-
-            // Update current position
-            currentPosition = p.getDeliveryLocation();
-
-            // Assuming TimeWindowPolicy.TimeWindowPolicies.TARDY_ALLOWED
-            long pickupTime = getCurrentTime()
-                    + (p.canBePickedUp(this, pickupTravelTime) ? pickupTravelTime : p.getPickupTimeWindow().begin());
-            long deliveryTime = pickupTime
-                    + p.getPickupDuration()
-                    + (p.canBeDelivered(this, deliveryTravelTime) ? deliveryTravelTime : p.getDeliveryTimeWindow().begin());
-
-            pickupTimes.put(p, pickupTime);
-            deliveryTimes.put(p, deliveryTime);
-        }
-
-        // Possibly unsafe cast: Assuming Collection<Parcel> is Collection<MyParcel>
-        computeRoutePenalty(pickupTimes, deliveryTimes, Arrays.asList(this.getRoute().toArray(new MyParcel[0])));
-
-        return 0L;
-    }
-
-    private long computeRoutePenalty(Map<Parcel, Long> pickupTimes, Map<Parcel, Long> deliveryTimes, Collection<MyParcel> route) {
-        // TODO add caching to route penalty calculations
-
-        long penalty = 0L;
-
-        for(MyParcel p : route) {
-            penalty += p.computePenalty(pickupTimes.get(p), deliveryTimes.get(p));
-        }
-
-        return penalty;
-    }
 
 
     @Override
@@ -183,10 +138,6 @@ public class MyVehicle extends RouteFollowingVehicle implements CommUser{
 
     /**
      * Compute the travel time between two points in the simulation at the speed of this vehicle.
-     * @param a
-     * @param b
-     * @param timeUnit
-     * @return
      */
     protected long computeTravelTimeFromTo(Point a, Point b, Unit<Duration> timeUnit) {
         // TODO add caching to travel time calculations
