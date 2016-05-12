@@ -10,6 +10,7 @@ import com.github.rinde.rinsim.core.model.road.RoadModelBuilders;
 import com.github.rinde.rinsim.core.model.time.TickListener;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.github.rinde.rinsim.geom.Point;
+import com.github.rinde.rinsim.pdptw.common.PDPRoadModel;
 import com.github.rinde.rinsim.scenario.*;
 import com.github.rinde.rinsim.ui.renderers.CommRenderer;
 import com.github.rinde.rinsim.ui.renderers.PlaneRoadModelRenderer;
@@ -80,7 +81,7 @@ public class Main {
 
         int id = 0;
         Scenario myScenario = makeScenario(viewBuilder, id);
-//        Path path = FileSystems.getDefault().getPath("src\\main\\resources", "ThreePackageScenario.txt");
+//        Path path = FileSystems.getDefault().getPath("src\\main\\resources", "ThreeParcelScenario.txt");
 //
 //        try {
 //            ScenarioIO.write(myScenario,path);
@@ -92,8 +93,9 @@ public class Main {
         Simulator.builder()
                 .addModel(ScenarioController
                                 .builder(myScenario)
-                        .withEventHandler(NewParcelEvent.class, new NewParcelEventHandler())
-                        .withEventHandler(NewVehicleEvent.class, new NewVehicleEventHandler()))
+                        .withEventHandler(NewParcelEvent.class, NewParcelEvent.defaultHandler())
+                        .withEventHandler(NewVehicleEvent.class, NewVehicleEvent.defaultHandler())
+                        .withEventHandler(NewDepotEvent.class, NewDepotEvent.defaultHandler()))
                 .build()
                 .start();
 
@@ -113,15 +115,17 @@ public class Main {
     private static Scenario makeScenario(View.Builder viewBuilder, int id) {
         Scenario.Builder scenarioBuilder = Scenario.builder();
 
-        scenarioBuilder.addModel(RoadModelBuilders.plane()
-                .withMinPoint(MIN_POINT)
-                .withMaxPoint(MAX_POINT)
-                .withMaxSpeed(10000d))
+        scenarioBuilder.
+                addModel(PDPRoadModel.builder(
+                        RoadModelBuilders.plane()
+                                .withMinPoint(MIN_POINT)
+                                .withMaxPoint(MAX_POINT)
+                                .withMaxSpeed(10000d)))
                 .addModel(DefaultPDPModel.builder())
                 .addModel(CommModel.builder())
                 .addModel(viewBuilder);
 
-        File file = Paths.get("src\\main\\resources\\scene.txt").toFile();
+        File file = Paths.get("src\\main\\resources\\ThreeParcelScenario.txt").toFile();
         long lastEventTime = -1;
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;

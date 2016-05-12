@@ -12,32 +12,11 @@ import com.google.common.base.Optional;
 /**
  * Created by KevinB on 8/05/2016.
  */
-public class MyDepot extends Depot implements CommUser, TickListener{
-
-    private Optional<CommDevice> device;
+public class MyDepot extends Depot{
 
     public MyDepot(Point position, int depotCapacity) {
         super(position);
         setCapacity(depotCapacity);
     }
 
-    @Override
-    public Optional<Point> getPosition() {
-        return Optional.of(this.getRoadModel().getPosition(this));
-    }
-
-    @Override
-    public void setCommDevice(CommDeviceBuilder commDeviceBuilder) {
-
-        device = Optional.of(commDeviceBuilder.build());
-    }
-
-    @Override
-    public void tick(TimeLapse timeLapse) {
-    }
-
-    @Override
-    public void afterTick(TimeLapse timeLapse) {
-
-    }
 }

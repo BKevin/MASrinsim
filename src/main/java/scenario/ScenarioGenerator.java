@@ -3,6 +3,7 @@ package scenario;
 import com.github.rinde.rinsim.geom.Point;
 
 import java.io.*;
+import java.nio.file.Paths;
 import java.util.Random;
 
 /**
@@ -12,7 +13,7 @@ public class ScenarioGenerator {
     private static Random rng = new Random();
     private static long currentTime;
 
-    private static double widht = 10;
+    private static double width = 10;
     private static double height = 10;
 
     private static int amountVehiclesAtStart = 5;
@@ -39,11 +40,14 @@ public class ScenarioGenerator {
     private static void generateScenario() {
         currentTime = 0;
 
-        String file = "src\\main\\resources\\new_scenarios\\scene.txt";
-
+        File file = Paths.get("src\\main\\resources\\new_scenarios\\scene.txt").toFile();
         try (BufferedWriter br = new BufferedWriter(
                                             new OutputStreamWriter(
                                                     new FileOutputStream(file), "utf-8"))) {
+
+            String depotEvent = makeNewDepotEventAtStart();
+            br.write(depotEvent);
+            br.newLine();
 
             for(int i = 0; i < amountVehiclesAtStart; i++){
                 String vehicleEvent = makeVehicleEventAtStart();
@@ -74,6 +78,14 @@ public class ScenarioGenerator {
             e.printStackTrace();
         }
 
+    }
+
+    private static String makeNewDepotEventAtStart()  {
+        return depotEventAtTime(-1);
+    }
+
+    private static String depotEventAtTime(long time) {
+        return "NewDepot " + time + " " + height/2 + "," + width /2 + " " + amountVehiclesAtStart;
     }
 
     private static String makeVehicleEventAtStart() {
@@ -109,7 +121,7 @@ public class ScenarioGenerator {
 
     private static Point randomPoint(){
         double x = rng.nextDouble() * height;
-        double y = rng.nextDouble() * widht;
+        double y = rng.nextDouble() * width;
         return new Point(x,y);
     }
 

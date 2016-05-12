@@ -18,6 +18,9 @@ public class TimedEventFactory {
         if("NewVehicle".equals(split[0])){
             return makeNewVehicleEvent(split);
         }
+        if("NewDepot".equals(split[0])){
+            return makeNewDepotEvent(split);
+        }
         if("info".equals(split[0])){
             return null;
         }
@@ -55,6 +58,18 @@ public class TimedEventFactory {
         int capacity = Integer.parseInt(split[5]);
 
         return new NewParcelEvent(time, pickupLocation, depositLocation, serviceDuration, capacity);
+    }
+
+    private static TimedEvent makeNewDepotEvent(String[] split) {
+        long time = Long.parseLong(split[1]);
+        Point position;
+        String[] co = split[2].split(",");
+        double x = Double.parseDouble(co[0]);
+        double y = Double.parseDouble(co[1]);
+        position = new Point(x,y);
+        int capacity = Integer.parseInt(split[3]);
+
+        return new NewDepotEvent(time, position, capacity);
     }
 
 
