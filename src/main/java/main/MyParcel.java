@@ -1,18 +1,15 @@
 package main;
 
 import com.github.rinde.rinsim.core.model.comm.*;
-import com.github.rinde.rinsim.core.model.pdp.Parcel;
-import com.github.rinde.rinsim.core.model.pdp.ParcelDTO;
-import com.github.rinde.rinsim.core.model.pdp.TimeWindowPolicy;
-import com.github.rinde.rinsim.core.model.pdp.Vehicle;
+import com.github.rinde.rinsim.core.model.pdp.*;
 import com.github.rinde.rinsim.core.model.time.TickListener;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.github.rinde.rinsim.geom.Point;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
-import comm.AcceptBidMessage;
-import comm.AuctionedParcelMessage;
-import comm.BidMessage;
+import main.comm.AcceptBidMessage;
+import main.comm.AuctionedParcelMessage;
+import main.comm.BidMessage;
 import org.apache.commons.math3.random.RandomGenerator;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -51,7 +48,9 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
 
     @Override
     public Optional<Point> getPosition() {
-        return Optional.of(this.getRoadModel().getPosition(this));
+        if(this.getRoadModel().containsObject(this))
+            return Optional.of(this.getRoadModel().getPosition(this));
+        return Optional.absent();
     }
 
 
@@ -103,7 +102,9 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
             }
         }
         //send AcceptBidMessage to winner of auction
-        device.get().send(new AcceptBidMessage(this), bestMess.getSender());
+        MyVehicle winningVehicle = ((BidMessage) bestMess.getContents()).getVehicle();
+        device.get().send(new AcceptBidMessage(this), winningVehicle);
+        setWinningVehicle(winningVehicle);
         //send RefuseBidMessage to losers
         for (Message message : bids) {
 

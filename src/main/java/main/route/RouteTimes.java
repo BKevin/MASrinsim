@@ -61,6 +61,7 @@ public class RouteTimes{
         Point currentPosition = this.startPosition;
 
         for(Parcel p : this.getRoute()){
+            //WARNING parcel needs to be in the route of a vehicle twice (once for pickup and once for delivery)
 
             //From last parcel delivery to current parcel pickup
             //FIXME not linked yet

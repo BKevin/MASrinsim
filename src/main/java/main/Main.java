@@ -24,8 +24,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
@@ -55,39 +53,12 @@ public class Main {
         runWithScenario();
     }
 
-    public static void runWithRng() {
-        View.Builder viewBuilder = createGUI();
-
-        final Simulator simulator = getBasicSimulatorBuilder(viewBuilder).build();
-
-
-        final RandomGenerator rng = simulator.getRandomGenerator();
-
-        //initializeDepot(simulator, rng);
-        initializeVehicles(simulator, rng);
-        initializeParcels(simulator, rng);
-        
-        configureParcelSpawn(simulator, rng);
-
-        simulator.start();
-    }
-
-
     public static void runWithScenario() {
 
         View.Builder viewBuilder = createGUI();
 
-        //final Simulator.Builder simulator = getBasicSimulatorBuilder(viewBuilder);
-
         int id = 0;
         Scenario myScenario = makeScenario(viewBuilder, id);
-//        Path path = FileSystems.getDefault().getPath("src\\main\\resources", "ThreeParcelScenario.txt");
-//
-//        try {
-//            ScenarioIO.write(myScenario,path);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
 
 
         Simulator.builder()
@@ -101,16 +72,6 @@ public class Main {
 
     }
 
-    private static Simulator.Builder getBasicSimulatorBuilder(View.Builder viewBuilder) {
-        return Simulator.builder()
-                    .addModel(RoadModelBuilders.plane()
-                            .withMinPoint(MIN_POINT)
-                            .withMaxPoint(MAX_POINT)
-                            .withMaxSpeed(10000d))
-                    .addModel(DefaultPDPModel.builder())
-                    .addModel(CommModel.builder())
-                    .addModel(viewBuilder);
-    }
 
     private static Scenario makeScenario(View.Builder viewBuilder, int id) {
         Scenario.Builder scenarioBuilder = Scenario.builder();
@@ -146,80 +107,6 @@ public class Main {
         return scenarioBuilder.build();
     }
 
-
-    private static void configureParcelSpawn(final Simulator simulator, final RandomGenerator rng) {
-        final RoadModel roadModel = simulator.getModelProvider().getModel(
-                RoadModel.class);
-
-        simulator.addTickListener(
-                new TickListener() {
-                    @Override
-                    public void tick(TimeLapse time) {
-//                        if (time.getStartTime() > endTime) {
-//                            simulator.stop();
-//                        } else
-                        if (rng.nextDouble() < NEW_PARCEL_PROB) {
-                            simulator.register(new MyParcel(
-                                    Parcel
-                                            .builder(roadModel.getRandomPosition(rng),
-                                                    roadModel.getRandomPosition(rng))
-                                            .serviceDuration(SERVICE_DURATION)
-                                            .neededCapacity(1)
-                                            .buildDTO(), rng));
-                        }
-                    }
-
-                    @Override
-                    public void afterTick(TimeLapse timeLapse) {
-
-                    }
-                }
-        );
-    }
-
-    private static List<MyParcel> initializeParcels(Simulator simulator, RandomGenerator rng) {
-        final RoadModel roadModel = simulator.getModelProvider().getModel(
-                RoadModel.class);
-
-        LinkedList<MyParcel> parcelList = new LinkedList<MyParcel>();
-
-        for (int i = 0; i < NUM_PARCELS; i++) {
-            MyParcel parcel = new MyParcel(
-                    Parcel.builder(roadModel.getRandomPosition(rng),
-                            roadModel.getRandomPosition(rng))
-                            .serviceDuration(SERVICE_DURATION)
-                            .neededCapacity(1)
-                            .buildDTO(), rng);
-            simulator.register(parcel);
-            parcelList.add(parcel);
-        }
-
-        return parcelList;
-    }
-
-    private static void initializeDepot(Simulator simulator, RandomGenerator rng) {
-        final RoadModel roadModel = simulator.getModelProvider().getModel(
-                RoadModel.class);
-
-        // add depots, taxis and parcels to simulator
-        for (int i = 0; i < NUM_DEPOTS; i++) {
-            simulator.register(new MyDepot(roadModel.getRandomPosition(rng),
-                    DEPOT_CAPACITY));
-        }
-    }
-
-    private static void initializeVehicles(Simulator simulator, RandomGenerator rng) {
-        final RoadModel roadModel = simulator.getModelProvider().getModel(
-                RoadModel.class);
-
-        for (int i = 0; i < NUM_VEHICLES; i++) {
-            simulator.register(new MyVehicle(VehicleDTO.builder()
-                    .startPosition(roadModel.getRandomPosition(rng))
-                    .capacity(VEHICLE_CAPACITY)
-                    .speed(VEHICLE_SPEED)
-                    .build()));
-        }
-    }
 
     private static View.Builder createGUI() {
         View.Builder view = View.builder()

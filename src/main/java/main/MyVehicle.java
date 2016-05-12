@@ -1,31 +1,25 @@
 package main;
 
 import com.github.rinde.rinsim.core.model.comm.*;
-import com.github.rinde.rinsim.core.model.pdp.PDPModel;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
-import com.github.rinde.rinsim.core.model.pdp.TimeWindowPolicy;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
-import com.github.rinde.rinsim.core.model.road.RoadModel;
 import com.github.rinde.rinsim.core.model.road.RoadModels;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
-import com.github.rinde.rinsim.core.model.time.TimeModel;
 import com.github.rinde.rinsim.geom.Point;
 import com.github.rinde.rinsim.pdptw.common.RouteFollowingVehicle;
 import com.google.common.base.Optional;
 import com.google.common.math.DoubleMath;
-import comm.AcceptBidMessage;
-import comm.AuctionedParcelMessage;
-import comm.BidMessage;
-import comm.RefuseBidMessage;
+import main.comm.AcceptBidMessage;
+import main.comm.AuctionedParcelMessage;
+import main.comm.BidMessage;
+import main.comm.RefuseBidMessage;
 
 import javax.measure.Measure;
 import javax.measure.quantity.Duration;
 import javax.measure.quantity.Length;
-import javax.measure.quantity.Velocity;
 import javax.measure.unit.Unit;
 import java.math.RoundingMode;
 import java.util.*;
-import java.util.function.Consumer;
 
 /**
  * Created by KevinB on 8/05/2016.
@@ -85,8 +79,14 @@ public class MyVehicle extends RouteFollowingVehicle implements CommUser{
                 // Add vehicle to route
                 LinkedList newRoute = new LinkedList<>(this.getRoute());
 
+
+                //DONT FORGET TO ADD THE PARCEL TWICE, BOTH FOR PICKUP AND DELIVERY
                 newRoute.add(
-                        calculatedIndexOfParcel.get(acceptedBidMessage.getParcel()),
+                        //calculatedIndexOfParcel.get(acceptedBidMessage.getParcel()),
+                        newRoute.size(), //FIXME just something to make it work (since no implementation of position picking yet)
+                        acceptedBidMessage.getParcel());
+                newRoute.add(
+                        newRoute.size(),
                         acceptedBidMessage.getParcel());
 
                 this.setRoute(newRoute);
