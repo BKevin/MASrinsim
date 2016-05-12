@@ -20,10 +20,12 @@ import org.apache.commons.math3.random.RandomGenerator;
 import scenario.*;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -119,7 +121,7 @@ public class Main {
                 .addModel(CommModel.builder())
                 .addModel(viewBuilder);
 
-        String file = "src\\main\\resources\\scene.txt";
+        File file = Paths.get("src\\main\\resources\\scene.txt").toFile();
         long lastEventTime = -1;
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
