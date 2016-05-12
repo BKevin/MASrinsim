@@ -6,16 +6,9 @@ import com.github.rinde.rinsim.core.model.pdp.Parcel;
 /**
  * Created by KevinB on 8/05/2016.
  */
-public class RefuseBidMessage implements MessageContents {
+public class RefuseBidMessage extends ParcelMessage{
 
-    private final Parcel parcel;
-
-    RefuseBidMessage(Parcel parcel){
-        this.parcel = parcel;
+    public RefuseBidMessage(Parcel parcel) {
+        super(parcel);
     }
-
-    public Parcel getParcel(){
-        return this.parcel;
-    }
-
 }

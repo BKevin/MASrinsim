@@ -6,15 +6,9 @@ import com.github.rinde.rinsim.core.model.pdp.Parcel;
 /**
  * Created by KevinB on 8/05/2016.
  */
-public class AcceptBidMessage implements MessageContents {
-
-    private final Parcel parcel;
+public class AcceptBidMessage extends ParcelMessage{
 
     public AcceptBidMessage(Parcel parcel) {
-        this.parcel = parcel;
-    }
-
-    public Parcel getParcel() {
-        return parcel;
+        super(parcel);
     }
 }
