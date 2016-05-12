@@ -63,8 +63,10 @@ public class RouteTimes{
         for(Parcel p : this.getRoute()){
 
             //From last parcel delivery to current parcel pickup
+            //FIXME not linked yet
             long pickupTravelTime = 0;//v.computeTravelTimeFromTo(currentPosition, p.getPickupLocation(), timeUnit);
             //From current parcel pickup to current parcel delivery
+            //FIXME not linked yet
             long deliveryTravelTime = 0;//v.computeTravelTimeFromTo(p.getPickupLocation(), p.getDeliveryLocation(), timeUnit);
 
             // Update current position
