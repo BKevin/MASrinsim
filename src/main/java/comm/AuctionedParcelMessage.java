@@ -1,8 +1,6 @@
 package comm;
 
-import com.github.rinde.rinsim.core.model.comm.MessageContents;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
-import main.MyParcel;
 
 /**
  * Created by KevinB on 8/05/2016.
