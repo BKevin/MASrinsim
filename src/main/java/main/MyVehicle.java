@@ -14,6 +14,7 @@ import comm.AuctionedParcelMessage;
 import comm.BidMessage;
 import comm.RefuseBidMessage;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -26,12 +27,14 @@ public class MyVehicle extends RouteFollowingVehicle implements CommUser{
 
     private Optional<CommDevice> device;
 
+    private Map<Parcel, Integer> calculatedIndexOfParcel;
+
     public MyVehicle(VehicleDTO vehicleDTO) {
-        super(vehicleDTO);
-    
+        super(vehicleDTO, true); //route diversion is on.
+
+        calculatedIndexOfParcel = new HashMap<>();
     }
 
-    
 
     /**
      * Pre-tick message handling.
@@ -160,8 +163,8 @@ public class MyVehicle extends RouteFollowingVehicle implements CommUser{
 
     @Override
     public Optional<Point> getPosition() {
-        if (this.getRoadModel().get().containsObject(this)) {
-            return Optional.of(this.getRoadModel().get().getPosition(this));
+        if (this.getRoadModel().containsObject(this)) {
+            return Optional.of(this.getRoadModel().getPosition(this));
         }
         return Optional.absent();
     }
