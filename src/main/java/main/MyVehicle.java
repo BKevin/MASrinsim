@@ -188,7 +188,7 @@ public class MyVehicle extends RouteFollowingVehicle implements CommUser{
      * @param timeUnit
      * @return
      */
-    protected long computeTravelTimeFromTo(Point a, Point b, Unit<Duration> timeUnit){
+    protected long computeTravelTimeFromTo(Point a, Point b, Unit<Duration> timeUnit) {
         // TODO add caching to travel time calculations
 
         final Measure<Double, Length> distance = Measure.valueOf(Point.distance(
@@ -200,49 +200,6 @@ public class MyVehicle extends RouteFollowingVehicle implements CommUser{
                         Measure.valueOf(this.getSpeed(), this.getRoadModel().getSpeedUnit()), distance, timeUnit),
                 RoundingMode.CEILING);
     }
-
-    @Deprecated
-    private void move(TimeLapse time) {
-        //move in the direction of the first scheduled parcel
-        //if arrived then pickup or deliver Parcel
-//        final RoadModel rm = getRoadModel();
-//        final PDPModel pm = getPDPModel();
-//
-//        if (!time.hasTimeLeft()) {
-//            return;
-//        }
-//
-//        if (parcels.isEmpty()) {
-//            //do nothing when no assignment
-//            return;
-//        }
-//
-//        if (!parcels.isEmpty()) {
-//            MyParcel curr = parcels.get(0);
-//            final boolean inCargo = pm.containerContains(this, curr);
-//            // sanity check: if it is not in our cargo AND it is also not on the
-//            // RoadModel, we cannot go to curr anymore.
-//            if (!inCargo && !rm.containsObject(curr)) {
-//                throw new IllegalStateException("A Parcel isn't available, but MyVehicle still has to PDP it.");
-//            } else if (inCargo) {
-//                // if it is in cargo, go to its destination
-//                rm.moveTo(this, curr.getDeliveryLocation(), time);
-//                if (rm.getPosition(this).equals(curr.getDeliveryLocation())) {
-//                    // deliver when we arrive
-//                    pm.deliver(this, curr, time);
-//                    parcels.remove(0);
-//                }
-//            } else {
-//                // it is still available, go there as fast as possible
-//                rm.moveTo(this, curr, time);
-//                if (rm.equalPosition(this, curr)) {
-//                    // pickup customer
-//                    pm.pickup(this, curr, time);
-//                }
-//            }
-//        }
-    }
-
 
     @Override
     public Optional<Point> getPosition() {
