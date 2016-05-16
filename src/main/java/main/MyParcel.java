@@ -10,10 +10,12 @@ import com.google.common.collect.ImmutableList;
 import main.comm.AcceptBidMessage;
 import main.comm.AuctionedParcelMessage;
 import main.comm.BidMessage;
+import main.comm.RefuseBidMessage;
 import org.apache.commons.math3.random.RandomGenerator;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -91,6 +93,32 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
         }
 
         //handle ending auction:
+        endAuction();
+
+    }
+
+    private void endAuction(){
+
+        Message m = getBestBid();
+
+        List<Message> losingbids = new ArrayList<>();
+        Collections.copy(losingbids, bids);
+        losingbids.remove(m);
+
+        //send AcceptBidMessage to winner of auction
+        device.get().send(new AcceptBidMessage(this), m.getSender());
+
+        this.setWinningVehicle(m.getSender());
+
+        //send RefuseBidMessage to losers
+        for (Message message : losingbids) {
+            device.get().send(new RefuseBidMessage(this), message.getSender());
+        }
+
+        auctioned = true;
+    }
+
+    private Message getBestBid(){
         //find the best bid
         Message bestMess = bids.get(rng.nextInt(bids.size()));
         for (Message message : bids) {
@@ -101,16 +129,11 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
                 throw new NotImplementedException();
             }
         }
-        //send AcceptBidMessage to winner of auction
-        MyVehicle winningVehicle = ((BidMessage) bestMess.getContents()).getVehicle();
-        device.get().send(new AcceptBidMessage(this), winningVehicle);
-        setWinningVehicle(winningVehicle);
+
         //send RefuseBidMessage to losers
         for (Message message : bids) {
 
-        }
-
-        auctioned = true;
+        return bestMess;
     }
 
     @Override
