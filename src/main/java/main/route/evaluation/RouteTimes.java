@@ -1,10 +1,9 @@
-package main.route;
+package main.route.evaluation;
 
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.Vehicle;
 import com.github.rinde.rinsim.geom.Point;
 import com.github.rinde.rinsim.pdptw.common.RouteFollowingVehicle;
-import main.MyVehicle;
 
 import javax.measure.quantity.Duration;
 import javax.measure.unit.Unit;

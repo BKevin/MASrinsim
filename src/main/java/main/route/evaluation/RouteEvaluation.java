@@ -1,5 +1,6 @@
-package main.route;
+package main.route.evaluation;
 
+import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import main.MyParcel;
 
 import java.util.*;
@@ -11,29 +12,15 @@ public class RouteEvaluation {
 
     private final RouteTimes times;
 
-    private Long penalty;
+    private final Penalty penalty;
 
     RouteEvaluation(RouteTimes routeTimes){
         this.times = routeTimes;
-        this.computeRouteValue();
+        this.penalty = this.computeRoutePenalty();
     }
 
-//    private Collection<Parcel> computeOptimalRoute(Collection<Parcel> route){
-
-//
-//        }
-//            computeRouteValue(route)
-//        for(Collection<Parcel> route : routes){
-//
-//        List<Collection<Parcel>> routes = this.generateRoutes(this.getRoute());
-//
-
-    public Long getPenalty() {
+    public Penalty getPenalty() {
         return penalty;
-    }
-
-    public void setPenalty(Long penalty) {
-        this.penalty = penalty;
     }
 
     public RouteTimes getTimes() {
@@ -43,15 +30,15 @@ public class RouteEvaluation {
     /**
      * Computes route value based on each individual parcel's penalty incurred on pickup and delivery.
      */
-    private long computeRouteValue() {
+    protected Penalty computeRoutePenalty() {
 
-        long penalty = 0L;
+        Map<Parcel, Long> map = new HashMap<>();
 
         for(MyParcel p : Arrays.asList(this.times.getRoute().toArray(new MyParcel[0]))) {
-            penalty += p.computePenalty(this.times.getPickupTimes().get(p), this.times.getDeliveryTimes().get(p));
+            map.put(p, p.computePenalty(this.times.getPickupTimes().get(p), this.times.getDeliveryTimes().get(p)));
         }
 
-        return penalty;
+        return new Penalty(this.times.getRoute(), map);
     }
 
     @Override
