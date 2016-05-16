@@ -108,7 +108,7 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
         //send AcceptBidMessage to winner of auction
         device.get().send(new AcceptBidMessage(this), m.getSender());
 
-        this.setWinningVehicle(m.getSender());
+        this.setWinningVehicle(((BidMessage)m.getContents()).getVehicle());
 
         //send RefuseBidMessage to losers
         for (Message message : losingbids) {
@@ -129,9 +129,6 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
                 throw new NotImplementedException();
             }
         }
-
-        //send RefuseBidMessage to losers
-        for (Message message : bids) {
 
         return bestMess;
     }
