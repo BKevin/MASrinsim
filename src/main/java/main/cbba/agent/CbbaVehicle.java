@@ -1,4 +1,4 @@
-package main.cbba;
+package main.cbba.agent;
 
 import com.github.rinde.rinsim.core.model.comm.CommUser;
 import com.github.rinde.rinsim.core.model.comm.Message;
@@ -6,13 +6,10 @@ import com.github.rinde.rinsim.core.model.comm.MessageContents;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.Vehicle;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableTable;
 import main.MyParcel;
 import main.MyVehicle;
 import main.cbba.snapshot.CbbaSnapshot;
-import main.cbba.snapshot.CbgaSnapshot;
 import main.cbba.snapshot.Snapshot;
 import main.route.evaluation.RouteEvaluation;
 import main.route.evaluation.RouteTimes;

@@ -2,8 +2,8 @@ package main.cbba.snapshot;
 
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import main.MyParcel;
-import main.cbba.CbbaVehicle;
-import main.cbba.ConsensusAgent;
+import main.cbba.agent.CbbaVehicle;
+import main.cbba.agent.ConsensusAgent;
 
 import java.util.Map;
 

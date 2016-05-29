@@ -1,14 +1,8 @@
 package main.cbba.snapshot;
 
 import com.github.rinde.rinsim.core.model.comm.MessageContents;
-import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
-import com.github.rinde.rinsim.core.model.time.Timestamp;
-import com.google.common.collect.ImmutableTable;
-import com.sun.corba.se.impl.protocol.giopmsgheaders.Message;
-import main.cbba.ConsensusAgent;
-import main.cbga.CbgaAgent;
-import main.route.evaluation.RouteEvaluation;
+import main.cbba.agent.ConsensusAgent;
 
 import java.util.Map;
 

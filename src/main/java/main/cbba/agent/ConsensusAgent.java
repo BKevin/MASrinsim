@@ -1,4 +1,4 @@
-package main.cbba;
+package main.cbba.agent;
 
 /**
  * Created by pieter on 26.05.16.
