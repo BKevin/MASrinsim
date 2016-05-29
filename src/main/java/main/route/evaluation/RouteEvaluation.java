@@ -14,7 +14,7 @@ public class RouteEvaluation {
 
     private final Penalty penalty;
 
-    RouteEvaluation(RouteTimes routeTimes){
+    public RouteEvaluation(RouteTimes routeTimes){
         this.times = routeTimes;
         this.penalty = this.computeRoutePenalty();
     }

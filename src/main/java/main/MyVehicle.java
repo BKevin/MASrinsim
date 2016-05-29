@@ -55,7 +55,7 @@ public class MyVehicle extends RouteFollowingVehicle implements CommUser{
         time.getTimeUnit();
     }
 
-    private void communicate() {
+    public void communicate() {
         if(device.get().getUnreadCount() == 0)
             return;
         //check new messages

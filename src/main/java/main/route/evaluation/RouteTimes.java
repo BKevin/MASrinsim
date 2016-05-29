@@ -39,6 +39,17 @@ public class RouteTimes{
         computeRouteTimes(v, timeUnit);
     }
 
+    public RouteTimes(RouteFollowingVehicle v, Collection<Parcel> route, Point startPosition, Long startTime, Unit<Duration> timeUnit){
+        this.route = route;
+        this.startTime = startTime;
+        this.startPosition = startPosition;
+
+        this.pickupTimes = new HashMap<>();
+        this.deliveryTimes = new HashMap<>();
+
+        computeRouteTimes(v, timeUnit);
+    }
+
 
     public Collection<Parcel> getRoute() {
         return route;
