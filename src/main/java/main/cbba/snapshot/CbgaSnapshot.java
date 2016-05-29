@@ -15,18 +15,13 @@ import java.util.Map;
  */
 public class CbgaSnapshot extends Snapshot {
 
-
     private final ImmutableTable<Parcel, ConsensusAgent, Double> winningbids;
-
-    private final ImmutableMap<ConsensusAgent, Long> timestamps;
 
     public CbgaSnapshot(CbgaAgent agent, TimeLapse time) {
 
         super(agent, time);
 
         this.winningbids = agent.getWinningBids();
-
-        this.timestamps = agent.getCommunicationTimestamps();
     }
 
 
@@ -36,11 +31,9 @@ public class CbgaSnapshot extends Snapshot {
         return super.equals(o);
     }
 
-    public ImmutableMap<ConsensusAgent, Long> getTimestamps() {
-        return timestamps;
-    }
-
     public ImmutableTable<Parcel, ConsensusAgent, Double> getWinningbids() {
         return winningbids;
     }
+
+
 }
