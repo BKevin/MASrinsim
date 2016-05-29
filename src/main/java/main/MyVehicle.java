@@ -38,7 +38,6 @@ public class MyVehicle extends RouteFollowingVehicle implements CommUser{
         calculatedIndexOfParcel = new HashMap<>();
     }
 
-
     /**
      * Pre-tick message handling.
      *
@@ -126,10 +125,6 @@ public class MyVehicle extends RouteFollowingVehicle implements CommUser{
         return 0;
     }
 
-
-
-
-
     @Override
     protected long computeTravelTimeTo(Point p, Unit<Duration> timeUnit) {
 
@@ -163,6 +158,10 @@ public class MyVehicle extends RouteFollowingVehicle implements CommUser{
     @Override
     public void setCommDevice(CommDeviceBuilder commDeviceBuilder) {
         device = Optional.of(commDeviceBuilder.build());
+    }
+
+    protected Optional<CommDevice> getCommDevice() {
+        return device;
     }
 
 
