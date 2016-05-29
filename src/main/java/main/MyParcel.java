@@ -17,13 +17,14 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Created by KevinB on 8/05/2016.
  */
 public class MyParcel extends Parcel implements CommUser, TickListener{
 
-    private final RandomGenerator rng;
     private Optional<CommDevice> device;
     private boolean auctioned;
     private boolean broadcasted;
@@ -39,13 +40,11 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
     private long deliverTime = 0;
     private Vehicle vehicle;
 
-
-    public MyParcel(ParcelDTO parcelDTO, RandomGenerator random) {
+    public MyParcel(ParcelDTO parcelDTO){
         super(parcelDTO);
         auctioned = false;
         broadcasted = false;
         bids = null;
-        rng = random;
     }
 
     @Override
@@ -120,7 +119,8 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
 
     private Message getBestBid(){
         //find the best bid
-        Message bestMess = bids.get(rng.nextInt(bids.size()));
+        // use ThreadLocalRandom, as per http://stackoverflow.com/a/363692
+        Message bestMess = bids.get(ThreadLocalRandom.current().nextInt(bids.size()));
         for (Message message : bids) {
             BidMessage bestBid = (BidMessage) bestMess.getContents();
             BidMessage bid = (BidMessage) message.getContents();
