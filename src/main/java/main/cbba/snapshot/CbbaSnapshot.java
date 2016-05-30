@@ -2,8 +2,8 @@ package main.cbba.snapshot;
 
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
-import main.cbba.agent.CbbaVehicle;
-import main.cbba.agent.ConsensusAgent;
+import main.cbba.agent.CbbaAgent;
+import main.cbba.agent.AbstractConsensusAgent;
 
 import java.util.Map;
 
@@ -13,9 +13,9 @@ import java.util.Map;
 public class CbbaSnapshot extends Snapshot {
 
     private final Map<Parcel, Long> y;
-    private final Map<Parcel, ConsensusAgent> z;
+    private final Map<Parcel, AbstractConsensusAgent> z;
 
-    public CbbaSnapshot(CbbaVehicle agent, TimeLapse time) {
+    public CbbaSnapshot(CbbaAgent agent, TimeLapse time) {
         super(agent, time);
 
         this.y = agent.getY();
@@ -27,7 +27,7 @@ public class CbbaSnapshot extends Snapshot {
         return y;
     }
 
-    public Map<Parcel, ConsensusAgent> getZ() {
+    public Map<Parcel, AbstractConsensusAgent> getZ() {
         return z;
     }
 

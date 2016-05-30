@@ -3,7 +3,7 @@ package main.cbba.snapshot;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.google.common.collect.ImmutableTable;
-import main.cbba.agent.ConsensusAgent;
+import main.cbba.agent.AbstractConsensusAgent;
 import main.cbba.agent.CbgaAgent;
 
 /**
@@ -11,13 +11,13 @@ import main.cbba.agent.CbgaAgent;
  */
 public class CbgaSnapshot extends Snapshot {
 
-    private final ImmutableTable<Parcel, ConsensusAgent, Long> winningbids;
+    private final ImmutableTable<Parcel, AbstractConsensusAgent, Long> winningbids;
 
     public CbgaSnapshot(CbgaAgent agent, TimeLapse time) {
 
         super(agent, time);
 
-        this.winningbids = agent.getWinningBids();
+        this.winningbids = agent.getX();
     }
 
 
@@ -27,7 +27,7 @@ public class CbgaSnapshot extends Snapshot {
         return super.equals(o);
     }
 
-    public ImmutableTable<Parcel, ConsensusAgent, Long> getWinningbids() {
+    public ImmutableTable<Parcel, AbstractConsensusAgent, Long> getWinningbids() {
         return winningbids;
     }
 
