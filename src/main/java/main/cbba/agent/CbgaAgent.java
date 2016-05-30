@@ -42,6 +42,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
         return ImmutableTable.copyOf(X);
     }
 
+    @Override
     protected void replaceWinningBid(Parcel parcel, AbstractConsensusAgent from, AbstractConsensusAgent to, Long bid){
         this.X.put(parcel, from, 0L);
         this.setWinningBid(parcel, to, bid);
@@ -53,11 +54,22 @@ public class CbgaAgent extends AbstractConsensusAgent {
      * @param agent
      * @param bid
      */
+    @Override
     protected void setWinningBid(Parcel parcel, AbstractConsensusAgent agent, Long bid){
         super.setWinningBid(parcel, agent, bid);
 
         this.X.put(parcel, agent, bid);
 
+    }
+
+    @Override
+    protected void handleLostParcels(List<Parcel> parcels) {
+        // remove bids of this Agent on the given parcels
+        this.X.column(this).replaceAll(
+                ((parcel, bid)
+                        -> parcels.contains(parcel)
+                        ? 0L
+                        : bid));
     }
 
 //    /**

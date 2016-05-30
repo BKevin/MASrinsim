@@ -7,6 +7,8 @@ import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.Vehicle;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import main.MyParcel;
@@ -153,8 +155,30 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                             // Fetch actual parcels (in case of MultiParcel and build route
                             this.getP().stream().map(this::getAllocatedParcel).collect(Collectors.toList())));
         }
+        else{
+            //Handle the loss of a parcel (since you (the previous winner) are replaced)
+            if(this.getB().contains(parcel)){
+                int ind = this.getB().indexOf(parcel);
+                //make lists of parcels to keep and to remove
+                ImmutableList<Parcel> newB = FluentIterable.from(this.getB()).limit(ind).toList();
+                ImmutableList<Parcel> removedFromB = FluentIterable.from(this.getB()).skip(ind+1).toList(); //Don't take 'parcel' as it should be already handled
+
+                this.handleLostParcels(removedFromB);
+
+
+                //remove all parcels claimed after the lost parcel.
+                this.p = new ArrayList<>(this.getP().stream().filter(p -> newB.contains(p)).collect(Collectors.toList()));
+                this.b = new LinkedList<>(newB);
+            }
+        }
 
     }
+
+    /**
+     * Subclasses need to handle the loss of parcels due to the loss of an earlier assigned parcel.
+     * @param parcels
+     */
+    protected abstract void handleLostParcels(List<Parcel> parcels);
 
     private Parcel getAllocatedParcel(Parcel p){
         if(p instanceof MultiParcel){

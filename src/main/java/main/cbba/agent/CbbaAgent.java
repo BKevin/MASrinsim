@@ -273,6 +273,22 @@ public class CbbaAgent extends AbstractConsensusAgent {
         this.z.put(parcel, agent);
     }
 
+    @Override
+    protected void handleLostParcels(List<Parcel> parcels) {
+        //remove winning bids on the given parcels
+        this.y.replaceAll(
+                ((parcel, bid)
+                        -> parcels.contains(parcel)
+                        ? 0L
+                        : bid));
+        //remove winners of the given parcels
+        this.z.replaceAll(
+                ((parcel, winner)
+                        -> parcels.contains(parcel)
+                        ? null
+                        : winner));
+    }
+
     public Map<Parcel, Long> getY() {
         return ImmutableMap.copyOf(y);
     }
