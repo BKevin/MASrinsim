@@ -24,10 +24,10 @@ import java.util.stream.Collectors;
 public abstract class AbstractConsensusAgent extends MyVehicle {
 
 
-    protected LinkedList<Parcel> b;
-    protected ArrayList<Parcel> p;
+    private LinkedList<Parcel> b;
+    private ArrayList<Parcel> p;
 
-    protected Map<AbstractConsensusAgent, Long> communicationTimestamps;
+    private Map<AbstractConsensusAgent, Long> communicationTimestamps;
 
     // Previous snapshot
     private Snapshot snapshot;

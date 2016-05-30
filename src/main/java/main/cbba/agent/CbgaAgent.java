@@ -63,9 +63,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
     @Override
     protected void allocateParcelToWinner(Parcel parcel, AbstractConsensusAgent agent) {
         if (parcel instanceof MultiParcel) {
-
             ((MultiParcel) parcel).allocateTo(agent);
-
         }
         if (parcel instanceof SubParcel){
             throw new IllegalArgumentException("Should not directly allocate parcels of type "+parcel.getClass().getName());
