@@ -57,6 +57,7 @@ public class Main {
                 .addModel(ScenarioController
                                 .builder(myScenario)
                         .withEventHandler(NewParcelEvent.class, NewParcelEvent.defaultHandler())
+                        .withEventHandler(NewParcelEvent.class, NewMultiParcelEvent.defaultHandler())
                         .withEventHandler(NewVehicleEvent.class, NewVehicleEvent.defaultHandler())
                         .withEventHandler(NewDepotEvent.class, NewDepotEvent.defaultHandler()))
                 .build()

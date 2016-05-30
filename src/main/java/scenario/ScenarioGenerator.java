@@ -30,6 +30,7 @@ public class ScenarioGenerator {
 
     private static long parcelAverageInterArrivalTime = 50000; //ms
     private static long parcelInterArrivalTimeVariation = 10000; //ms
+    private static long parcelAverageTimeWindowVariation = 10000; //ms
     private static int parcelServiceDuration = 1000;
     private static int parcelCapacity = 1;
 
@@ -85,7 +86,10 @@ public class ScenarioGenerator {
     }
 
     private static String depotEventAtTime(long time) {
-        return "NewDepot " + time + " " + height/2 + "," + width /2 + " " + amountVehiclesAtStart;
+        return "NewDepot "
+                + time + " "
+                + height/2 + "," + width /2 + " "
+                + amountVehiclesAtStart;
     }
 
     private static String makeVehicleEventAtStart() {
@@ -100,29 +104,85 @@ public class ScenarioGenerator {
 
     private static String vehicleEventAtTime(long time) {
         Point location = randomPoint();
-        return "NewVehicle " + time + " " + location.x + "," + location.y + " " + vehicleCapacity + " " + vehicleSpeed;
+        return "NewVehicle "
+                + time + " "
+                + location.x + "," + location.y + " "
+                + vehicleCapacity + " "
+                + vehicleSpeed;
     }
 
     private static String makeParcelEventAtStart() {
-        return parcelEventAtTime(-1);
+        int requiredAgents = getRequiredAgents();
+        if (requiredAgents == 1)
+            return "NewParcel "
+                    + parcelEventAtTime(-1);
+        else
+            return "NewMultiParcel "
+                    + parcelEventAtTime(-1)
+                    + requiredAgents;
     }
 
     private static String makeNewParcelEvent() {
+        int requiredAgents = getRequiredAgents();
         long rngTime = (long) (currentTime + parcelAverageInterArrivalTime  + ((2*rng.nextDouble() - 1) * parcelInterArrivalTimeVariation));
         currentTime = rngTime;
-        return parcelEventAtTime(rngTime);
+        if (requiredAgents == 1)
+            return "NewParcel "
+                    + parcelEventAtTime(rngTime);
+        else
+            return "NewMultiParcel "
+                    + parcelEventAtTime(rngTime)
+                    + requiredAgents;
     }
 
     private static String parcelEventAtTime(long time) {
         Point location1 = randomPoint();
         Point location2 = randomPoint();
-        return "NewParcel " + time + " " + location1.x + "," + location1.y + " " + location2.x + "," + location2.y + " " + parcelServiceDuration + " " + parcelCapacity;
+        String timeWindow = makeTimeWindows(time, location1, location2);
+        return time + " "
+                + location1.x + "," + location1.y + " "
+                + location2.x + "," + location2.y + " "
+                + parcelServiceDuration + " "
+                + parcelCapacity + " "
+                + timeWindow;
+    }
+
+
+    private static String makeTimeWindows(long time, Point location1, Point location2) {
+        //FIXME time calculations probably wrong?
+        double distance = Math.sqrt(Math.pow(location1.x - location2.x,2) + Math.pow(location1.y - location2.y,2));
+        double timeToTravel = distance/vehicleSpeed;
+
+        long currentTime = time;
+        if( time < 0)
+            currentTime = 0;
+
+        long arrivalTime = (long) (currentTime + parcelAverageTimeWindowVariation);
+        double vari = rng.nextDouble();
+        long arrivalTimeWindowBegin = (long) (arrivalTime - vari * parcelAverageTimeWindowVariation);
+        //vari = rng.nextDouble();
+        long arrivalTimeWindowEnd = (long) (arrivalTime + vari * parcelAverageTimeWindowVariation);
+
+        long deliverTime = (long) (arrivalTime + timeToTravel);
+        //vari = rng.nextDouble();
+        long deliverTimeWindowBegin = (long) (arrivalTime - vari * parcelAverageTimeWindowVariation);
+        //vari = rng.nextDouble();
+        long deliverTimeWindowEnd = (long) (arrivalTime + vari * parcelAverageTimeWindowVariation);
+
+        return arrivalTimeWindowBegin + "/" + arrivalTimeWindowEnd + "=" + deliverTimeWindowBegin + "/" + deliverTimeWindowEnd;
+
     }
 
     private static Point randomPoint(){
         double x = rng.nextDouble() * height;
         double y = rng.nextDouble() * width;
         return new Point(x,y);
+    }
+
+
+
+    private static int getRequiredAgents() {
+        return 1; //FIXME add something to make it randomly generated
     }
 
 
