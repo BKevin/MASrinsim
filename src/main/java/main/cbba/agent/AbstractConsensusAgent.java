@@ -12,7 +12,6 @@ import main.MyParcel;
 import main.MyVehicle;
 import main.cbba.parcel.MultiParcel;
 import main.cbba.snapshot.Snapshot;
-import main.comm.ParcelMessage;
 import main.route.evaluation.RouteEvaluation;
 import main.route.evaluation.RouteTimes;
 
@@ -44,7 +43,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
     public abstract void findConsensus();
 
-    public abstract void evaluateSnapshot(Snapshot snaphot);
+    public abstract void evaluateSnapshot(Snapshot snaphot, AbstractConsensusAgent k);
 
     public LinkedList<Parcel> getB() {
         return b;
@@ -233,7 +232,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
             if (contents instanceof Snapshot) {
                 this.setCommunicationTimestamp(message);
 
-                evaluateSnapshot((Snapshot) message.getContents());
+                evaluateSnapshot((Snapshot) message.getContents(), (AbstractConsensusAgent) sender );
             }
 
 //            if (contents instanceof ParcelMessage){

@@ -116,32 +116,9 @@ public class CbbaAgent extends AbstractConsensusAgent {
     }
 
     /**
-     * Evaluate received message from all agents
-     */
-    protected void evaluateMessages() {
-
-        for (Message message : this.getCommDevice().get().getUnreadMessages()) {
-
-            //if AuctionedParcelMessage then calculate bid and send BidMessage
-            final MessageContents contents = message.getContents();
-
-            CommUser sender = message.getSender();
-
-            // Received snapshot, update bid values.
-            if (contents instanceof Snapshot) {
-                this.setCommunicationTimestamp(message);
-
-                evaluateSnapshot((Snapshot) message.getContents());
-            }
-        }
-    }
-
-
-
-    /**
      * Evaluate a single snapshot message from another sender
      */
-    protected void evaluateSnapshot(Snapshot s){
+    public void evaluateSnapshot(Snapshot s, AbstractConsensusAgent k){
         if(!(s instanceof CbbaSnapshot)){
             throw new IllegalArgumentException("Snapshot does not have the right format. Expected CbbaSnapshot");
         }

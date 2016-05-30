@@ -7,6 +7,7 @@ import com.google.common.collect.*;
 import main.MyParcel;
 import main.cbba.parcel.MultiParcel;
 import main.cbba.parcel.SubParcel;
+import main.cbba.snapshot.CbbaSnapshot;
 import main.cbba.snapshot.CbgaSnapshot;
 import main.cbba.snapshot.Snapshot;
 
@@ -17,7 +18,7 @@ import java.util.stream.Collectors;
 /**
  * Created by pieter on 26.05.16.
  */
-public class CbgaAgent extends CbbaAgent {
+public class CbgaAgent extends AbstractConsensusAgent {
 
     /* m*n matrix with the winning bids of agents.
      * Xij is equal to the winning bid of agent i for task j or equal to  0 if no assignment has been made.
@@ -126,11 +127,22 @@ public class CbgaAgent extends CbbaAgent {
 
     }
 
+    @Override
+    public void findConsensus() {
+
+        // Send snapshot to all agents
+        // Construct snapshot message
+        //TODO kan ook via this.getCurrentTime(), geeft rechtstreeks long value.
+        sendSnapshot(new CbgaSnapshot(this, this.getCurrentTimeLapse()));
+
+        evaluateMessages();
+    }
+
     /**
      * Evaluate a single snapshot message from another sender
      *
      */
-    protected void evaluateSnapshot(Snapshot s, AbstractConsensusAgent k){
+    public void evaluateSnapshot(Snapshot s, AbstractConsensusAgent k){
         if(!(s instanceof CbgaSnapshot)){
             throw new IllegalArgumentException("Snapshot does not have the right format. Expected CbgaSnapshot");
         }
@@ -145,8 +157,7 @@ public class CbgaAgent extends CbbaAgent {
         for(Parcel j : bids.rowKeySet()){
 
             if(!(j instanceof MultiParcel)) {
-                // FIXME link to CBBA table
-//                super.evaluateSnapshot(new CbbaSnapshot(null, null));
+                // FIXME link to CBBA table method
             }
 
             else{
