@@ -97,14 +97,6 @@ public class MultiParcel extends MyParcel {
         return changeAllocation(null, vehicle);
     }
 
-    public Parcel getAllocatedSubParcel(Vehicle vehicle){
-        return subParcels.stream().filter((SubParcel s) -> s.getAllocatedVehicle() == vehicle).collect(Collectors.<Parcel>toList()).get(0);
-    }
-
-    public List<Vehicle> getAllocatedVehicles(){
-        return subParcels.stream().map(SubParcel::getAllocatedVehicle).collect(Collectors.toList());
-    }
-
     public Parcel changeAllocation(Vehicle from, Vehicle to){
         List<SubParcel> matches;
         if(from == null) {
@@ -122,6 +114,14 @@ public class MultiParcel extends MyParcel {
 
     public Vehicle getAllocatedVehicle(){
         throw new UnsupportedOperationException("MultiParcel is not allocated directly. Use getAllocatedVehicles instead.");
+    }
+
+    public List<Vehicle> getAllocatedVehicles(){
+        return subParcels.stream().map(SubParcel::getAllocatedVehicle).collect(Collectors.toList());
+    }
+
+    public Parcel getAllocatedSubParcel(Vehicle vehicle){
+        return subParcels.stream().filter((SubParcel s) -> s.getAllocatedVehicle() == vehicle).collect(Collectors.<Parcel>toList()).get(0);
     }
 
 }
