@@ -32,14 +32,6 @@ public class CbbaAgent extends AbstractConsensusAgent {
         this.z = new HashMap<>();
     }
 
-    public Map<Parcel, Long> getY() {
-        return ImmutableMap.copyOf(y);
-    }
-
-    public Map<Parcel, AbstractConsensusAgent> getZ() {
-        return ImmutableMap.copyOf(z);
-    }
-
     public void constructBundle() {
         LinkedList<? extends Parcel> newB = getB();
         ArrayList<? extends Parcel> newP = getP();
@@ -86,21 +78,6 @@ public class CbbaAgent extends AbstractConsensusAgent {
                 bIsChanging = true;
             }
         }
-    }
-
-
-    /**
-     * Set winning bid value for the given Parcel and AbstractConsensusAgent
-     * @param parcel
-     * @param agent
-     * @param bid
-     */
-    @Override
-    protected void setWinningBid(Parcel parcel, AbstractConsensusAgent agent, Long bid){
-        super.setWinningBid(parcel, agent, bid);
-
-        this.y.put(parcel,bid);
-        this.z.put(parcel,agent);
     }
 
 
@@ -160,22 +137,22 @@ public class CbbaAgent extends AbstractConsensusAgent {
         //I think I win
         if(this.equals(myIdea)){
             if(otherSnapshot.getY().get(parcel) > mySnapshot.getY().get(parcel))
-                update();
+                update(parcel, otherSnapshot);
             return;
         }
         //I think sender wins
         if(sender.equals(myIdea)){
-            update();
+            update(parcel, otherSnapshot);
             return;
         }
         if(myIdea != null && !sender.equals(myIdea) && !this.equals(myIdea)){
             if((otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
                     || (otherSnapshot.getY().get(parcel) > mySnapshot.getY().get(parcel)))
-                update();
+                update(parcel, otherSnapshot);
             return;
         }
         if(myIdea == null){
-            update();
+            update(parcel, otherSnapshot);
             return;
         }
 
@@ -188,12 +165,12 @@ public class CbbaAgent extends AbstractConsensusAgent {
             return;
         }
         if(sender.equals(myIdea)){
-            reset();
+            reset(parcel);
             return;
         }
         if(myIdea != null && !sender.equals(myIdea) && !this.equals(myIdea)){
             if(otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
-                reset();
+                reset(parcel);
             return;
         }
         if(myIdea == null){
@@ -208,54 +185,53 @@ public class CbbaAgent extends AbstractConsensusAgent {
         if(this.equals(myIdea)) {
             if((otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
                     && (otherSnapshot.getY().get(parcel) > mySnapshot.getY().get(parcel)))
-                update();
+                update(parcel, otherSnapshot);
             return;
         }
         if(sender.equals(myIdea)){
             if(otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
-                update();
+                update(parcel, otherSnapshot);
             else
-                reset();
+                reset(parcel);
             return;
         }
         if(otherIdea.equals(myIdea)){
             if(otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
-                update();
+                update(parcel, otherSnapshot);
             return;
         }
         if(myIdea != null && !sender.equals(myIdea) && !this.equals(myIdea) && !otherIdea.equals(myIdea)){
             if(otherSnapshot.getCommunicationTimestamps().get(otherIdea) > mySnapshot.getCommunicationTimestamps().get(otherIdea)
                     && otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
-                update();
+                update(parcel, otherSnapshot);
             if(otherSnapshot.getCommunicationTimestamps().get(otherIdea) > mySnapshot.getCommunicationTimestamps().get(otherIdea)
                     && (otherSnapshot.getY().get(parcel) > mySnapshot.getY().get(parcel)))
-                update();
+                update(parcel, otherSnapshot);
             if(otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea)
                     && mySnapshot.getCommunicationTimestamps().get(otherIdea) > otherSnapshot.getCommunicationTimestamps().get(otherIdea))
-                reset();
+                reset(parcel);
             return;
         }
         if(myIdea == null){
             if(otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
-                update();
+                update(parcel, otherSnapshot);
             return;
         }
 
         throw new IllegalArgumentException("Something went wrong in senderThinksHeWins: unreachable code.");
     }
-
     private void senderThinksNododyWins(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, CbbaSnapshot mySnapshot, CbbaSnapshot otherSnapshot) {
         if(this.equals(myIdea)) {
             leave();
             return;
         }
         if(sender.equals(myIdea)){
-            update();
+            update(parcel, otherSnapshot);
             return;
         }
         if(myIdea != null && !sender.equals(myIdea) && !this.equals(myIdea)){
             if(otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
-                update();
+                update(parcel, otherSnapshot);
             return;
         }
         if(myIdea == null){
@@ -265,5 +241,45 @@ public class CbbaAgent extends AbstractConsensusAgent {
 
         throw new IllegalArgumentException("Something went wrong in senderThinksHeWins: unreachable code.");
     }
+
+    private void update(Parcel parcel, CbbaSnapshot snapshot) {
+        this.setWinningBid(parcel, snapshot.getZ().get(parcel), snapshot.getY().get(parcel));
+    }
+
+    private void leave() {
+        //do nothing
+    }
+
+    private void reset(Parcel parcel) {
+        this.setWinningBid(parcel, null, 0L); //FIXME is dit legaal?
+    }
+
+    @Override
+    protected void replaceWinningBid(Parcel parcel, AbstractConsensusAgent from, AbstractConsensusAgent to, Long bid){
+        this.setWinningBid(parcel, to, bid);
+    }
+
+    /**
+     * Set winning bid value for the given Parcel and AbstractConsensusAgent
+     * @param parcel
+     * @param agent
+     * @param bid
+     */
+    @Override
+    protected void setWinningBid(Parcel parcel, AbstractConsensusAgent agent, Long bid){
+        super.setWinningBid(parcel, agent, bid);
+
+        this.y.put(parcel, bid);
+        this.z.put(parcel, agent);
+    }
+
+    public Map<Parcel, Long> getY() {
+        return ImmutableMap.copyOf(y);
+    }
+
+    public Map<Parcel, AbstractConsensusAgent> getZ() {
+        return ImmutableMap.copyOf(z);
+    }
+
 
 }
