@@ -1,17 +1,20 @@
 package main.cbba.agent;
 
+import com.github.rinde.rinsim.core.model.comm.CommUser;
 import com.github.rinde.rinsim.core.model.comm.Message;
+import com.github.rinde.rinsim.core.model.comm.MessageContents;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.Vehicle;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import main.MyParcel;
 import main.MyVehicle;
 import main.cbba.parcel.MultiParcel;
 import main.cbba.snapshot.Snapshot;
+import main.comm.ParcelMessage;
 import main.route.evaluation.RouteEvaluation;
 import main.route.evaluation.RouteTimes;
-import org.apache.commons.math3.analysis.function.Abs;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -40,6 +43,8 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     public abstract void constructBundle();
 
     public abstract void findConsensus();
+
+    public abstract void evaluateSnapshot(Snapshot snaphot);
 
     public LinkedList<Parcel> getB() {
         return b;
@@ -155,40 +160,91 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         }
 
         // Check for parcels that are picked up but not delivered yet.
-        List<Parcel> current = this.getRoute().stream().collect(Collectors.toList());
-        // Compare second element
-        if(!current.get(1).equals(parcels.get(0))){
-            // The first parcel is already picked up and may be deleted once.
-            result.remove(0);
+//        List<Parcel> current = this.getRoute().stream().collect(Collectors.toList());
+        ImmutableSet<Parcel> currentContents = this.getPDPModel().getContents(this);
+
+        if(!currentContents.isEmpty()){
+                // A parcel is already picked up and must be added.
+            for(Parcel p : currentContents)
+                // correct if you have max 1 package in load.
+                result.add(0, p);
         }
 
         return result;
     }
 
     protected Long calculateBestRouteWith(Parcel parcel) {
-        throw new UnsupportedOperationException("Not implemented yet");
-//        return 0D;
+
+        // Calculate minimum penalty
+        return calculatePenaltiesWith(parcel).stream().min(Long::compareTo).get();
+    }
+
+    protected List<Long> calculatePenaltiesWith(Parcel parcel){
+        // Map route calc for every index position
+        List<Long> penalties = this.getP().stream().map((Parcel p) -> calculatePenaltyAtPosition(this.getP(), parcel, this.getP().indexOf(p))).collect(Collectors.toList());
+        // Add extra route when adding at the end.
+        penalties.add(calculatePenaltyAtPosition(this.getP(), parcel, this.getP().size()));
+
+        return penalties;
     }
 
     protected long calculatePenaltyAtPosition(ArrayList<? extends Parcel> path, Parcel parcel, int positionOfParcel) {
         ArrayList<Parcel> adaptedPath = new ArrayList<Parcel>(path);
         adaptedPath.add(positionOfParcel,parcel);
-        return calculatePenalty(adaptedPath);
+
+        long newPathValue = calculatePenalty(adaptedPath);
+        // FIXME must be cached somewhere
+        long oldPathValue = calculatePenalty(this.getP());
+
+        // return difference
+        return newPathValue - oldPathValue;
     }
 
     protected long calculatePenalty(ArrayList<? extends Parcel> path) {
         RouteTimes routeTimes = new RouteTimes(this,new ArrayList<Parcel>(path),this.getPosition().get(),this.getCurrentTime(),this.getCurrentTimeLapse().getTimeUnit());
         RouteEvaluation evaluation = new RouteEvaluation(routeTimes);
+
         return evaluation.getPenalty().getRoutePenalty();
     }
 
     public Integer calculateBestRouteIndexWith(Parcel parcel) {
-        return 0;
+        List<Long> penalties = calculatePenaltiesWith(parcel);
+        return penalties.indexOf(penalties.stream().min(Long::compareTo).get());
     }
 
     protected boolean isBetterBidThan(double bid, double otherBid) {
         return bid < otherBid;
     }
+
+
+    /**
+     * Evaluate received message from all agents
+     */
+    protected void evaluateMessages() {
+
+        for (Message message : this.getCommDevice().get().getUnreadMessages()) {
+
+            //if AuctionedParcelMessage then calculate bid and send BidMessage
+            final MessageContents contents = message.getContents();
+
+            CommUser sender = message.getSender();
+
+            // Received snapshot, update bid values.
+            if (contents instanceof Snapshot) {
+                this.setCommunicationTimestamp(message);
+
+                evaluateSnapshot((Snapshot) message.getContents());
+            }
+
+//            if (contents instanceof ParcelMessage){
+//
+//                this.addParcel(((ParcelMessage) contents).getParcel());
+//
+//
+//            }
+        }
+    }
+
 
 
 }
