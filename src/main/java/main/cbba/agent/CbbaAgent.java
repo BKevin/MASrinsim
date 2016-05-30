@@ -19,61 +19,32 @@ import java.util.*;
 /**
  * Created by pieter on 26.05.16.
  */
-public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
+public class CbbaAgent extends AbstractConsensusAgent {
 
-    private LinkedList<Parcel> b;
-    private ArrayList<Parcel> p;
     private Map<Parcel, Long> y;
-    private Map<Parcel, ConsensusAgent> z;
-
-    private Map<ConsensusAgent, Long> communicationTimestamps;
-
-    // Previous snapshot
-    private Snapshot snapshot;
+    private Map<Parcel, AbstractConsensusAgent> z;
 
 
-    public CbbaVehicle(VehicleDTO vehicleDTO) {
+    public CbbaAgent(VehicleDTO vehicleDTO) {
         super(vehicleDTO);
-        this.communicationTimestamps = new HashMap<>();
 
-        this.b = new LinkedList<>();
-        this.p = new ArrayList<>();
         this.y = new HashMap<>();
         this.z = new HashMap<>();
     }
 
-    public Map<ConsensusAgent, Long> getCommunicationTimestamps() {
-        return ImmutableMap.copyOf(communicationTimestamps);
+    public Map<Parcel, Long> getY() {
+        return ImmutableMap.copyOf(y);
     }
 
-    /**
-     * Set timestamp to last received message timestamp for that agent
-     * @param agent
-     * @param time
-     */
-    private void setCommunicationTimestamp(ConsensusAgent agent, Long time){
-        this.communicationTimestamps.put(agent, time);
+    public Map<Parcel, AbstractConsensusAgent> getZ() {
+        return ImmutableMap.copyOf(z);
     }
 
-    /**
-     * Set timestamp to last received message timestamp for the sending agent.
-     * @param message Snapshot Message from a ConsensusAgent
-     */
-    protected void setCommunicationTimestamp(Message message){
-
-        Snapshot snapshot = (Snapshot) message.getContents();
-        ConsensusAgent agent = (ConsensusAgent) message.getSender();
-
-        this.setCommunicationTimestamp(agent, snapshot.getTimestamp());
-    }
-
-
-    @Override
     public void constructBundle() {
         LinkedList<? extends Parcel> newB = getB();
         ArrayList<? extends Parcel> newP = getP();
         Map<? extends Parcel, Long> newY = getY(); //FIXME it now uses Immutablemaps
-        Map<? extends Parcel, ConsensusAgent> newZ = getZ(); //FIXME it now uses Immutablemaps
+        Map<? extends Parcel, AbstractConsensusAgent> newZ = getZ(); //FIXME it now uses Immutablemaps
 
         long currentPenalty = calculatePenalty(newP);
 
@@ -107,8 +78,8 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
                 }
             }
             if(bestParcel != null){
-                b.addLast( bestParcel);
-                p.add(bestPosition, bestParcel);
+                getB().addLast( bestParcel);
+                getP().add(bestPosition, bestParcel);
 
                 this.setWinningBid(bestParcel, this, bestBid);
 
@@ -117,60 +88,19 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
         }
     }
 
+
     /**
-     * Set winning bid value for the given Parcel and ConsensusAgent
+     * Set winning bid value for the given Parcel and AbstractConsensusAgent
      * @param parcel
      * @param agent
      * @param bid
      */
-    protected void setWinningBid(Parcel parcel, ConsensusAgent agent, Long bid){
+    @Override
+    protected void setWinningBid(Parcel parcel, AbstractConsensusAgent agent, Long bid){
+        super.setWinningBid(parcel, agent, bid);
+
         this.y.put(parcel,bid);
         this.z.put(parcel,agent);
-
-        ((MyParcel) parcel).allocateTo((Vehicle) agent);
-    }
-
-    protected Long calculateBestRouteWith(Parcel parcel) {
-        throw new UnsupportedOperationException("Not implemented yet");
-//        return 0D;
-    }
-
-
-    private long calculatePenaltyAtPosition(ArrayList<? extends Parcel> path, Parcel parcel, int positionOfParcel) {
-        ArrayList<Parcel> adaptedPath = new ArrayList<Parcel>(path);
-        adaptedPath.add(positionOfParcel,parcel);
-        return calculatePenalty(adaptedPath);
-    }
-
-    private long calculatePenalty(ArrayList<? extends Parcel> path) {
-        RouteTimes routeTimes = new RouteTimes(this,new ArrayList<Parcel>(path),this.getPosition().get(),this.getCurrentTime(),this.getCurrentTimeLapse().getTimeUnit());
-        RouteEvaluation evaluation = new RouteEvaluation(routeTimes);
-        return evaluation.getPenalty().getRoutePenalty();
-    }
-
-    public Integer calculateBestRouteIndexWith(Parcel parcel) {
-        return 0;
-    }
-
-    protected boolean isBetterBidThan(double bid, double otherBid) {
-        return bid < otherBid;
-    }
-
-    public LinkedList<Parcel> getB() {
-        return b;
-    }
-
-    public ArrayList<Parcel> getP() {
-        return p;
-    }
-
-
-    public Map<Parcel, Long> getY() {
-        return ImmutableMap.copyOf(y);
-    }
-
-    public Map<Parcel, ConsensusAgent> getZ() {
-        return ImmutableMap.copyOf(z);
     }
 
 
@@ -225,25 +155,4 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
 
     }
 
-    protected void sendSnapshot(Snapshot snapshot){
-        // If the current information is different from the information we sent last time, resend.
-        if(!this.getSnapshot().equals(snapshot)){
-
-            this.setSnapshot(snapshot);
-
-            //TODO getVehicles: send to agent k with g_ik(t) = 1.
-            for(Vehicle c : this.getPDPModel().getVehicles()) {
-                MyVehicle v = (MyVehicle) c;
-                this.getCommDevice().get().send(snapshot, v);
-            }
-        };
-    }
-
-    protected Snapshot getSnapshot() {
-        return snapshot;
-    }
-
-    protected void setSnapshot(Snapshot snapshot) {
-        this.snapshot = snapshot;
-    }
 }

@@ -66,6 +66,10 @@ public class MultiParcel extends MyParcel {
         return changeAllocation(null, vehicle);
     }
 
+    public Parcel getAllocated(Vehicle vehicle){
+        return subParcels.stream().filter((SubParcel s) -> s.getAllocatedVehicle() == vehicle).collect(Collectors.<Parcel>toList()).get(0);
+    }
+
     public Parcel changeAllocation(Vehicle from, Vehicle to){
         List<SubParcel> matches;
         if(from == null) {

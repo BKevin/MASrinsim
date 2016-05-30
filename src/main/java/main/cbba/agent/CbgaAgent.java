@@ -4,7 +4,9 @@ import com.github.rinde.rinsim.core.model.pdp.PDPModel;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
 import com.google.common.collect.*;
+import main.MyParcel;
 import main.cbba.parcel.MultiParcel;
+import main.cbba.parcel.SubParcel;
 import main.cbba.snapshot.CbgaSnapshot;
 import main.cbba.snapshot.Snapshot;
 
@@ -15,17 +17,17 @@ import java.util.stream.Collectors;
 /**
  * Created by pieter on 26.05.16.
  */
-public class CbgaAgent extends CbbaVehicle{
+public class CbgaAgent extends CbbaAgent {
 
     /* m*n matrix with the winning bids of agents.
      * Xij is equal to the winning bid of agent i for task j or equal to  0 if no assignment has been made.
      */
-    private Table<Parcel, ConsensusAgent, Long> winningBids; //sparse table
+    private Table<Parcel, AbstractConsensusAgent, Long> X; //sparse table
 
     public CbgaAgent(VehicleDTO vehicleDTO) {
         super(vehicleDTO);
 
-        this.winningBids = HashBasedTable.create(
+        this.X = HashBasedTable.create(
                 this.getPDPModel().getParcels(PDPModel.ParcelState.AVAILABLE).size(), //expected parcels
                 this.getPDPModel().getVehicles().size()); //expected vehicles
 
@@ -35,26 +37,50 @@ public class CbgaAgent extends CbbaVehicle{
     /**
      * @return Immutable version of the winning bids array
      */
-    public ImmutableTable<Parcel, ConsensusAgent, Long> getWinningBids() {
-        return ImmutableTable.copyOf(winningBids);
+    public ImmutableTable<Parcel, AbstractConsensusAgent, Long> getX() {
+        return ImmutableTable.copyOf(X);
     }
 
     /**
-     * Set winning bid value for the given Parcel and ConsensusAgent
+     * Set winning bid value for the given Parcel and AbstractConsensusAgent
      * @param parcel
      * @param agent
      * @param bid
      */
-    protected void setWinningBid(Parcel parcel, ConsensusAgent agent, Long bid){
+    protected void setWinningBid(Parcel parcel, AbstractConsensusAgent agent, Long bid){
         super.setWinningBid(parcel, agent, bid);
-        this.winningBids.put(parcel, agent, bid);
 
+        this.X.put(parcel, agent, bid);
+
+    }
+
+    /**
+     * We handle MultiParcel too here, allocation is different than for Cbba single Parcels
+     * @param parcel
+     * @param agent
+     */
+    @Override
+    protected void allocateParcelToWinner(Parcel parcel, AbstractConsensusAgent agent) {
+        if (parcel instanceof MultiParcel) {
+
+            ((MultiParcel) parcel).allocateTo(agent);
+
+        }
+        if (parcel instanceof SubParcel){
+            throw new IllegalArgumentException("Should not directly allocate parcels of type "+parcel.getClass().getName());
+        }
+        else if(parcel instanceof MyParcel){
+            ((MyParcel) parcel).allocateTo(agent);
+        }
+        else{
+            throw new IllegalArgumentException("Should not allocate parcels of type "+parcel.getClass().getName());
+        }
     }
 
     @Override
     public void constructBundle() {
 
-        Set<Parcel> parcels = winningBids.column(this).keySet();
+        Set<Parcel> parcels = X.column(this).keySet();
 
         // Get all parcels not already in B
         List<Parcel> notInB = parcels.stream().filter(p -> !this.getB().contains(p)).collect(Collectors.toList());
@@ -76,7 +102,7 @@ public class CbgaAgent extends CbbaVehicle{
                                     entry.getValue(),
                                     // calculate the current maximum bid for every parcel not in B
                                     // TODO could be cached?
-                                    this.getWinningBids().row(entry.getKey()).values().stream()
+                                    this.getX().row(entry.getKey()).values().stream()
                                             .max(Long::compareTo).get()
                             )
                     )
@@ -104,14 +130,14 @@ public class CbgaAgent extends CbbaVehicle{
      * Evaluate a single snapshot message from another sender
      *
      */
-    protected void evaluateSnapshot(Snapshot s, ConsensusAgent k){
+    protected void evaluateSnapshot(Snapshot s, AbstractConsensusAgent k){
         if(!(s instanceof CbgaSnapshot)){
             throw new IllegalArgumentException("Snapshot does not have the right format. Expected CbgaSnapshot");
         }
 
         CbgaSnapshot snapshot = (CbgaSnapshot) s;
 
-        ImmutableTable<Parcel, ConsensusAgent, Long> bids = snapshot.getWinningbids();
+        ImmutableTable<Parcel, AbstractConsensusAgent, Long> bids = snapshot.getWinningbids();
 
         // Convenience variable to adhere to the original algorithm
         CbgaAgent i = this;
@@ -126,17 +152,17 @@ public class CbgaAgent extends CbbaVehicle{
             else{
 //                MultiParcel mj = (MultiParcel) j;
 
-                Map<ConsensusAgent, Long> timestamps = snapshot.getCommunicationTimestamps();
+                Map<AbstractConsensusAgent, Long> timestamps = snapshot.getCommunicationTimestamps();
 
 
                 // (for all m) m /= i
-                for(ConsensusAgent m : bids.row(j).keySet()){
+                for(AbstractConsensusAgent m : bids.row(j).keySet()){
                     if(m.equals(i))
                         continue;
 
                     // Agent i believes an assignment is taking place between agent m and task j
                     //(if) Xijm>0
-                    if(i.getWinningBids().get(j, m) > 0) {
+                    if(i.getX().get(j, m) > 0) {
 
                         // If K has newer information about assignment of task j to  M, update info.
                         //(if) Skm > Sim (or) m = k
@@ -152,13 +178,13 @@ public class CbgaAgent extends CbbaVehicle{
             MultiParcel mj = (MultiParcel) j;
 
             // (for all m E A)
-            for(ConsensusAgent m : bids.row(j).keySet()){
+            for(AbstractConsensusAgent m : bids.row(j).keySet()){
                 //(if) m /= i (and) Xijm > 0 (and) Xkjm >= 0
-                if(m.equals(i) || i.getWinningBids().get(j, m) == 0)
+                if(m.equals(i) || i.getX().get(j, m) == 0)
                     continue;
 
                 // Number of agents assigned to J according to I
-                List<Long> bidsOnJ = i.getWinningBids().row(j).values().stream().filter((Long d) -> 0L < d).collect(Collectors.<Long>toList());
+                List<Long> bidsOnJ = i.getX().row(j).values().stream().filter((Long d) -> 0L < d).collect(Collectors.<Long>toList());
 
                 // There are less than the required number of agents assigned and m does a bid on j according to k
                 // (Sum of all N: Xijn > 0) < Qj
@@ -175,7 +201,7 @@ public class CbgaAgent extends CbbaVehicle{
                 if(!minBid.isPresent() ) {
                     throw new IllegalArgumentException("No minimum bid found in bid table.");
                 }
-                ConsensusAgent n = HashBiMap.<ConsensusAgent, Long>create(bids.row(j)).inverse().get(minBid.get());
+                AbstractConsensusAgent n = HashBiMap.<AbstractConsensusAgent, Long>create(bids.row(j)).inverse().get(minBid.get());
 
                 // If the maximum bid of N is higher than the bid of M for J, assign M instead of N
                 // (Min of all n: Xijn) < Xkjm
