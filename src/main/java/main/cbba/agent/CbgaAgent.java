@@ -5,13 +5,11 @@ import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
 import com.google.common.collect.*;
 import main.cbba.parcel.MultiParcel;
-import main.cbba.snapshot.CbbaSnapshot;
 import main.cbba.snapshot.CbgaSnapshot;
 import main.cbba.snapshot.Snapshot;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -22,7 +20,7 @@ public class CbgaAgent extends CbbaVehicle{
     /* m*n matrix with the winning bids of agents.
      * Xij is equal to the winning bid of agent i for task j or equal to  0 if no assignment has been made.
      */
-    private Table<Parcel, ConsensusAgent, Double> winningBids; //sparse table
+    private Table<Parcel, ConsensusAgent, Long> winningBids; //sparse table
 
     public CbgaAgent(VehicleDTO vehicleDTO) {
         super(vehicleDTO);
@@ -37,7 +35,7 @@ public class CbgaAgent extends CbbaVehicle{
     /**
      * @return Immutable version of the winning bids array
      */
-    public ImmutableTable<Parcel, ConsensusAgent, Double> getWinningBids() {
+    public ImmutableTable<Parcel, ConsensusAgent, Long> getWinningBids() {
         return ImmutableTable.copyOf(winningBids);
     }
 
@@ -47,20 +45,58 @@ public class CbgaAgent extends CbbaVehicle{
      * @param agent
      * @param bid
      */
-    protected void setWinningBid(Parcel parcel, ConsensusAgent agent, Double bid){
+    protected void setWinningBid(Parcel parcel, ConsensusAgent agent, Long bid){
+        super.setWinningBid(parcel, agent, bid);
         this.winningBids.put(parcel, agent, bid);
-    }
 
+    }
 
     @Override
     public void constructBundle() {
 
-        // FIXME Use winningbids-table
-        super.constructBundle();
+        Set<Parcel> parcels = winningBids.column(this).keySet();
 
+        // Get all parcels not already in B
+        List<Parcel> notInB = parcels.stream().filter(p -> !this.getB().contains(p)).collect(Collectors.toList());
 
-        //TODO implement constructbundle
-        throw new UnsupportedOperationException();
+        boolean bIsChanging = true;
+
+        while(bIsChanging) {
+
+            // Find best route values for every parcel currently not assigned to this vehicle
+            Map<Parcel, Long> c_ij =
+                    notInB.stream().collect(Collectors.toMap(Function.identity(), this::calculateBestRouteWith));
+
+            // Get the best bid
+            Optional<Map.Entry<Parcel, Long>> optBestEntry = c_ij.entrySet().stream()
+                    // Remove all entries for which c_ij < max(y_ij)
+                    .filter(entry ->
+                            this.isBetterBidThan(
+                                    // bid value of the entry
+                                    entry.getValue(),
+                                    // calculate the current maximum bid for every parcel not in B
+                                    // TODO could be cached?
+                                    this.getWinningBids().row(entry.getKey()).values().stream()
+                                            .max(Long::compareTo).get()
+                            )
+                    )
+                    // Calculate the minimum argument in h_ij
+                    .min(new Comparator<Map.Entry<? extends Parcel, Long>>() {
+                        @Override
+                        public int compare(Map.Entry<? extends Parcel, Long> parcelLongEntry, Map.Entry<? extends Parcel, Long> t1) {
+                            return parcelLongEntry.getValue().compareTo(t1.getValue());
+                        }
+                    });
+
+            if(bIsChanging = optBestEntry.isPresent()) {
+                Map.Entry<? extends Parcel, Long> bestEntry = optBestEntry.get();
+
+                this.getB().add(bestEntry.getKey());
+                this.getP().add(this.calculateBestRouteIndexWith(bestEntry.getKey()), bestEntry.getKey());
+
+                this.setWinningBid(bestEntry.getKey(), this, bestEntry.getValue());
+            }
+        }
 
     }
 
@@ -75,7 +111,7 @@ public class CbgaAgent extends CbbaVehicle{
 
         CbgaSnapshot snapshot = (CbgaSnapshot) s;
 
-        ImmutableTable<Parcel, ConsensusAgent, Double> bids = snapshot.getWinningbids();
+        ImmutableTable<Parcel, ConsensusAgent, Long> bids = snapshot.getWinningbids();
 
         // Convenience variable to adhere to the original algorithm
         CbgaAgent i = this;
@@ -122,34 +158,34 @@ public class CbgaAgent extends CbbaVehicle{
                     continue;
 
                 // Number of agents assigned to J according to I
-                List<Double> bidsOnJ = i.getWinningBids().row(j).values().stream().filter((Double d) -> 0.0 < d).collect(Collectors.<Double>toList());
+                List<Long> bidsOnJ = i.getWinningBids().row(j).values().stream().filter((Long d) -> 0L < d).collect(Collectors.<Long>toList());
 
                 // There are less than the required number of agents assigned and m does a bid on j according to k
                 // (Sum of all N: Xijn > 0) < Qj
                 if(bidsOnJ.size() < mj.getRequiredAgents()){
                     // Assign m to j
                     //Xijm = Xkjm
-                    i.setWinningBid(j, m, bids.get(j, m));
+                    i.setWinningBid(mj, m, bids.get(mj, m));
                 }
 
                 // (Assumes the number of required agents is reached)
-                // Determine the minimum bid value and the associated agent N for task J
-                Optional<Double> minBid = bidsOnJ.stream().min(Double::compareTo);
+                // Determine the maximum bid value and the associated agent N for task J
+                Optional<Long> minBid = bidsOnJ.stream().max(Long::compareTo);
 
                 if(!minBid.isPresent() ) {
                     throw new IllegalArgumentException("No minimum bid found in bid table.");
                 }
-                ConsensusAgent n = HashBiMap.<ConsensusAgent, Double>create(bids.row(j)).inverse().get(minBid.get());
+                ConsensusAgent n = HashBiMap.<ConsensusAgent, Long>create(bids.row(j)).inverse().get(minBid.get());
 
-                // If the minimum bid of N is lower than the bid of M for J, assign M instead of N
+                // If the maximum bid of N is higher than the bid of M for J, assign M instead of N
                 // (Min of all n: Xijn) < Xkjm
-                if(minBid.get().compareTo(bids.get(j, m)) < 0 ){
-                    i.setWinningBid(j, n, 0D);
+                if(this.isBetterBidThan(minBid.get(), bids.get(j, m))){
+                    i.setWinningBid(j, n, 0L);
                     i.setWinningBid(j, m, bids.get(j, m));
                 }
-                // If the minimum bid of N is equal to the bid of M for J, the greatest ID (hashvalue) wins the assignment to J
+                // If the maximum bid of N is equal to the bid of M for J, the greatest ID (hashvalue) wins the assignment of J
                 else if(minBid.get().compareTo(bids.get(j, m)) == 0 && i.hashCode() > m.hashCode()){
-                    i.setWinningBid(j, n, 0D);
+                    i.setWinningBid(j, n, 0L);
                     i.setWinningBid(j, m, bids.get(j, m));
                 }
 

@@ -10,6 +10,6 @@ import java.util.Collection;
  */
 public interface RouteStrategy {
 
-    public Penalty computeRoute(Collection<Parcel> parcels);
+    public Penalty computeRoute(Collection<? extends Parcel> parcels);
 
 }

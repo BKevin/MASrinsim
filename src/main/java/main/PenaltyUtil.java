@@ -9,7 +9,7 @@ import java.util.List;
  */
 public class PenaltyUtil {
 
-    public static double calculateParcelPenalty(MyParcel parcel, List<MyParcel> planning){
+    public static double calculateParcelPenalty(Parcel parcel, List<? extends Parcel> planning){
 
 
 
@@ -17,7 +17,7 @@ public class PenaltyUtil {
         return 0.0;
     }
 
-    private static double calculateParcelPenalty(MyParcel parcel, TimeLapse time){
+    private static double calculateParcelPenalty(Parcel parcel, TimeLapse time){
         return 0.0;
     }
 

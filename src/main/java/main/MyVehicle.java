@@ -30,7 +30,7 @@ public class MyVehicle extends RouteFollowingVehicle implements CommUser{
     private Optional<CommDevice> device;
 
     // Index on which a Parcel would be added if the bid for that Parcel is won.
-    private Map<Parcel, Integer> calculatedIndexOfParcel;
+    private Map<? extends Parcel, Integer> calculatedIndexOfParcel;
 
     public MyVehicle(VehicleDTO vehicleDTO) {
         super(vehicleDTO, true); //route diversion is on.

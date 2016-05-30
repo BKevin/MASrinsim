@@ -1,12 +1,8 @@
 
 package main.cbba.parcel;
 
-import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.ParcelDTO;
-import com.github.rinde.rinsim.core.model.pdp.Vehicle;
-import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import main.MyParcel;
-import org.apache.commons.math3.random.RandomGenerator;
 
 /**
  * Created by pieter on 30.05.16.

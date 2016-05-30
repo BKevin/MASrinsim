@@ -21,10 +21,10 @@ import java.util.*;
  */
 public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
 
-    private LinkedList<MyParcel> b;
-    private ArrayList<MyParcel> p;
-    private Map<MyParcel, Long> y;
-    private Map<MyParcel, ConsensusAgent> z;
+    private LinkedList<Parcel> b;
+    private ArrayList<Parcel> p;
+    private Map<Parcel, Long> y;
+    private Map<Parcel, ConsensusAgent> z;
 
     private Map<ConsensusAgent, Long> communicationTimestamps;
 
@@ -70,10 +70,10 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
 
     @Override
     public void constructBundle() {
-        LinkedList<MyParcel> newB = getB();
-        ArrayList<MyParcel> newP = getP();
-        Map<MyParcel, Long> newY = getY(); //FIXME it now uses Immutablemaps
-        Map<MyParcel, ConsensusAgent> newZ = getZ(); //FIXME it now uses Immutablemaps
+        LinkedList<? extends Parcel> newB = getB();
+        ArrayList<? extends Parcel> newP = getP();
+        Map<? extends Parcel, Long> newY = getY(); //FIXME it now uses Immutablemaps
+        Map<? extends Parcel, ConsensusAgent> newZ = getZ(); //FIXME it now uses Immutablemaps
 
         long currentPenalty = calculatePenalty(newP);
 
@@ -82,11 +82,11 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
             bIsChanging = false;
 
             long bestBid = Long.MAX_VALUE;
-            MyParcel bestParcel = null;
+            Parcel bestParcel = null;
             int bestPosition = -1;
 
             //look at all parcels
-            for(MyParcel parcel : newZ.keySet()){
+            for(Parcel parcel : newZ.keySet()){
                 //if you don't own the parcel yet, check it
                 if(!newZ.get(parcel).equals(this)){
 
@@ -107,45 +107,69 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
                 }
             }
             if(bestParcel != null){
-                newB.addLast(bestParcel);
-                newP.add(bestPosition,bestParcel);
-                newY.put(bestParcel,bestBid);
-                newZ.put(bestParcel,this);
+                b.addLast( bestParcel);
+                p.add(bestPosition, bestParcel);
+
+                this.setWinningBid(bestParcel, this, bestBid);
+
                 bIsChanging = true;
             }
         }
     }
 
-    private long calculatePenaltyAtPosition(ArrayList<MyParcel> path, MyParcel parcel, int positionOfParcel) {
-        ArrayList<MyParcel> adaptedPath = new ArrayList<MyParcel>(path);
+    /**
+     * Set winning bid value for the given Parcel and ConsensusAgent
+     * @param parcel
+     * @param agent
+     * @param bid
+     */
+    protected void setWinningBid(Parcel parcel, ConsensusAgent agent, Long bid){
+        this.y.put(parcel,bid);
+        this.z.put(parcel,agent);
+
+        ((MyParcel) parcel).allocateTo((Vehicle) agent);
+    }
+
+    protected Long calculateBestRouteWith(Parcel parcel) {
+        throw new UnsupportedOperationException("Not implemented yet");
+//        return 0D;
+    }
+
+
+    private long calculatePenaltyAtPosition(ArrayList<? extends Parcel> path, Parcel parcel, int positionOfParcel) {
+        ArrayList<Parcel> adaptedPath = new ArrayList<Parcel>(path);
         adaptedPath.add(positionOfParcel,parcel);
         return calculatePenalty(adaptedPath);
     }
 
-
-    private long calculatePenalty(ArrayList<MyParcel> path) {
+    private long calculatePenalty(ArrayList<? extends Parcel> path) {
         RouteTimes routeTimes = new RouteTimes(this,new ArrayList<Parcel>(path),this.getPosition().get(),this.getCurrentTime(),this.getCurrentTimeLapse().getTimeUnit());
         RouteEvaluation evaluation = new RouteEvaluation(routeTimes);
         return evaluation.getPenalty().getRoutePenalty();
     }
 
-    private boolean isBetterBidThan(double bid, double otherBid) {
+    public Integer calculateBestRouteIndexWith(Parcel parcel) {
+        return 0;
+    }
+
+    protected boolean isBetterBidThan(double bid, double otherBid) {
         return bid < otherBid;
     }
 
-    public LinkedList<MyParcel> getB() {
+    public LinkedList<Parcel> getB() {
         return b;
     }
 
-    public ArrayList<MyParcel> getP() {
+    public ArrayList<Parcel> getP() {
         return p;
     }
 
-    public Map<MyParcel, Long> getY() {
+
+    public Map<Parcel, Long> getY() {
         return ImmutableMap.copyOf(y);
     }
 
-    public Map<MyParcel, ConsensusAgent> getZ() {
+    public Map<Parcel, ConsensusAgent> getZ() {
         return ImmutableMap.copyOf(z);
     }
 
@@ -183,6 +207,7 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
     }
 
 
+
     /**
      * Evaluate a single snapshot message from another sender
      */
@@ -213,8 +238,6 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
             }
         };
     }
-
-
 
     protected Snapshot getSnapshot() {
         return snapshot;

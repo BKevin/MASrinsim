@@ -11,7 +11,7 @@ import main.cbba.agent.CbgaAgent;
  */
 public class CbgaSnapshot extends Snapshot {
 
-    private final ImmutableTable<Parcel, ConsensusAgent, Double> winningbids;
+    private final ImmutableTable<Parcel, ConsensusAgent, Long> winningbids;
 
     public CbgaSnapshot(CbgaAgent agent, TimeLapse time) {
 
@@ -27,7 +27,7 @@ public class CbgaSnapshot extends Snapshot {
         return super.equals(o);
     }
 
-    public ImmutableTable<Parcel, ConsensusAgent, Double> getWinningbids() {
+    public ImmutableTable<Parcel, ConsensusAgent, Long> getWinningbids() {
         return winningbids;
     }
 

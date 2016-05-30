@@ -4,7 +4,6 @@ import com.github.rinde.rinsim.core.SimulatorAPI;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.ParcelDTO;
 import com.github.rinde.rinsim.geom.Point;
-import com.github.rinde.rinsim.pdptw.common.AddParcelEvent;
 import com.github.rinde.rinsim.scenario.TimedEvent;
 import com.github.rinde.rinsim.scenario.TimedEventHandler;
 import main.MyParcel;
@@ -50,8 +49,7 @@ public class NewParcelEvent implements TimedEvent {//extends AddParcelEvent
             NewParcelEvent newParcelEvent = (NewParcelEvent) timedEvent;
 
             simulatorAPI.register(new MyParcel(
-                    newParcelEvent.getParcelDTO(),
-                    simulatorAPI.getRandomGenerator()));
+                    newParcelEvent.getParcelDTO()));
         }
     }
 }
