@@ -121,7 +121,7 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
 
     private long calculatePenaltyAtPosition(ArrayList<MyParcel> path, MyParcel parcel, int positionOfParcel) {
         ArrayList<MyParcel> adaptedPath = new ArrayList<MyParcel>(path);
-        adaptedPath.add(positionOfParcel,parcel);
+        adaptedPath.add(positionOfParcel, parcel);
         return calculatePenalty(adaptedPath);
     }
 
@@ -178,9 +178,14 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
 
             // Received snapshot, update bid values.
             if (contents instanceof Snapshot) {
+                if(!(sender instanceof ConsensusAgent)){
+                    throw new IllegalArgumentException("Snapshot doens't have an appropriate sender. Expected ConsensusAgent");
+                }
+
+                ConsensusAgent consensusAgent = (ConsensusAgent) sender;
                 this.setCommunicationTimestamp(message);
 
-                evaluateSnapshot((Snapshot) message.getContents());
+                evaluateSnapshot((Snapshot) message.getContents(), consensusAgent);
             }
         }
     }
@@ -189,18 +194,152 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
     /**
      * Evaluate a single snapshot message from another sender
      */
-    protected void evaluateSnapshot(Snapshot s){
+    protected void evaluateSnapshot(Snapshot s, ConsensusAgent sender){
         if(!(s instanceof CbbaSnapshot)){
             throw new IllegalArgumentException("Snapshot does not have the right format. Expected CbbaSnapshot");
         }
 
-        CbbaSnapshot snapshot = (CbbaSnapshot) s;
+        CbbaSnapshot otherSnapshot = (CbbaSnapshot) s;
 
 
 
         // TODO Original Cbba Table for bid evaluation.
+        CbbaSnapshot mySnapshot = (CbbaSnapshot) this.getSnapshot();
+
+        for(MyParcel parcel : mySnapshot.getZ().keySet()){
+            ConsensusAgent myIdea = mySnapshot.getZ().get(parcel);
+            ConsensusAgent otherIdea = otherSnapshot.getZ().get(parcel);
+
+            if(sender.equals(otherIdea)){
+                senderThinksHeWins(sender, parcel, myIdea, mySnapshot, otherSnapshot);
+                continue;
+            }
+            if(this.equals(otherIdea)){
+                senderThinksIWin(sender, parcel, myIdea, mySnapshot, otherSnapshot);
+                continue;
+            }
+            if(otherIdea != null && !sender.equals(otherIdea) && !this.equals(otherIdea)){
+                senderThinksSomeoneElseWins(sender, parcel, myIdea, mySnapshot, otherIdea, otherSnapshot);
+                continue;
+            }
+            if(otherIdea == null){
+                senderThinksNododyWins(sender, parcel, myIdea, mySnapshot, otherSnapshot);
+                continue;
+            }
 
 
+        }
+
+    }
+
+    private void senderThinksHeWins(ConsensusAgent sender, MyParcel parcel, ConsensusAgent myIdea, CbbaSnapshot mySnapshot, CbbaSnapshot otherSnapshot) {
+        //I think I win
+        if(this.equals(myIdea)){
+            if(otherSnapshot.getY().get(parcel) > mySnapshot.getY().get(parcel))
+                update();
+            return;
+        }
+        //I think sender wins
+        if(sender.equals(myIdea)){
+            update();
+            return;
+        }
+        if(myIdea != null && !sender.equals(myIdea) && !this.equals(myIdea)){
+            if((otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
+                    || (otherSnapshot.getY().get(parcel) > mySnapshot.getY().get(parcel)))
+                update();
+            return;
+        }
+        if(myIdea == null){
+            update();
+            return;
+        }
+
+        throw new IllegalArgumentException("Something went wrong in senderThinksHeWins: unreachable code.");
+    }
+
+    private void senderThinksIWin(ConsensusAgent sender, MyParcel parcel, ConsensusAgent myIdea, CbbaSnapshot mySnapshot, CbbaSnapshot otherSnapshot) {
+        if(this.equals(myIdea)) {
+            leave();
+            return;
+        }
+        if(sender.equals(myIdea)){
+            reset();
+            return;
+        }
+        if(myIdea != null && !sender.equals(myIdea) && !this.equals(myIdea)){
+            if(otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
+                reset();
+            return;
+        }
+        if(myIdea == null){
+            leave();
+            return;
+        }
+
+        throw new IllegalArgumentException("Something went wrong in senderThinksHeWins: unreachable code.");
+    }
+
+    private void senderThinksSomeoneElseWins(ConsensusAgent sender, MyParcel parcel, ConsensusAgent myIdea, CbbaSnapshot mySnapshot, ConsensusAgent otherIdea, CbbaSnapshot otherSnapshot) {
+        if(this.equals(myIdea)) {
+            if((otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
+                    && (otherSnapshot.getY().get(parcel) > mySnapshot.getY().get(parcel)))
+                update();
+            return;
+        }
+        if(sender.equals(myIdea)){
+            if(otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
+                update();
+            else
+                reset();
+            return;
+        }
+        if(otherIdea.equals(myIdea)){
+            if(otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
+                update();
+            return;
+        }
+        if(myIdea != null && !sender.equals(myIdea) && !this.equals(myIdea) && !otherIdea.equals(myIdea)){
+            if(otherSnapshot.getCommunicationTimestamps().get(otherIdea) > mySnapshot.getCommunicationTimestamps().get(otherIdea)
+                    && otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
+                update();
+            if(otherSnapshot.getCommunicationTimestamps().get(otherIdea) > mySnapshot.getCommunicationTimestamps().get(otherIdea)
+                    && (otherSnapshot.getY().get(parcel) > mySnapshot.getY().get(parcel)))
+                update();
+            if(otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea)
+                    && mySnapshot.getCommunicationTimestamps().get(otherIdea) > otherSnapshot.getCommunicationTimestamps().get(otherIdea))
+                reset();
+            return;
+        }
+        if(myIdea == null){
+            if(otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
+                update();
+            return;
+        }
+
+        throw new IllegalArgumentException("Something went wrong in senderThinksHeWins: unreachable code.");
+    }
+
+    private void senderThinksNododyWins(ConsensusAgent sender, MyParcel parcel, ConsensusAgent myIdea, CbbaSnapshot mySnapshot, CbbaSnapshot otherSnapshot) {
+        if(this.equals(myIdea)) {
+            leave();
+            return;
+        }
+        if(sender.equals(myIdea)){
+            update();
+            return;
+        }
+        if(myIdea != null && !sender.equals(myIdea) && !this.equals(myIdea)){
+            if(otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
+                update();
+            return;
+        }
+        if(myIdea == null){
+            leave();
+            return;
+        }
+
+        throw new IllegalArgumentException("Something went wrong in senderThinksHeWins: unreachable code.");
     }
 
     protected void sendSnapshot(Snapshot snapshot){
