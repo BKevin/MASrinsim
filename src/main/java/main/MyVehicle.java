@@ -49,81 +49,81 @@ public class MyVehicle extends RouteFollowingVehicle implements CommUser{
     protected void preTick(TimeLapse time) {
         super.preTick(time);
 
-        communicate();
+//        communicate();
 
         time.getTimeUnit();
     }
 
-    public void communicate() {
-        if(device.get().getUnreadCount() == 0)
-            return;
-        //check new messages
-        boolean haveToRecalculate = false;
+//    public void communicate() {
+//        if(device.get().getUnreadCount() == 0)
+//            return;
+//        //check new messages
+//        boolean haveToRecalculate = false;
+//
+//        for(Message message : device.get().getUnreadMessages()){
+//            //if AuctionedParcelMessage then calculate bid and send BidMessage
+//            final MessageContents contents = message.getContents();
+//
+//            if(contents instanceof AuctionedParcelMessage){
+//                AuctionedParcelMessage auctionedParcelMessage = (AuctionedParcelMessage) contents;
+//                //TODO change to asynchonous call(?)
+//                int bidInfo = calculateBidInfo(auctionedParcelMessage);
+//                device.get().send(new BidMessage(bidInfo, this), message.getSender());
+//            }
+//            //if AcceptBidMessage then add parcel to todolist
+//            if(contents instanceof AcceptBidMessage){
+//                // The Vehicle won the auction.
+//                AcceptBidMessage acceptedBidMessage = (AcceptBidMessage) contents;
+//
+//                // Add vehicle to route
+//                LinkedList newRoute = new LinkedList<>(this.getRoute());
+//
+//
+//                //DONT FORGET TO ADD THE PARCEL TWICE, BOTH FOR PICKUP AND DELIVERY
+//                newRoute.add(
+//                        //calculatedIndexOfParcel.get(acceptedBidMessage.getParcel()),
+//                        newRoute.size(), //FIXME just something to make it work (since no implementation of position picking yet)
+//                        acceptedBidMessage.getParcel());
+//                newRoute.add(
+//                        newRoute.size(),
+//                        acceptedBidMessage.getParcel());
+//
+//                this.setRoute(newRoute);
+//
+//            }
+//
+//            if(contents instanceof RefuseBidMessage){
+//
+//                RefuseBidMessage refuseBidMessage = (RefuseBidMessage) contents;
+//
+//                calculatedIndexOfParcel.remove(refuseBidMessage.getParcel());
+//
+//            }
+//
+//            //if RefuseBidMessage then remove from memory (incase of reauctioned)
+//            //else not applicable
+//
+//        }
+//
+//        if(haveToRecalculate){
+//            //recalculate utility for situation
+////            calculateWithIDP();
+//            //request new auction for parcels incurring a penalty
+//            //TODO penalty + when to reauction
+//        }
+//
+//
+//    }
 
-        for(Message message : device.get().getUnreadMessages()){
-            //if AuctionedParcelMessage then calculate bid and send BidMessage
-            final MessageContents contents = message.getContents();
-
-            if(contents instanceof AuctionedParcelMessage){
-                AuctionedParcelMessage auctionedParcelMessage = (AuctionedParcelMessage) contents;
-                //TODO change to asynchonous call(?)
-                int bidInfo = calculateBidInfo(auctionedParcelMessage);
-                device.get().send(new BidMessage(bidInfo, this), message.getSender());
-            }
-            //if AcceptBidMessage then add parcel to todolist
-            if(contents instanceof AcceptBidMessage){
-                // The Vehicle won the auction.
-                AcceptBidMessage acceptedBidMessage = (AcceptBidMessage) contents;
-
-                // Add vehicle to route
-                LinkedList newRoute = new LinkedList<>(this.getRoute());
-
-
-                //DONT FORGET TO ADD THE PARCEL TWICE, BOTH FOR PICKUP AND DELIVERY
-                newRoute.add(
-                        //calculatedIndexOfParcel.get(acceptedBidMessage.getParcel()),
-                        newRoute.size(), //FIXME just something to make it work (since no implementation of position picking yet)
-                        acceptedBidMessage.getParcel());
-                newRoute.add(
-                        newRoute.size(),
-                        acceptedBidMessage.getParcel());
-
-                this.setRoute(newRoute);
-
-            }
-
-            if(contents instanceof RefuseBidMessage){
-
-                RefuseBidMessage refuseBidMessage = (RefuseBidMessage) contents;
-
-                calculatedIndexOfParcel.remove(refuseBidMessage.getParcel());
-
-            }
-
-            //if RefuseBidMessage then remove from memory (incase of reauctioned)
-            //else not applicable
-
-        }
-
-        if(haveToRecalculate){
-            //recalculate utility for situation
-//            calculateWithIDP();
-            //request new auction for parcels incurring a penalty
-            //TODO penalty + when to reauction
-        }
-
-
-    }
-
-    private int calculateBidInfo(AuctionedParcelMessage contents) {
-
-
-
-
-
-        //calculate Distances between destinatinons
-        return 0;
-    }
+//    private int calculateBidInfo(AuctionedParcelMessage contents) {
+//
+//
+//
+//
+//
+//        calculate Distances between destinatinons
+//        return 0;
+//    }
 
     @Override
     protected long computeTravelTimeTo(Point p, Unit<Duration> timeUnit) {
@@ -165,10 +165,10 @@ public class MyVehicle extends RouteFollowingVehicle implements CommUser{
     }
 
 
-
-    public void getPenalty(){
-
-    }
+//
+//    public void getPenalty(){
+//
+//    }
 
 
 }

@@ -252,7 +252,7 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
         return this;
     }
 
-    protected Parcel changeAllocateTo(Vehicle from, Vehicle to){
+    protected Parcel changeAllocation(Vehicle from, Vehicle to){
         if(from != this.vehicle){
             throw new IllegalArgumentException("'From' vehicle does not match current allocation.");
         }

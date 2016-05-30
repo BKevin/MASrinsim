@@ -42,6 +42,11 @@ public class CbgaAgent extends AbstractConsensusAgent {
         return ImmutableTable.copyOf(X);
     }
 
+    protected void replaceWinningBid(Parcel parcel, AbstractConsensusAgent from, AbstractConsensusAgent to, Long bid){
+        this.X.put(parcel, from, 0L);
+        this.setWinningBid(parcel, to, bid);
+    }
+
     /**
      * Set winning bid value for the given Parcel and AbstractConsensusAgent
      * @param parcel
@@ -55,26 +60,29 @@ public class CbgaAgent extends AbstractConsensusAgent {
 
     }
 
-    /**
-     * We handle MultiParcel too here, allocation is different than for Cbba single Parcels
-     * @param parcel
-     * @param agent
-     */
-    @Override
-    protected void allocateParcelToWinner(Parcel parcel, AbstractConsensusAgent agent) {
-        if (parcel instanceof MultiParcel) {
-            ((MultiParcel) parcel).allocateTo(agent);
-        }
-        if (parcel instanceof SubParcel){
-            throw new IllegalArgumentException("Should not directly allocate parcels of type "+parcel.getClass().getName());
-        }
-        else if(parcel instanceof MyParcel){
-            ((MyParcel) parcel).allocateTo(agent);
-        }
-        else{
-            throw new IllegalArgumentException("Should not allocate parcels of type "+parcel.getClass().getName());
-        }
-    }
+//    /**
+//     * We handle MultiParcel too here, allocation is different than for Cbba single Parcels
+//     * @param parcel
+//     * @param agent
+//     */
+//    @Override
+//    protected void allocateParcelToWinner(Parcel parcel, AbstractConsensusAgent agent) {
+//        if (parcel instanceof MultiParcel) {
+//
+//            ((MultiParcel) parcel).allocateTo(agent);
+//
+//            //Find out who other allocated vehicles are
+//        }
+//        if (parcel instanceof SubParcel){
+//            throw new IllegalArgumentException("Should not directly allocate parcels of type "+parcel.getClass().getName());
+//        }
+//        else if(parcel instanceof MyParcel){
+//            ((MyParcel) parcel).allocateTo(agent);
+//        }
+//        else{
+//            throw new IllegalArgumentException("Should not allocate parcels of type "+parcel.getClass().getName());
+//        }
+//    }
 
     @Override
     public void constructBundle() {
@@ -215,13 +223,11 @@ public class CbgaAgent extends AbstractConsensusAgent {
                 // If the maximum bid of N is higher than the bid of M for J, assign M instead of N
                 // (Min of all n: Xijn) < Xkjm
                 if(this.isBetterBidThan(minBid.get(), bids.get(j, m))){
-                    i.setWinningBid(j, n, 0L);
-                    i.setWinningBid(j, m, bids.get(j, m));
+                    i.replaceWinningBid(j, n, m, bids.get(j, m));
                 }
                 // If the maximum bid of N is equal to the bid of M for J, the greatest ID (hashvalue) wins the assignment of J
                 else if(minBid.get().compareTo(bids.get(j, m)) == 0 && i.hashCode() > m.hashCode()){
-                    i.setWinningBid(j, n, 0L);
-                    i.setWinningBid(j, m, bids.get(j, m));
+                    i.replaceWinningBid(j, n, m, bids.get(j, m));
                 }
 
             }

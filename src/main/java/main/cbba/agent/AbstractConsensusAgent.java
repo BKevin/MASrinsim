@@ -6,6 +6,7 @@ import com.github.rinde.rinsim.core.model.comm.MessageContents;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.Vehicle;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
+import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import main.MyParcel;
@@ -37,6 +38,22 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         this.p = new ArrayList<>();
         this.b = new LinkedList<>();
         this.communicationTimestamps = new HashMap<>();
+    }
+
+    protected void preTick(TimeLapse time) {
+        super.preTick(time);
+
+        ArrayList<Parcel> previous = null;
+
+        //"Realtime" implementatie: verander de while loop door een for loop of asynchrone thread,
+        // iedere tick wordt er dan een beperkte berekening/communicatie gedaan.
+
+        while (getP() != previous){
+            previous = new ArrayList<>(getP());
+            constructBundle();
+            findConsensus();
+        }
+
     }
 
     public abstract void constructBundle();
@@ -100,6 +117,10 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         };
     }
 
+    protected void replaceWinningBid(Parcel parcel, AbstractConsensusAgent from, AbstractConsensusAgent to, Long bid){
+        this.setWinningBid(parcel, to, bid);
+    }
+
     /**
      * Set winning bid value for the given Parcel and AbstractConsensusAgent
      * @param parcel
@@ -137,7 +158,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
     private Parcel getAllocatedParcel(Parcel p){
         if(p instanceof MultiParcel){
-            return ((MultiParcel) p).getAllocated(this);
+            return ((MultiParcel) p).getAllocatedSubParcel(this);
         }
         else{
             return p;
@@ -163,7 +184,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         ImmutableSet<Parcel> currentContents = this.getPDPModel().getContents(this);
 
         if(!currentContents.isEmpty()){
-                // A parcel is already picked up and must be added.
+            // A parcel is already picked up and must be added.
             for(Parcel p : currentContents)
                 // correct if you have max 1 package in load.
                 result.add(0, p);
@@ -235,6 +256,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                 evaluateSnapshot((Snapshot) message.getContents(), (AbstractConsensusAgent) sender );
             }
 
+            //FIXME handle ParcelMessages
 //            if (contents instanceof ParcelMessage){
 //
 //                this.addParcel(((ParcelMessage) contents).getParcel());

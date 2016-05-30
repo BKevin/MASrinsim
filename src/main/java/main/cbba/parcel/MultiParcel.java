@@ -5,10 +5,13 @@ import com.github.rinde.rinsim.core.model.pdp.ParcelDTO;
 import com.github.rinde.rinsim.core.model.pdp.Vehicle;
 import com.google.common.collect.ImmutableList;
 import main.MyParcel;
+import main.cbba.agent.AbstractConsensusAgent;
+import main.cbba.agent.CbgaAgent;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -18,9 +21,8 @@ import java.util.stream.Collectors;
  */
 public class MultiParcel extends MyParcel {
 
-//    ParcelDTO baseParcel;
+    //    ParcelDTO baseParcel;
     private List<SubParcel> subParcels;
-    private Map<SubParcel, Vehicle> allocations;
 
     public MultiParcel(ParcelDTO parcel, Integer requiredAgents) {
         super(parcel);
@@ -61,13 +63,46 @@ public class MultiParcel extends MyParcel {
      * Allocation methods
      */
 
+    /**
+     * The algorithm guarantees this is only called when a vehicle is allocating to itself!
+     * @param vehicle
+     * @return
+     */
     @Override
     public Parcel allocateTo(Vehicle vehicle) {
+        if(vehicle instanceof CbgaAgent){
+            CbgaAgent agent = (CbgaAgent) vehicle;
+
+            // Get allocated agents according to the given vehicle.
+            Set<AbstractConsensusAgent> agents = agent.getX().row(this)
+                    .entrySet().stream()
+                    .filter(entry -> entry.getValue() > 0)
+                    .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()))
+                    .keySet();
+
+            List<Vehicle> allocated = getAllocatedVehicles();
+
+            // Difference between allocated and to-be assigned
+            allocated.removeAll(agents);
+
+            if(allocated.size() > 0){
+                // The allocated agents loses the subparcel to the calling vehicle
+                changeAllocation(allocated.get(0), vehicle);
+            }
+            else{
+                //nothing happens otherwise, the allocation didn't really change.
+            }
+        }
+
         return changeAllocation(null, vehicle);
     }
 
-    public Parcel getAllocated(Vehicle vehicle){
+    public Parcel getAllocatedSubParcel(Vehicle vehicle){
         return subParcels.stream().filter((SubParcel s) -> s.getAllocatedVehicle() == vehicle).collect(Collectors.<Parcel>toList()).get(0);
+    }
+
+    public List<Vehicle> getAllocatedVehicles(){
+        return subParcels.stream().map(SubParcel::getAllocatedVehicle).collect(Collectors.toList());
     }
 
     public Parcel changeAllocation(Vehicle from, Vehicle to){
@@ -86,7 +121,7 @@ public class MultiParcel extends MyParcel {
     }
 
     public Vehicle getAllocatedVehicle(){
-        throw new UnsupportedOperationException("MultiParcel is not allocated directly.");
+        throw new UnsupportedOperationException("MultiParcel is not allocated directly. Use getAllocatedVehicles instead.");
     }
 
 }
