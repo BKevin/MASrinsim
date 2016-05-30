@@ -1,14 +1,9 @@
 package main.cbba.snapshot;
 
 import com.github.rinde.rinsim.core.model.comm.MessageContents;
-import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
-import com.github.rinde.rinsim.core.model.time.Timestamp;
-import com.google.common.collect.ImmutableTable;
-import com.sun.corba.se.impl.protocol.giopmsgheaders.Message;
-import main.cbba.ConsensusAgent;
-import main.cbga.CbgaAgent;
-import main.route.evaluation.RouteEvaluation;
+import main.cbba.agent.AbstractConsensusAgent;
+import main.cbba.agent.AbstractConsensusAgent;
 
 import java.util.Map;
 
@@ -20,9 +15,9 @@ public abstract class Snapshot implements MessageContents{
     private final long timestamp;
     private final int agent;
 
-    private Map<ConsensusAgent, Long> communicationTimestamps;
+    private Map<AbstractConsensusAgent, Long> communicationTimestamps;
 
-    public Snapshot(ConsensusAgent agent, TimeLapse time) {
+    public Snapshot(AbstractConsensusAgent agent, TimeLapse time) {
 
         // Timestamp static builders are not public, we have to manage with long values.
         this.timestamp = time.getTime(); //Timestamp.now(time.getTime());
@@ -51,7 +46,7 @@ public abstract class Snapshot implements MessageContents{
                 && sn.getAgentHash().equals(this.getAgentHash());
     }
 
-    public Map<ConsensusAgent, Long> getCommunicationTimestamps() {
+    public Map<AbstractConsensusAgent, Long> getCommunicationTimestamps() {
         return communicationTimestamps;
     }
 

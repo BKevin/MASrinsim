@@ -1,10 +1,8 @@
 package scenario;
 
 import com.github.rinde.rinsim.core.model.pdp.PDPModel;
-import com.github.rinde.rinsim.core.model.road.RoadModel;
 import com.github.rinde.rinsim.scenario.StopCondition;
 import com.google.common.collect.ImmutableSet;
-import main.MyParcel;
 
 /**
  * Created by KevinB on 10/05/2016.

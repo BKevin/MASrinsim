@@ -14,7 +14,7 @@ import java.util.*;
  */
 public class RouteTimes{
 
-    private final Collection<Parcel> route;
+    private final Collection<? extends Parcel> route;
 
     // Start time
     private final Long startTime;
@@ -39,7 +39,7 @@ public class RouteTimes{
         computeRouteTimes(v, timeUnit);
     }
 
-    public RouteTimes(RouteFollowingVehicle v, Collection<Parcel> route, Point startPosition, Long startTime, Unit<Duration> timeUnit){
+    public RouteTimes(RouteFollowingVehicle v, Collection<? extends Parcel> route, Point startPosition, Long startTime, Unit<Duration> timeUnit){
         this.route = route;
         this.startTime = startTime;
         this.startPosition = startPosition;
@@ -51,22 +51,22 @@ public class RouteTimes{
     }
 
 
-    public Collection<Parcel> getRoute() {
+    public Collection<? extends Parcel> getRoute() {
         return route;
     }
 
-    public Map<Parcel, Long> getPickupTimes() {
+    public Map<? extends Parcel, Long> getPickupTimes() {
         return pickupTimes;
     }
 
-    public Map<Parcel, Long> getDeliveryTimes() {
+    public Map<? extends Parcel, Long> getDeliveryTimes() {
         return deliveryTimes;
     }
 
     protected void computeRouteTimes(Vehicle v, Unit<Duration> timeUnit){
 
-        final Map<Parcel, Long> pickupTimes = new HashMap<>();
-        final Map<Parcel, Long> deliveryTimes = new HashMap<>();
+        final Map<Parcel, Long> pickupTimes = new HashMap();
+        final Map<Parcel, Long> deliveryTimes = new HashMap();
 
         Point currentPosition = this.startPosition;
 

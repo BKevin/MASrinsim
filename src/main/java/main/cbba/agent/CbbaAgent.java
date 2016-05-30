@@ -1,4 +1,4 @@
-package main.cbba;
+package main.cbba.agent;
 
 import com.github.rinde.rinsim.core.model.comm.CommUser;
 import com.github.rinde.rinsim.core.model.comm.Message;
@@ -6,13 +6,10 @@ import com.github.rinde.rinsim.core.model.comm.MessageContents;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.Vehicle;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableTable;
 import main.MyParcel;
 import main.MyVehicle;
 import main.cbba.snapshot.CbbaSnapshot;
-import main.cbba.snapshot.CbgaSnapshot;
 import main.cbba.snapshot.Snapshot;
 import main.route.evaluation.RouteEvaluation;
 import main.route.evaluation.RouteTimes;
@@ -22,61 +19,32 @@ import java.util.*;
 /**
  * Created by pieter on 26.05.16.
  */
-public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
+public class CbbaAgent extends AbstractConsensusAgent {
 
-    private LinkedList<MyParcel> b;
-    private ArrayList<MyParcel> p;
-    private Map<MyParcel, Long> y;
-    private Map<MyParcel, ConsensusAgent> z;
-
-    private Map<ConsensusAgent, Long> communicationTimestamps;
-
-    // Previous snapshot
-    private Snapshot snapshot;
+    private Map<Parcel, Long> y;
+    private Map<Parcel, AbstractConsensusAgent> z;
 
 
-    public CbbaVehicle(VehicleDTO vehicleDTO) {
+    public CbbaAgent(VehicleDTO vehicleDTO) {
         super(vehicleDTO);
-        this.communicationTimestamps = new HashMap<>();
 
-        this.b = new LinkedList<>();
-        this.p = new ArrayList<>();
         this.y = new HashMap<>();
         this.z = new HashMap<>();
     }
 
-    public Map<ConsensusAgent, Long> getCommunicationTimestamps() {
-        return ImmutableMap.copyOf(communicationTimestamps);
+    public Map<Parcel, Long> getY() {
+        return ImmutableMap.copyOf(y);
     }
 
-    /**
-     * Set timestamp to last received message timestamp for that agent
-     * @param agent
-     * @param time
-     */
-    private void setCommunicationTimestamp(ConsensusAgent agent, Long time){
-        this.communicationTimestamps.put(agent, time);
+    public Map<Parcel, AbstractConsensusAgent> getZ() {
+        return ImmutableMap.copyOf(z);
     }
 
-    /**
-     * Set timestamp to last received message timestamp for the sending agent.
-     * @param message Snapshot Message from a ConsensusAgent
-     */
-    protected void setCommunicationTimestamp(Message message){
-
-        Snapshot snapshot = (Snapshot) message.getContents();
-        ConsensusAgent agent = (ConsensusAgent) message.getSender();
-
-        this.setCommunicationTimestamp(agent, snapshot.getTimestamp());
-    }
-
-
-    @Override
     public void constructBundle() {
-        LinkedList<MyParcel> newB = getB();
-        ArrayList<MyParcel> newP = getP();
-        Map<MyParcel, Long> newY = getY(); //FIXME it now uses Immutablemaps
-        Map<MyParcel, ConsensusAgent> newZ = getZ(); //FIXME it now uses Immutablemaps
+        LinkedList<? extends Parcel> newB = getB();
+        ArrayList<? extends Parcel> newP = getP();
+        Map<? extends Parcel, Long> newY = getY(); //FIXME it now uses Immutablemaps
+        Map<? extends Parcel, AbstractConsensusAgent> newZ = getZ(); //FIXME it now uses Immutablemaps
 
         long currentPenalty = calculatePenalty(newP);
 
@@ -85,11 +53,11 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
             bIsChanging = false;
 
             long bestBid = Long.MAX_VALUE;
-            MyParcel bestParcel = null;
+            Parcel bestParcel = null;
             int bestPosition = -1;
 
             //look at all parcels
-            for(MyParcel parcel : newZ.keySet()){
+            for(Parcel parcel : newZ.keySet()){
                 //if you don't own the parcel yet, check it
                 if(!newZ.get(parcel).equals(this)){
 
@@ -110,46 +78,29 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
                 }
             }
             if(bestParcel != null){
-                newB.addLast(bestParcel);
-                newP.add(bestPosition,bestParcel);
-                newY.put(bestParcel,bestBid);
-                newZ.put(bestParcel,this);
+                getB().addLast( bestParcel);
+                getP().add(bestPosition, bestParcel);
+
+                this.setWinningBid(bestParcel, this, bestBid);
+
                 bIsChanging = true;
             }
         }
     }
 
-    private long calculatePenaltyAtPosition(ArrayList<MyParcel> path, MyParcel parcel, int positionOfParcel) {
-        ArrayList<MyParcel> adaptedPath = new ArrayList<MyParcel>(path);
-        adaptedPath.add(positionOfParcel, parcel);
-        return calculatePenalty(adaptedPath);
-    }
 
+    /**
+     * Set winning bid value for the given Parcel and AbstractConsensusAgent
+     * @param parcel
+     * @param agent
+     * @param bid
+     */
+    @Override
+    protected void setWinningBid(Parcel parcel, AbstractConsensusAgent agent, Long bid){
+        super.setWinningBid(parcel, agent, bid);
 
-    private long calculatePenalty(ArrayList<MyParcel> path) {
-        RouteTimes routeTimes = new RouteTimes(this,new ArrayList<Parcel>(path),this.getPosition().get(),this.getCurrentTime(),this.getCurrentTimeLapse().getTimeUnit());
-        RouteEvaluation evaluation = new RouteEvaluation(routeTimes);
-        return evaluation.getPenalty().getRoutePenalty();
-    }
-
-    private boolean isBetterBidThan(double bid, double otherBid) {
-        return bid < otherBid;
-    }
-
-    public LinkedList<MyParcel> getB() {
-        return b;
-    }
-
-    public ArrayList<MyParcel> getP() {
-        return p;
-    }
-
-    public Map<MyParcel, Long> getY() {
-        return ImmutableMap.copyOf(y);
-    }
-
-    public Map<MyParcel, ConsensusAgent> getZ() {
-        return ImmutableMap.copyOf(z);
+        this.y.put(parcel,bid);
+        this.z.put(parcel,agent);
     }
 
 
@@ -165,36 +116,9 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
     }
 
     /**
-     * Evaluate received message from all agents
-     */
-    protected void evaluateMessages() {
-
-        for (Message message : this.getCommDevice().get().getUnreadMessages()) {
-
-            //if AuctionedParcelMessage then calculate bid and send BidMessage
-            final MessageContents contents = message.getContents();
-
-            CommUser sender = message.getSender();
-
-            // Received snapshot, update bid values.
-            if (contents instanceof Snapshot) {
-                if(!(sender instanceof ConsensusAgent)){
-                    throw new IllegalArgumentException("Snapshot doens't have an appropriate sender. Expected ConsensusAgent");
-                }
-
-                ConsensusAgent consensusAgent = (ConsensusAgent) sender;
-                this.setCommunicationTimestamp(message);
-
-                evaluateSnapshot((Snapshot) message.getContents(), consensusAgent);
-            }
-        }
-    }
-
-
-    /**
      * Evaluate a single snapshot message from another sender
      */
-    protected void evaluateSnapshot(Snapshot s, ConsensusAgent sender){
+    public void evaluateSnapshot(Snapshot s, AbstractConsensusAgent sender){
         if(!(s instanceof CbbaSnapshot)){
             throw new IllegalArgumentException("Snapshot does not have the right format. Expected CbbaSnapshot");
         }
@@ -206,9 +130,9 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
         // TODO Original Cbba Table for bid evaluation.
         CbbaSnapshot mySnapshot = (CbbaSnapshot) this.getSnapshot();
 
-        for(MyParcel parcel : mySnapshot.getZ().keySet()){
-            ConsensusAgent myIdea = mySnapshot.getZ().get(parcel);
-            ConsensusAgent otherIdea = otherSnapshot.getZ().get(parcel);
+        for(Parcel parcel : mySnapshot.getZ().keySet()){
+            AbstractConsensusAgent myIdea = mySnapshot.getZ().get(parcel);
+            AbstractConsensusAgent otherIdea = otherSnapshot.getZ().get(parcel);
 
             if(sender.equals(otherIdea)){
                 senderThinksHeWins(sender, parcel, myIdea, mySnapshot, otherSnapshot);
@@ -232,7 +156,7 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
 
     }
 
-    private void senderThinksHeWins(ConsensusAgent sender, MyParcel parcel, ConsensusAgent myIdea, CbbaSnapshot mySnapshot, CbbaSnapshot otherSnapshot) {
+    private void senderThinksHeWins(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, CbbaSnapshot mySnapshot, CbbaSnapshot otherSnapshot) {
         //I think I win
         if(this.equals(myIdea)){
             if(otherSnapshot.getY().get(parcel) > mySnapshot.getY().get(parcel))
@@ -258,7 +182,7 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
         throw new IllegalArgumentException("Something went wrong in senderThinksHeWins: unreachable code.");
     }
 
-    private void senderThinksIWin(ConsensusAgent sender, MyParcel parcel, ConsensusAgent myIdea, CbbaSnapshot mySnapshot, CbbaSnapshot otherSnapshot) {
+    private void senderThinksIWin(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, CbbaSnapshot mySnapshot, CbbaSnapshot otherSnapshot) {
         if(this.equals(myIdea)) {
             leave();
             return;
@@ -280,7 +204,7 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
         throw new IllegalArgumentException("Something went wrong in senderThinksHeWins: unreachable code.");
     }
 
-    private void senderThinksSomeoneElseWins(ConsensusAgent sender, MyParcel parcel, ConsensusAgent myIdea, CbbaSnapshot mySnapshot, ConsensusAgent otherIdea, CbbaSnapshot otherSnapshot) {
+    private void senderThinksSomeoneElseWins(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, CbbaSnapshot mySnapshot, AbstractConsensusAgent otherIdea, CbbaSnapshot otherSnapshot) {
         if(this.equals(myIdea)) {
             if((otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
                     && (otherSnapshot.getY().get(parcel) > mySnapshot.getY().get(parcel)))
@@ -320,7 +244,7 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
         throw new IllegalArgumentException("Something went wrong in senderThinksHeWins: unreachable code.");
     }
 
-    private void senderThinksNododyWins(ConsensusAgent sender, MyParcel parcel, ConsensusAgent myIdea, CbbaSnapshot mySnapshot, CbbaSnapshot otherSnapshot) {
+    private void senderThinksNododyWins(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, CbbaSnapshot mySnapshot, CbbaSnapshot otherSnapshot) {
         if(this.equals(myIdea)) {
             leave();
             return;
@@ -342,27 +266,4 @@ public class CbbaVehicle extends MyVehicle implements ConsensusAgent {
         throw new IllegalArgumentException("Something went wrong in senderThinksHeWins: unreachable code.");
     }
 
-    protected void sendSnapshot(Snapshot snapshot){
-        // If the current information is different from the information we sent last time, resend.
-        if(!this.getSnapshot().equals(snapshot)){
-
-            this.setSnapshot(snapshot);
-
-            //TODO getVehicles: send to agent k with g_ik(t) = 1.
-            for(Vehicle c : this.getPDPModel().getVehicles()) {
-                MyVehicle v = (MyVehicle) c;
-                this.getCommDevice().get().send(snapshot, v);
-            }
-        };
-    }
-
-
-
-    protected Snapshot getSnapshot() {
-        return snapshot;
-    }
-
-    protected void setSnapshot(Snapshot snapshot) {
-        this.snapshot = snapshot;
-    }
 }

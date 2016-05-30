@@ -10,16 +10,16 @@ import java.util.Map;
  */
 public class Penalty {
 
-    private final Collection<Parcel> route;
+    private final Collection<? extends Parcel> route;
 
-    private final Map<Parcel, Long> penaltyMap;
+    private final Map<? extends Parcel, Long> penaltyMap;
 
-    public Penalty(Collection<Parcel> route, Map<Parcel, Long> penaltyMap) {
+    public Penalty(Collection<? extends Parcel> route, Map<? extends Parcel, Long> penaltyMap) {
         this.route = route;
         this.penaltyMap = penaltyMap;
     }
 
-    public Collection<Parcel> getRoute(){
+    public Collection<? extends Parcel> getRoute(){
 
         return this.route;
 

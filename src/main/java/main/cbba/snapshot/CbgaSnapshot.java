@@ -2,26 +2,22 @@ package main.cbba.snapshot;
 
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableTable;
-import main.cbba.ConsensusAgent;
-import main.cbga.CbgaAgent;
-
-import java.util.HashMap;
-import java.util.Map;
+import main.cbba.agent.AbstractConsensusAgent;
+import main.cbba.agent.CbgaAgent;
 
 /**
  * Snapshot of an CbgaAgent
  */
 public class CbgaSnapshot extends Snapshot {
 
-    private final ImmutableTable<Parcel, ConsensusAgent, Double> winningbids;
+    private final ImmutableTable<Parcel, AbstractConsensusAgent, Long> winningbids;
 
     public CbgaSnapshot(CbgaAgent agent, TimeLapse time) {
 
         super(agent, time);
 
-        this.winningbids = agent.getWinningBids();
+        this.winningbids = agent.getX();
     }
 
 
@@ -31,9 +27,8 @@ public class CbgaSnapshot extends Snapshot {
         return super.equals(o);
     }
 
-    public ImmutableTable<Parcel, ConsensusAgent, Double> getWinningbids() {
+    public ImmutableTable<Parcel, AbstractConsensusAgent, Long> getWinningbids() {
         return winningbids;
     }
-
 
 }

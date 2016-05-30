@@ -1,7 +1,6 @@
 package main.route.evaluation;
 
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
-import main.MyParcel;
 
 import java.util.*;
 
@@ -32,9 +31,9 @@ public class RouteEvaluation {
      */
     protected Penalty computeRoutePenalty() {
 
-        Map<Parcel, Long> map = new HashMap<>();
+        Map<? extends Parcel, Long> map = new HashMap<>();
 
-        for(MyParcel p : Arrays.asList(this.times.getRoute().toArray(new MyParcel[0]))) {
+        for(Parcel p : Arrays.asList(this.times.getRoute().toArray(new Parcel[0]))) {
             map.put(p, p.computePenalty(this.times.getPickupTimes().get(p), this.times.getDeliveryTimes().get(p)));
         }
 
