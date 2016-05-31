@@ -297,8 +297,8 @@ public class CbbaAgent extends AbstractConsensusAgent {
     }
 
     @Override
-    protected void handleLostParcels(List<Parcel> parcels) {
-        super.handleLostParcels(parcels);
+    protected void handleLostParcels(Parcel cause, List<Parcel> parcels) {
+        super.handleLostParcels(cause,parcels);
         //remove winning bids on the given parcels
         this.y.replaceAll(
                 ((parcel, bid)

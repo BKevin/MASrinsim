@@ -178,12 +178,8 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                 ImmutableList<Parcel> newB = FluentIterable.from(this.getB()).limit(ind).toList();
                 ImmutableList<Parcel> removedFromB = FluentIterable.from(this.getB()).skip(ind).toList(); //Do take 'parcel' as it should be already handled
 
-                this.handleLostParcels(removedFromB);
+                this.handleLostParcels(parcel, removedFromB);
 
-
-                //remove all parcels claimed after the lost parcel.
-                this.p = new ArrayList<>(this.getP().stream().filter(p -> newB.contains(p)).collect(Collectors.toList()));
-                this.b = new LinkedList<>(newB);
             }
         }
 
@@ -193,7 +189,9 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
      * Subclasses need to handle the loss of parcels due to the loss of an earlier assigned parcel.
      * @param parcels
      */
-    protected void handleLostParcels(List<Parcel> parcels){
+    protected void handleLostParcels(Parcel cause, List<Parcel> parcels){
+        this.getP().remove(cause);
+        this.getB().remove(cause);
         this.getP().removeAll(parcels);
         this.getB().removeAll(parcels);
         //Update route

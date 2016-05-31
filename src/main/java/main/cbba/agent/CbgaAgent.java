@@ -63,7 +63,8 @@ public class CbgaAgent extends AbstractConsensusAgent {
     }
 
     @Override
-    protected void handleLostParcels(List<Parcel> parcels) {
+    protected void handleLostParcels(Parcel cause,List<Parcel> parcels) {
+        super.handleLostParcels(cause,parcels);
         // remove bids of this Agent on the given parcels
         this.X.column(this).replaceAll(
                 ((parcel, bid)
