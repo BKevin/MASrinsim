@@ -33,7 +33,7 @@ public class MyVehicle extends RouteFollowingVehicle implements CommUser{
     private Map<? extends Parcel, Integer> calculatedIndexOfParcel;
 
     public MyVehicle(VehicleDTO vehicleDTO) {
-        super(vehicleDTO, true); //route diversion is on.
+        super(vehicleDTO, false); //don't allow delayed route diversion
 
         calculatedIndexOfParcel = new HashMap<>();
     }

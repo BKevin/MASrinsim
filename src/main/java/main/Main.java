@@ -82,12 +82,14 @@ public class Main {
     private static Scenario makeScenario(View.Builder viewBuilder, int id) {
         Scenario.Builder scenarioBuilder = Scenario.builder();
 
-        scenarioBuilder.
-                addModel(PDPRoadModel.builder(
-                        RoadModelBuilders.plane()
-                                .withMinPoint(MIN_POINT)
-                                .withMaxPoint(MAX_POINT)
-                                .withMaxSpeed(10000d)))
+        scenarioBuilder
+                .addModel(
+                        PDPRoadModel.builder(
+                                RoadModelBuilders.plane()
+                                        .withMinPoint(MIN_POINT)
+                                        .withMaxPoint(MAX_POINT)
+                                        .withMaxSpeed(10000d))
+                            .withAllowVehicleDiversion(true))
                 .addModel(DefaultPDPModel.builder())
                 .addModel(CommModel.builder())
                 .addModel(viewBuilder);
