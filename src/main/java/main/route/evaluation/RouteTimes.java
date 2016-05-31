@@ -70,52 +70,32 @@ public class RouteTimes{
         long currentTime = this.startTime;
 
 
-        for(Parcel p : this.getPath()){
+        for(Parcel p : this.getPath()) {
             long pickupTime;
             long deliveryTime;
+            //you start at the deliverypoint or underway to the first in path
 
-            if (pdpModel.getParcelState(p) == PDPModel.ParcelState.AVAILABLE
-                    || pdpModel.getParcelState(p) == PDPModel.ParcelState.ANNOUNCED){ //FIXME niet zeker van ANNOUNCED
+            //calculate the pickupTime
+            long pickupTravelTime = v.computeTravelTimeFromTo(currentPosition, p.getPickupLocation(), timeUnit);
+            pickupTime = currentTime
+                    + (p.canBePickedUp(v, pickupTravelTime) ? pickupTravelTime : p.getPickupTimeWindow().begin())
+                    + p.getPickupDuration();
+            pickupTimes.put(p, pickupTime);
 
-                //From last parcel delivery to current parcel pickup
-                long pickupTravelTime = v.computeTravelTimeFromTo(currentPosition, p.getPickupLocation(), timeUnit);
-                // Assuming TimeWindowPolicy.TimeWindowPolicies.TARDY_ALLOWED
-                pickupTime = currentTime
-                        + (p.canBePickedUp(v, pickupTravelTime) ? pickupTravelTime : p.getPickupTimeWindow().begin());
-                pickupTimes.put(p, pickupTime);
-                currentPosition = p.getPickupLocation();
-            }
-            else{
-                pickupTime = currentTime;
-                //Set pickupTimes as negative,to signify that it happened in the past
-                pickupTimes.put(p, -1L);
-            }
+            //set the time and position correct
+            currentTime = pickupTime;
+            currentPosition = p.getPickupLocation();
 
-            if(pdpModel.getParcelState(p) != PDPModel.ParcelState.DELIVERED
-                    && pdpModel.getParcelState(p) != PDPModel.ParcelState.DELIVERING) {
+            //calculate the deliveryTime
+            long deliveryTravelTime = v.computeTravelTimeFromTo(currentPosition, p.getDeliveryLocation(), timeUnit);
+            deliveryTime = currentTime
+                    + (p.canBeDelivered(v, deliveryTravelTime) ? deliveryTravelTime : p.getDeliveryTimeWindow().begin())
+                    + p.getPickupDuration();
+            deliveryTimes.put(p, deliveryTime);
 
-                //From current parcel pickup to current parcel delivery
-                long deliveryTravelTime = v.computeTravelTimeFromTo(currentPosition, p.getDeliveryLocation(), timeUnit);
-                // Assuming TimeWindowPolicy.TimeWindowPolicies.TARDY_ALLOWED
-                deliveryTime = pickupTime
-                        + p.getPickupDuration()
-                        + (p.canBeDelivered(v, deliveryTravelTime) ? deliveryTravelTime : p.getDeliveryTimeWindow().begin());
-                deliveryTimes.put(p, deliveryTime);
-
-
-                // Update current position (only if you had to move to deliver it)
-                currentPosition = p.getDeliveryLocation();
-                // Update current time (only if you had to move to deliver it)
-                currentTime = deliveryTime;
-            }
-            else{
-                if(pdpModel.getParcelState(p) != PDPModel.ParcelState.DELIVERED)
-                    deliveryTimes.put(p,-1L);
-                if(pdpModel.getParcelState(p) != PDPModel.ParcelState.DELIVERING)
-                    deliveryTimes.put(p,currentTime);
-            }
-
-
+            //set the time and position correct
+            currentTime = deliveryTime;
+            currentPosition = p.getDeliveryLocation();
         }
 
         this.pickupTimes.putAll(pickupTimes);
