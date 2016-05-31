@@ -167,9 +167,9 @@ public class ScenarioGenerator {
 
         long deliverTime = (long) (arrivalTime + timeToTravel);
         //vari = rng.nextDouble();
-        long deliverTimeWindowBegin = (long) (arrivalTime - vari * parcelAverageTimeWindowVariation);
+        long deliverTimeWindowBegin = (long) (deliverTime - vari * parcelAverageTimeWindowVariation);
         //vari = rng.nextDouble();
-        long deliverTimeWindowEnd = (long) (arrivalTime + vari * parcelAverageTimeWindowVariation);
+        long deliverTimeWindowEnd = (long) (deliverTime + vari * parcelAverageTimeWindowVariation);
 
         return arrivalTimeWindowBegin + "/" + arrivalTimeWindowEnd + "=" + deliverTimeWindowBegin + "/" + deliverTimeWindowEnd;
 
