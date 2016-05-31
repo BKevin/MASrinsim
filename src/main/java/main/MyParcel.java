@@ -7,15 +7,11 @@ import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.github.rinde.rinsim.geom.Point;
 import com.github.rinde.rinsim.util.TimeWindow;
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
 import main.comm.*;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Created by KevinB on 8/05/2016.
@@ -30,7 +26,8 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
 //    private List<Message> bids;
     // Time window and penalty information
 
-    private boolean announced;
+    private boolean announcedArrival;
+    private boolean announcedSold;
 
 //    private final TimeWindowPolicy policy = TimeWindowPolicy.TimeWindowPolicies.TARDY_ALLOWED;
 
@@ -41,7 +38,8 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
 
     public MyParcel(ParcelDTO parcelDTO){
         super(parcelDTO);
-        this.announced = false;
+        this.announcedArrival = false;
+        this.announcedSold = false;
 //        broadcasted = false;
 //        bids = null;
         this.allocatedVehicles = new ArrayList<>();
@@ -67,19 +65,25 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
 
     public void tick(TimeLapse timeLapse) {
 
-        if(!announced){
-            this.getCommDevice().get().broadcast(new ParcelMessage(this));
-            setAnnounced();
+        if(!announcedArrival){
+            ParcelMessage contents = new ParcelMessage(this);
+            this.getCommDevice().get().broadcast(contents);
+            LoggerFactory.getLogger(this.getClass()).info("Broadcasted ParcelMessage from {} : {}", this, contents);
+            setAnnouncedArrival();
         }
 
         PDPModel.ParcelState state = this.getPDPModel().getParcelState(this);
-        if(!state.equals(PDPModel.ParcelState.ANNOUNCED) && !state.equals(PDPModel.ParcelState.AVAILABLE)){
+        if(!announcedSold
+                && !state.equals(PDPModel.ParcelState.ANNOUNCED)
+                && !state.equals(PDPModel.ParcelState.AVAILABLE)){
             this.getCommDevice().get().broadcast(new SoldParcelMessage(this));
+            this.setAnnouncedSold();
         }
     }
 
-    protected void setAnnounced(){
-        this.announced = true;
+    protected void setAnnouncedArrival(){ this.announcedArrival = true; }
+    protected void setAnnouncedSold(){
+        this.announcedSold = true;
     }
 
 //    @Override

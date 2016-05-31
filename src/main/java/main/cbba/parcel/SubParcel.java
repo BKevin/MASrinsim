@@ -16,7 +16,8 @@ public class SubParcel extends MyParcel {
         this.parent = parent;
 
         // announcement is handled by parent MultiParcel
-        setAnnounced();
+        setAnnouncedArrival();
+        setAnnouncedSold();
     }
 
     public MultiParcel getParent(){
