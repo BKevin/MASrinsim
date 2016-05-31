@@ -34,6 +34,11 @@ public abstract class Snapshot implements MessageContents{
     }
 
 
+    /**
+     * Snapshot can be equal when they are about the same agent.
+     * @param o
+     * @return
+     */
     @Override
     public boolean equals(Object o) {
         if(!(o instanceof Snapshot)){
@@ -42,8 +47,7 @@ public abstract class Snapshot implements MessageContents{
 
         Snapshot sn = (Snapshot) o;
 
-        return sn.getTimestamp().equals(this.getTimestamp())
-                && sn.getAgentHash().equals(this.getAgentHash());
+        return sn.getAgentHash().equals(this.getAgentHash());
     }
 
     public Map<AbstractConsensusAgent, Long> getCommunicationTimestamps() {

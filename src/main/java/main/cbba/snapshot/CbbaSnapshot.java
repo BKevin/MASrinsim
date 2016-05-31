@@ -35,4 +35,17 @@ public class CbbaSnapshot extends Snapshot {
     public String toString() {
         return super.toString() + " \ny= " + y + " \nz= "+ z ;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        boolean result;
+        if(result = (super.equals(o) && o instanceof CbbaSnapshot)){
+            CbbaSnapshot s = (CbbaSnapshot) o;
+
+            result = s.getY().entrySet().containsAll(this.getY().entrySet())
+                    && s.getZ().entrySet().containsAll(this.getZ().entrySet());
+        };
+
+        return result;
+    }
 }
