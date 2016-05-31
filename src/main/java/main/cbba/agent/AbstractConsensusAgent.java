@@ -15,6 +15,7 @@ import main.MyParcel;
 import main.MyVehicle;
 import main.cbba.parcel.MultiParcel;
 import main.cbba.snapshot.Snapshot;
+import main.comm.ParcelMessage;
 import main.route.evaluation.RouteEvaluation;
 import main.route.evaluation.RouteTimes;
 
@@ -280,16 +281,17 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                 evaluateSnapshot((Snapshot) message.getContents(), (AbstractConsensusAgent) sender );
             }
 
-            //FIXME handle ParcelMessages
-//            if (contents instanceof ParcelMessage){
-//
-//                this.addParcel(((ParcelMessage) contents).getParcel());
-//
-//
-//            }
+            if (contents instanceof ParcelMessage){
+                //TODO meer nodig?
+                this.addParcel(((ParcelMessage) contents).getParcel());}
         }
     }
 
+    /**
+     * Subclasses are given the new Parcel and can change their lists accordingly.
+     * @param parcel
+     */
+    protected abstract void addParcel(Parcel parcel);
 
 
 }

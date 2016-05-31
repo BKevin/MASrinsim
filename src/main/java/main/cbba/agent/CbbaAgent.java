@@ -21,6 +21,7 @@ import java.util.*;
  */
 public class CbbaAgent extends AbstractConsensusAgent {
 
+    private static final Long NO_BID = 0L;
     private Map<Parcel, Long> y;
     private Map<Parcel, AbstractConsensusAgent> z;
 
@@ -251,7 +252,7 @@ public class CbbaAgent extends AbstractConsensusAgent {
     }
 
     private void reset(Parcel parcel) {
-        this.setWinningBid(parcel, null, 0L); //FIXME is dit legaal?
+        this.setWinningBid(parcel, null, NO_BID); //FIXME is dit legaal?
     }
 
     @Override
@@ -279,7 +280,7 @@ public class CbbaAgent extends AbstractConsensusAgent {
         this.y.replaceAll(
                 ((parcel, bid)
                         -> parcels.contains(parcel)
-                        ? 0L
+                        ? NO_BID
                         : bid));
         //remove winners of the given parcels
         this.z.replaceAll(
@@ -287,6 +288,16 @@ public class CbbaAgent extends AbstractConsensusAgent {
                         -> parcels.contains(parcel)
                         ? null
                         : winner));
+    }
+
+    /**
+     * Add the new parcel to the lists of bids and winners
+     * @param parcel
+     */
+    @Override
+    protected void addParcel(Parcel parcel) {
+        this.y.put(parcel,NO_BID);
+        this.z.put(parcel,null);
     }
 
     public Map<Parcel, Long> getY() {

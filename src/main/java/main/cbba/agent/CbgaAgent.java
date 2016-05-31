@@ -72,6 +72,11 @@ public class CbgaAgent extends AbstractConsensusAgent {
                         : bid));
     }
 
+    @Override
+    protected void addParcel(Parcel parcel) {
+        //FIXME moet er iets worden toegevoegd?
+    }
+
 //    /**
 //     * We handle MultiParcel too here, allocation is different than for Cbba single Parcels
 //     * @param parcel
