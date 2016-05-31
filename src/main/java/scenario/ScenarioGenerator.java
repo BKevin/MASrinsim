@@ -33,6 +33,7 @@ public class ScenarioGenerator {
     private static long parcelAverageTimeWindowVariation = 10000; //ms
     private static int parcelServiceDuration = 1000;
     private static int parcelCapacity = 1;
+    private static int maxAmountOfRequiredAgents = 1;
 
     public static void main(String[] args) {
         generateScenario();
@@ -108,7 +109,8 @@ public class ScenarioGenerator {
                 + time + " "
                 + location.x + "," + location.y + " "
                 + vehicleCapacity + " "
-                + vehicleSpeed;
+                + vehicleSpeed + " "
+                + maxAmountOfRequiredAgents;
     }
 
     private static String makeParcelEventAtStart() {

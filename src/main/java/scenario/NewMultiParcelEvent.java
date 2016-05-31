@@ -24,7 +24,7 @@ public class NewMultiParcelEvent extends NewParcelEvent {
         return requiredAgents;
     }
 
-    public static TimedEventHandler<NewParcelEvent> defaultHandler(){
+    public static TimedEventHandler defaultHandler(){
         return new NewMultiParcelEventHandler();
     }
 

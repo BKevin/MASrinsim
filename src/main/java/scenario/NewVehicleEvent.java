@@ -6,6 +6,8 @@ import com.github.rinde.rinsim.geom.Point;
 import com.github.rinde.rinsim.scenario.TimedEvent;
 import com.github.rinde.rinsim.scenario.TimedEventHandler;
 import main.MyVehicle;
+import main.cbba.agent.CbbaAgent;
+import main.cbba.agent.CbgaAgent;
 
 /**
  * Created by KevinB on 9/05/2016.
@@ -16,12 +18,20 @@ public class NewVehicleEvent implements TimedEvent {
     private final Point startLocation;
     private final int capacity;
     private final double speed;
+    private final VehicleType type;
 
-    public NewVehicleEvent(long time, Point newStartLocation, int newCapacity, double newSpeed){
+
+    public NewVehicleEvent(long time, Point newStartLocation, int newCapacity, double newSpeed, int maxRequiredAgents){
         triggerTime = time;
         startLocation = newStartLocation;
         capacity = newCapacity;
         speed = newSpeed;
+        if(maxRequiredAgents == 1){
+            type = VehicleType.CBBA;
+        }
+        else{
+            type = VehicleType.CBGA;
+        }
     }
 
     @Override
@@ -43,6 +53,8 @@ public class NewVehicleEvent implements TimedEvent {
 
 
 
+
+
     public static TimedEventHandler<NewVehicleEvent> defaultHandler(){
         return new NewParcelEventHandler();
     }
@@ -55,13 +67,27 @@ public class NewVehicleEvent implements TimedEvent {
 
             NewVehicleEvent newVehicleEvent = (NewVehicleEvent) timedEvent;
 
-            simulatorAPI.register(new MyVehicle(
+            if(newVehicleEvent.type == VehicleType.CBBA)
+                simulatorAPI.register(new CbbaAgent(
                     VehicleDTO.builder()
                             .startPosition(newVehicleEvent.getStartLocation())
                             .capacity(newVehicleEvent.getCapacity())
                             .speed(newVehicleEvent.getSpeed())
                             .build()));
+            if(newVehicleEvent.type == VehicleType.CBGA)
+                simulatorAPI.register(new CbgaAgent(
+                        VehicleDTO.builder()
+                                .startPosition(newVehicleEvent.getStartLocation())
+                                .capacity(newVehicleEvent.getCapacity())
+                                .speed(newVehicleEvent.getSpeed())
+                                .build()));
 
         }
+    }
+
+    enum VehicleType {
+        CBBA,
+        CBGA;
+
     }
 }

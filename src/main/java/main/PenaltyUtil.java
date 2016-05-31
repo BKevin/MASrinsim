@@ -1,5 +1,6 @@
 package main;
 
+import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
 
 import java.util.List;

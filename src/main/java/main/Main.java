@@ -46,23 +46,36 @@ public class Main {
     }
 
     public static void runWithScenario() {
+        boolean multi = false;
+
 
         View.Builder viewBuilder = createGUI();
 
         int id = 0;
         Scenario myScenario = makeScenario(viewBuilder, id);
 
-
+        if(multi){
         Simulator.builder()
                 .addModel(ScenarioController
                                 .builder(myScenario)
                         .withEventHandler(NewParcelEvent.class, NewParcelEvent.defaultHandler())
-                        .withEventHandler(NewParcelEvent.class, NewMultiParcelEvent.defaultHandler())
+                        .withEventHandler(NewMultiParcelEvent.class, NewMultiParcelEvent.defaultHandler())
                         .withEventHandler(NewVehicleEvent.class, NewVehicleEvent.defaultHandler())
                         .withEventHandler(NewDepotEvent.class, NewDepotEvent.defaultHandler()))
                 .build()
                 .start();
+        }
+        else{
+            Simulator.builder()
+                    .addModel(ScenarioController
+                            .builder(myScenario)
+                            .withEventHandler(NewParcelEvent.class, NewParcelEvent.defaultHandler())
+                            .withEventHandler(NewVehicleEvent.class, NewVehicleEvent.defaultHandler())
+                            .withEventHandler(NewDepotEvent.class, NewDepotEvent.defaultHandler()))
+                    .build()
+                    .start();
 
+        }
     }
 
 
@@ -79,7 +92,7 @@ public class Main {
                 .addModel(CommModel.builder())
                 .addModel(viewBuilder);
 
-        File file = Paths.get("src\\main\\resources\\ThreeParcelScenario.txt").toFile();
+        File file = Paths.get("src\\main\\resources\\new_scenarios\\scene.txt").toFile();
         long lastEventTime = -1;
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;

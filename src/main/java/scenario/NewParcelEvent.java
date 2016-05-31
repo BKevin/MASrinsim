@@ -39,7 +39,7 @@ public class NewParcelEvent implements TimedEvent {//extends AddParcelEvent
     }
 
 
-    public static TimedEventHandler<NewParcelEvent> defaultHandler(){
+    public static TimedEventHandler defaultHandler(){
         return new NewParcelEventHandler();
     }
 
