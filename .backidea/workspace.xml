@@ -1,22 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="ab60feca-5222-42fa-bc01-e6357565fb27" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/MASProject.iml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/project.iml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/target/classes/main/Main.class" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/target/classes/main/MyDepot.class" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/target/classes/main/MyParcel.class" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/target/classes/main/MyVehicle.class" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/target/classes/scenario/NewParcelEvent.class" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/target/classes/scenario/NewVehicleEvent.class" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/target/classes/scenario/NoParcelsStopCondition.class" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/target/classes/scenario/ScenarioGenerator.class" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/target/classes/scenario/TimedEventFactory.class" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/target/classes/scene.txt" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
-    </list>
+    <list default="true" id="ab60feca-5222-42fa-bc01-e6357565fb27" name="Default" comment="" />
     <ignored path="MASrinsim.iws" />
     <ignored path=".idea/workspace.xml" />
     <ignored path="$PROJECT_DIR$/target/" />
@@ -279,6 +264,9 @@
   <component name="ShelveChangesManager" show_recycled="false">
     <option name="remove_strategy" value="false" />
   </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="ab60feca-5222-42fa-bc01-e6357565fb27" name="Default" comment="" />
@@ -286,12 +274,20 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1464701787788</updated>
-      <workItem from="1464701790445" duration="90000" />
+      <workItem from="1464701790445" duration="281000" />
     </task>
+    <task id="LOCAL-00001" summary="Please commit correctly">
+      <created>1464701895928</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1464701895928</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="90000" />
+    <option name="totallyTimeSpent" value="281000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -342,6 +338,12 @@
   </component>
   <component name="VcsContentAnnotationSettings">
     <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
+    <option name="CHECK_NEW_TODO" value="false" />
+    <MESSAGE value="Please commit correctly" />
+    <option name="LAST_COMMIT_MESSAGE" value="Please commit correctly" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager />
