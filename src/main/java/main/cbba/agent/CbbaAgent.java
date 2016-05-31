@@ -15,13 +15,14 @@ import main.route.evaluation.RouteEvaluation;
 import main.route.evaluation.RouteTimes;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by pieter on 26.05.16.
  */
 public class CbbaAgent extends AbstractConsensusAgent {
 
-    private static final Long NO_BID = 0L;
+    private static final Long NO_BID = Long.MAX_VALUE; //TODO check of dit overal klopt
     private Map<Parcel, Long> y;
     private Map<Parcel, AbstractConsensusAgent> z;
 
@@ -34,45 +35,56 @@ public class CbbaAgent extends AbstractConsensusAgent {
     }
 
     public void constructBundle() {
-        LinkedList<? extends Parcel> newB = getB();
-        ArrayList<? extends Parcel> newP = getP();
-        Map<? extends Parcel, Long> newY = getY(); //FIXME it now uses Immutablemaps
-        Map<? extends Parcel, AbstractConsensusAgent> newZ = getZ(); //FIXME it now uses Immutablemaps
 
-        long currentPenalty = calculatePenalty(newP);
+//        long currentPenalty = calculatePenalty(getP());
+
+
+        Set<Parcel> parcels = this.z.keySet();
+        // Get all parcels not already in B
+        List<Parcel> notInB = parcels.stream().filter(p -> !this.getB().contains(p)).collect(Collectors.toList());
 
         boolean bIsChanging = true;
         while(bIsChanging){
             bIsChanging = false;
 
-            long bestBid = Long.MAX_VALUE;
+            long bestBid = NO_BID;
             Parcel bestParcel = null;
-            int bestPosition = -1;
-
+//            int bestPosition = -1;
             //look at all parcels
-            for(Parcel parcel : newZ.keySet()){
+            for(Parcel parcel : notInB){
                 //if you don't own the parcel yet, check it
-                if(!newZ.get(parcel).equals(this)){
-
-                    for(int pos = 0; pos <= newP.size(); pos++){
-                        //calculate a bid for each position
-                        long bid = calculatePenaltyAtPosition(newP,parcel,pos) - currentPenalty; //TODO aftrekken of optellen? (beter aftrek functie in penalty)
-                        //check if bid is better than current best
-                        if(isBetterBidThan(bid,newY.get(parcel))){
-                            //check if bid is better than previous best
-                            if(isBetterBidThan(bid, bestBid)){
-                                //If better, save appropriate info
-                                bestBid = bid;
-                                bestParcel = parcel;
-                                bestPosition = pos;
-                            }
+                if(!this.z.get(parcel).equals(this)){
+//
+//                    for(int pos = 0; pos <= getP().size(); pos++){
+//                        //calculate a bid for each position
+//                        long bid = calculatePenaltyAtPosition(getP(),parcel,pos) - currentPenalty;
+//                        //check if bid is better than current best
+//                        if(isBetterBidThan(bid,newY.get(parcel))){
+//                            //check if bid is better than previous best
+//                            if(isBetterBidThan(bid, bestBid)){
+//                                //If better, save appropriate info
+//                                bestBid = bid;
+//                                bestParcel = parcel;
+//                                bestPosition = pos;
+//                            }
+//                        }
+//                    }
+                    long bid = this.calculateBestRouteWith(parcel);
+                    //check if bid is better than current best
+                    if(isBetterBidThan(bid,this.y.get(parcel))){
+                        //check if bid is better than previous best
+                        if(isBetterBidThan(bid, bestBid)){
+                            //If better, save appropriate info
+                            bestBid = bid;
+                            bestParcel = parcel;
                         }
                     }
                 }
             }
             if(bestParcel != null){
-                getB().addLast( bestParcel);
-                getP().add(bestPosition, bestParcel);
+                getB().addLast(bestParcel);
+//                getP().add(bestPosition, bestParcel);
+                getP().add(this.calculateBestRouteIndexWith(bestParcel), bestParcel);
 
                 this.setWinningBid(bestParcel, this, bestBid);
 
@@ -179,7 +191,7 @@ public class CbbaAgent extends AbstractConsensusAgent {
             return;
         }
 
-        throw new IllegalArgumentException("Something went wrong in senderThinksHeWins: unreachable code.");
+        throw new IllegalArgumentException("Something went wrong in senderThinksIWins: unreachable code.");
     }
 
     private void senderThinksSomeoneElseWins(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, CbbaSnapshot mySnapshot, AbstractConsensusAgent otherIdea, CbbaSnapshot otherSnapshot) {
@@ -219,7 +231,7 @@ public class CbbaAgent extends AbstractConsensusAgent {
             return;
         }
 
-        throw new IllegalArgumentException("Something went wrong in senderThinksHeWins: unreachable code.");
+        throw new IllegalArgumentException("Something went wrong in senderThinksSomeoneElseWins: unreachable code.");
     }
     private void senderThinksNododyWins(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, CbbaSnapshot mySnapshot, CbbaSnapshot otherSnapshot) {
         if(this.equals(myIdea)) {
@@ -240,7 +252,7 @@ public class CbbaAgent extends AbstractConsensusAgent {
             return;
         }
 
-        throw new IllegalArgumentException("Something went wrong in senderThinksHeWins: unreachable code.");
+        throw new IllegalArgumentException("Something went wrong in senderThinksNododyWins: unreachable code.");
     }
 
     private void update(Parcel parcel, CbbaSnapshot snapshot) {
