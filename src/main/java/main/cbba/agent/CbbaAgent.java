@@ -119,6 +119,10 @@ public class CbbaAgent extends AbstractConsensusAgent {
         CbbaSnapshot mySnapshot = (CbbaSnapshot) this.getSnapshot();
 
         for(Parcel parcel : mySnapshot.getZ().keySet()){
+            //If the incoming snapshot has no information about this parcel, continue to the next one.
+            if(!otherSnapshot.getY().containsKey(parcel) && !otherSnapshot.getZ().containsKey(parcel)){
+                continue;
+            }
             AbstractConsensusAgent myIdea = mySnapshot.getZ().get(parcel);
             AbstractConsensusAgent otherIdea = otherSnapshot.getZ().get(parcel);
 
@@ -290,6 +294,8 @@ public class CbbaAgent extends AbstractConsensusAgent {
     protected void setWinningBid(Parcel parcel, AbstractConsensusAgent agent, Long bid){
         super.setWinningBid(parcel, agent, bid);
 
+        if(bid == null)
+            throw new IllegalArgumentException("Bids can't be null.");
         LoggerFactory.getLogger(this.getClass()).info("SetWinningBid {} {} {}", parcel, agent, bid);
 
         this.y.put(parcel, bid);

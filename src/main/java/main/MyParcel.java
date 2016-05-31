@@ -266,7 +266,7 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
 
     public Parcel allocateTo(Vehicle vehicle) {
         if(!this.getPDPModel().getParcels(PDPModel.ParcelState.AVAILABLE, PDPModel.ParcelState.ANNOUNCED).contains(this) ){
-            throw new IllegalStateException("Parcel cannot be transferred anymore.");
+            throw new IllegalStateException("Parcel cannot be transferred anymore: " + this);
         }
         this.allocatedVehicles.add(vehicle);
         return this;

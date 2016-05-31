@@ -164,12 +164,9 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
             Parcel p = ((MyParcel) parcel).allocateTo(agent);
 
-            // Update route
-            this.setRoute(
-                    // Create route with double parcels
-                    this.createRouteFrom(
-                            // Fetch actual parcels (in case of MultiParcel and build route
-                            this.getP().stream().map(this::getAllocatedParcel).collect(Collectors.toList())));
+            updateRoute();
+
+
         }
         else{
             //Handle the loss of a parcel (since you (the previous winner) are replaced)
@@ -203,12 +200,22 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         this.getP().removeAll(parcels);
         this.getB().removeAll(parcels);
         //Update route
+        updateRoute();
+    }
+
+    private void updateRoute() {
+
+        // Fetch actual parcels (in case of MultiParcel and build route
+        List<Parcel> collect = this.getP().stream().map(this::getAllocatedParcel).collect(Collectors.toList());
+
+        LoggerFactory.getLogger(this.getClass()).info("RouteUpdate for {} with {}", this, collect);
+
+        // Update route
         this.setRoute(
                 // Create route with double parcels
                 this.createRouteFrom(
-                        // Fetch actual parcels (in case of MultiParcel and build route
-                        this.getP().stream().map(this::getAllocatedParcel).collect(Collectors.toList())));
-    };
+                        collect));
+    }
 
     private Parcel getAllocatedParcel(Parcel p){
         if(p instanceof MultiParcel){
