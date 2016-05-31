@@ -60,6 +60,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         while (!hasConsensus){
             constructBundle();
             hasConsensus = findConsensus();
+
 //            org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick %s, %s", this, this.getP().size());
         }
 
