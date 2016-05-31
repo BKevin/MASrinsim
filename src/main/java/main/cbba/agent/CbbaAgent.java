@@ -312,6 +312,11 @@ public class CbbaAgent extends AbstractConsensusAgent {
         this.z.put(parcel,null);
     }
 
+    protected void removeParcel(Parcel parcel){
+        this.y.remove(parcel);
+        this.z.remove(parcel);
+    }
+
     public Map<Parcel, Long> getY() {
         return ImmutableMap.copyOf(y);
     }

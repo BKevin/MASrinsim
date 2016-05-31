@@ -20,6 +20,9 @@ import java.util.stream.Collectors;
  */
 public class CbgaAgent extends AbstractConsensusAgent {
 
+    // FIXME anders dan in CbbaAgent!
+    private static final Long NO_BID = 0L;
+
     /* m*n matrix with the winning bids of agents.
      * Xij is equal to the winning bid of agent i for task j or equal to  0 if no assignment has been made.
      */
@@ -44,7 +47,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
 
     @Override
     protected void replaceWinningBid(Parcel parcel, AbstractConsensusAgent from, AbstractConsensusAgent to, Long bid){
-        this.X.put(parcel, from, 0L);
+        this.X.put(parcel, from, this.NO_BID);
         this.setWinningBid(parcel, to, bid);
     }
 
@@ -68,15 +71,20 @@ public class CbgaAgent extends AbstractConsensusAgent {
         this.X.column(this).replaceAll(
                 ((parcel, bid)
                         -> parcels.contains(parcel)
-                        ? 0L
+                        ? this.NO_BID
                         : bid));
     }
 
     @Override
     protected void addParcel(Parcel parcel) {
-        //FIXME moet er iets worden toegevoegd?
         for(AbstractConsensusAgent agent : this.X.columnKeySet())
-            this.X.put(parcel,agent, 0L);
+            this.X.put(parcel,agent, this.NO_BID);
+    }
+
+    protected void removeParcel(Parcel parcel){
+        for(AbstractConsensusAgent agent : this.X.columnKeySet()){
+            this.X.remove(parcel, agent);
+        }
     }
 
 //    /**
@@ -220,7 +228,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
                     continue;
 
                 // Number of agents assigned to J according to I
-                List<Long> bidsOnJ = i.getX().row(j).values().stream().filter((Long d) -> 0L < d).collect(Collectors.<Long>toList());
+                List<Long> bidsOnJ = i.getX().row(j).values().stream().filter((Long d) -> this.NO_BID < d).collect(Collectors.<Long>toList());
 
                 // There are less than the required number of agents assigned and m does a bid on j according to k
                 // (Sum of all N: Xijn > 0) < Qj

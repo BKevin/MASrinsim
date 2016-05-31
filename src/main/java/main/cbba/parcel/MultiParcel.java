@@ -109,6 +109,11 @@ public class MultiParcel extends MyParcel {
             matches = subParcels.stream().filter((SubParcel s) -> !s.getAllocatedVehicle().equals(from)).collect(Collectors.<SubParcel>toList());
         }
 
+        /**
+         * TODO consistency problem
+         * Allocation cannot change after pickup, if some subparcel is not yet picked up and changes owner, but another
+         * subparcel in the list is changed owner, then this allocation change can fail.
+         */
         return matches.get(0).allocateTo(to);
     }
 

@@ -68,6 +68,11 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
             this.getCommDevice().get().broadcast(new ParcelMessage(this));
             setAnnounced();
         }
+
+        PDPModel.ParcelState state = this.getPDPModel().getParcelState(this);
+        if(!state.equals(PDPModel.ParcelState.ANNOUNCED) && !state.equals(PDPModel.ParcelState.AVAILABLE)){
+            this.getCommDevice().get().broadcast(new SoldParcelMessage(this));
+        }
     }
 
     protected void setAnnounced(){
@@ -248,6 +253,9 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
     }
 
     public Parcel allocateTo(Vehicle vehicle) {
+        if(!this.getPDPModel().getParcels(PDPModel.ParcelState.AVAILABLE, PDPModel.ParcelState.ANNOUNCED).contains(this) ){
+            throw new IllegalStateException("Parcel cannot be transferred anymore.");
+        }
         this.vehicle = vehicle;
         return this;
     }
