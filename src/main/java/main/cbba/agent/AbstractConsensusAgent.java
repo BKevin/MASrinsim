@@ -228,11 +228,6 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
         List<Parcel> result = new LinkedList<Parcel>();
 
-        for(Parcel p : parcels){
-            result.add(p);
-            result.add(p);
-        }
-
         // Check for parcels that are picked up but not delivered yet.
 //        List<Parcel> current = this.getRoute().stream().collect(Collectors.toList());
         ImmutableSet<Parcel> currentContents = this.getPDPModel().getContents(this);
@@ -242,6 +237,13 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
             for(Parcel p : currentContents)
                 // correct if you have max 1 package in load.
                 result.add(0, p);
+        }
+
+        for(Parcel p : parcels){
+            if(!currentContents.contains(p)){
+                result.add(p);
+                result.add(p);
+            }
         }
 
         return result;
@@ -320,17 +322,21 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
             if (contents instanceof Snapshot) {
                 this.setCommunicationTimestamp(message);
 
-                evaluateSnapshot((Snapshot) message.getContents(), (AbstractConsensusAgent) sender );
+                evaluateSnapshot((Snapshot) message.getContents(), (AbstractConsensusAgent) sender);
+                LoggerFactory.getLogger(this.getClass()).info("Received Snapshot from {} to {} : {}", sender, this, contents);
             }
 
             if(contents instanceof SoldParcelMessage){
-                this.removeParcel(((ParcelMessage) contents).getParcel());}
-
+                this.removeParcel(((ParcelMessage) contents).getParcel());
+                LoggerFactory.getLogger(this.getClass()).info("Received SoldParcelMessage from {} to {} : {}", sender, this, contents);
+            }
             else if (contents instanceof ParcelMessage){
                 //TODO meer nodig?
-                this.addParcel(((ParcelMessage) contents).getParcel());}
+                this.addParcel(((ParcelMessage) contents).getParcel());
+                LoggerFactory.getLogger(this.getClass()).info("Received ParcelMessage from {} to {} : {}", sender, this, contents);
+            }
 
-        }
+                }
 
     }
 
