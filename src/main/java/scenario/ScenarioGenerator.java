@@ -16,10 +16,10 @@ public class ScenarioGenerator {
     private static double width = 10;
     private static double height = 10;
 
-    private static int amountVehiclesAtStart = 5;
-    private static int amountParcelsAtStart = 3;
+    private static int amountVehiclesAtStart = 2;
+    private static int amountParcelsAtStart = 1;
     private static int amountNewVehicles = 0;
-    private static int amountNewParcels = 100;
+    private static int amountNewParcels = 0;
 
 
     private static long vehicleAverageInterArrivalTime; //ms
