@@ -79,6 +79,19 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
             this.getCommDevice().get().broadcast(new SoldParcelMessage(this));
             this.setAnnouncedSold();
         }
+
+
+        dismissMessages();
+
+    }
+
+    /**
+     * Ignore all incoming messages
+     */
+    private void dismissMessages() {
+        for(Message m : this.getCommDevice().get().getUnreadMessages()){
+            continue;
+        }
     }
 
     protected void setAnnouncedArrival(){ this.announcedArrival = true; }
