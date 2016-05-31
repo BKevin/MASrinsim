@@ -157,22 +157,6 @@ public class CbgaAgent extends AbstractConsensusAgent {
 
     }
 
-    @Override
-    public boolean findConsensus() {
-
-        // Send snapshot to all agents
-        // Construct snapshot message
-        //TODO kan ook via this.getCurrentTime(), geeft rechtstreeks long value.
-        boolean thisIsBrandNewInformation;
-        if(thisIsBrandNewInformation = !this.getCommDevice().get().getUnreadMessages().isEmpty()) {
-            sendSnapshot(new CbgaSnapshot(this, this.getCurrentTimeLapse()));
-        }
-
-        evaluateMessages();
-
-        return !thisIsBrandNewInformation;
-    }
-
     /**
      * Evaluate a single snapshot message from another sender
      *
@@ -262,6 +246,11 @@ public class CbgaAgent extends AbstractConsensusAgent {
             }
 
         }
+    }
+
+    @Override
+    protected Snapshot generateSnapshot() {
+        return new CbgaSnapshot(this, this.getCurrentTimeLapse());
     }
 
 }

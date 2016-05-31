@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableSet;
 import main.MyParcel;
 import main.MyVehicle;
 import main.cbba.parcel.MultiParcel;
+import main.cbba.snapshot.CbbaSnapshot;
 import main.cbba.snapshot.Snapshot;
 import main.comm.ParcelMessage;
 import main.comm.SoldParcelMessage;
@@ -68,9 +69,9 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
     public abstract void constructBundle();
 
-    public abstract boolean findConsensus();
-
     public abstract void evaluateSnapshot(Snapshot snaphot, AbstractConsensusAgent k);
+
+    protected abstract Snapshot generateSnapshot();
 
     public LinkedList<Parcel> getB() {
         return b;
@@ -115,6 +116,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
     protected void sendSnapshot(Snapshot snapshot){
         // If the current information is different from the information we sent last time, resend.
+        //FIXME equals
         if(!snapshot.equals(this.getSnapshot())){
 
             this.setSnapshot(snapshot);
@@ -272,6 +274,19 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         return bid < otherBid;
     }
 
+    public boolean findConsensus() {
+
+        // Send snapshot to all agents
+        // Construct snapshot message
+        //TODO kan ook via this.getCurrentTime(), geeft rechtstreeks long value.
+        boolean hasNewInformation = this.getCommDevice().get().getReceivedCount() > 0;
+
+        sendSnapshot(this.generateSnapshot());
+
+        evaluateMessages();
+
+        return !hasNewInformation;
+    }
 
     /**
      * Evaluate received message from all agents

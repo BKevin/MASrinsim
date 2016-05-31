@@ -63,6 +63,7 @@ public class CbbaAgent extends AbstractConsensusAgent {
 //                        }
 //                    }
                     long bid = this.calculateBestRouteWith(parcel);
+                    LoggerFactory.getLogger(this.getClass()).info("%M Route value for {}: {}", parcel, bid);
                     //check if bid is better than current best
                     if(isBetterBidThan(bid,this.y.get(parcel))){
                         //check if bid is better than previous best
@@ -93,14 +94,13 @@ public class CbbaAgent extends AbstractConsensusAgent {
         // Send snapshot to all agents
         // Construct snapshot message
         //TODO kan ook via this.getCurrentTime(), geeft rechtstreeks long value.
-        boolean thisIsBrandNewInformation = !this.getCommDevice().get().getUnreadMessages().isEmpty();
-//        if(thisIsBrandNewInformation = !this.getCommDevice().get().getUnreadMessages().isEmpty()) {
-            sendSnapshot(new CbbaSnapshot(this, this.getCurrentTimeLapse()));
-//        }
+        boolean hasNewInformation = this.getCommDevice().get().getReceivedCount() > 0;
+
+        sendSnapshot(new CbbaSnapshot(this, this.getCurrentTimeLapse()));
 
         evaluateMessages();
 
-        return !thisIsBrandNewInformation;
+        return !hasNewInformation;
     }
 
     /**
@@ -142,6 +142,11 @@ public class CbbaAgent extends AbstractConsensusAgent {
 
         }
 
+    }
+
+    @Override
+    protected Snapshot generateSnapshot() {
+        return new CbbaSnapshot(this, this.getCurrentTimeLapse());
     }
 
     private void senderThinksHeWins(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, CbbaSnapshot mySnapshot, CbbaSnapshot otherSnapshot) {
