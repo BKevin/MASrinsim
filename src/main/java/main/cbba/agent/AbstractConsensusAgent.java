@@ -19,6 +19,7 @@ import main.comm.ParcelMessage;
 import main.comm.SoldParcelMessage;
 import main.route.evaluation.RouteEvaluation;
 import main.route.evaluation.RouteTimes;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -47,7 +48,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     protected void preTick(TimeLapse time) {
         super.preTick(time);
 
-        org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick start for {0}", this);
+//        org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick start for {}", this);
 
         ArrayList<Parcel> previous = null;
 
@@ -61,7 +62,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 //            org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick %s, %s", this, this.getP().size());
         }
 
-        org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick done for {0}", this);
+//        org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick done for {}", this);
 
     }
 
@@ -114,7 +115,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
     protected void sendSnapshot(Snapshot snapshot){
         // If the current information is different from the information we sent last time, resend.
-        if(this.getSnapshot() != null && !this.getSnapshot().equals(snapshot)){
+        if(!snapshot.equals(this.getSnapshot())){
 
             this.setSnapshot(snapshot);
 
@@ -123,6 +124,8 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                 MyVehicle v = (MyVehicle) c;
                 this.getCommDevice().get().send(snapshot, v);
             }
+
+            LoggerFactory.getLogger(this.getClass()).info("Sent snapshot from {},  {}", this, snapshot);
         };
     }
 
@@ -271,9 +274,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     /**
      * Evaluate received message from all agents
      */
-    protected boolean evaluateMessages() {
-
-        boolean hasReceivedSnapshot = false;
+    protected void evaluateMessages() {
 
         for (Message message : this.getCommDevice().get().getUnreadMessages()) {
 
@@ -287,7 +288,6 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                 this.setCommunicationTimestamp(message);
 
                 evaluateSnapshot((Snapshot) message.getContents(), (AbstractConsensusAgent) sender );
-                hasReceivedSnapshot = true;
             }
 
             if(contents instanceof SoldParcelMessage){
@@ -299,7 +299,6 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
         }
 
-        return !hasReceivedSnapshot;
     }
 
     protected abstract void removeParcel(Parcel parcel);
