@@ -5,6 +5,7 @@ import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
 import com.google.common.collect.ImmutableMap;
 import main.cbba.snapshot.CbbaSnapshot;
 import main.cbba.snapshot.Snapshot;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -92,9 +93,14 @@ public class CbbaAgent extends AbstractConsensusAgent {
         // Send snapshot to all agents
         // Construct snapshot message
         //TODO kan ook via this.getCurrentTime(), geeft rechtstreeks long value.
-        sendSnapshot(new CbbaSnapshot(this, this.getCurrentTimeLapse()));
+        boolean thisIsBrandNewInformation = !this.getCommDevice().get().getUnreadMessages().isEmpty();
+//        if(thisIsBrandNewInformation = !this.getCommDevice().get().getUnreadMessages().isEmpty()) {
+            sendSnapshot(new CbbaSnapshot(this, this.getCurrentTimeLapse()));
+//        }
 
-        return evaluateMessages();
+        evaluateMessages();
+
+        return !thisIsBrandNewInformation;
     }
 
     /**
@@ -278,6 +284,8 @@ public class CbbaAgent extends AbstractConsensusAgent {
     @Override
     protected void setWinningBid(Parcel parcel, AbstractConsensusAgent agent, Long bid){
         super.setWinningBid(parcel, agent, bid);
+
+        LoggerFactory.getLogger(this.getClass()).info("%M {} {} {}", parcel, agent, bid);
 
         this.y.put(parcel, bid);
         this.z.put(parcel, agent);
