@@ -306,7 +306,8 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     }
 
     /**
-     * Projected time is the moment that the vehicle may assume other tasks. If there are tasks in cargo they will have to be completed first. Their completion time is added to the current time.
+     * Projected time is the moment that the vehicle may assume other tasks. If there are tasks in cargo they will
+     * have to be completed first. Their completion time is added to the current time.
      * @return The delivery time of the parcel in cargo or the current time if there is no parcel in cargo
      */
     private Long getProjectedStartTime(){
@@ -334,11 +335,11 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         // Send snapshot to all agents
         // Construct snapshot message
         //TODO kan ook via this.getCurrentTime(), geeft rechtstreeks long value.
-        boolean hasNewInformation = this.getCommDevice().get().getReceivedCount() > 0;
+        boolean hasNewInformation = this.getCommDevice().get().getUnreadCount() > 0;
 
-        sendSnapshot(this.generateSnapshot());
+        this.sendSnapshot(this.generateSnapshot());
 
-        evaluateMessages();
+        this.evaluateMessages();
 
         return !hasNewInformation;
     }

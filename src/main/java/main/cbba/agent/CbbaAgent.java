@@ -88,20 +88,20 @@ public class CbbaAgent extends AbstractConsensusAgent {
     }
 
 
-    @Override
-    public boolean findConsensus() {
-
-        // Send snapshot to all agents
-        // Construct snapshot message
-        //TODO kan ook via this.getCurrentTime(), geeft rechtstreeks long value.
-        boolean hasNewInformation = this.getCommDevice().get().getUnreadCount() > 0;
-
-        sendSnapshot(new CbbaSnapshot(this, this.getCurrentTimeLapse()));
-
-        evaluateMessages();
-
-        return !hasNewInformation;
-    }
+//    @Override
+//    public boolean findConsensus() {
+//
+//        // Send snapshot to all agents
+//        // Construct snapshot message
+//        //TODO kan ook via this.getCurrentTime(), geeft rechtstreeks long value.
+//        boolean hasNewInformation = this.getCommDevice().get().getUnreadCount() > 0;
+//
+//        sendSnapshot(new CbbaSnapshot(this, this.getCurrentTimeLapse()));
+//
+//        evaluateMessages();
+//
+//        return !hasNewInformation;
+//    }
 
     /**
      * Evaluate a single snapshot message from another sender
