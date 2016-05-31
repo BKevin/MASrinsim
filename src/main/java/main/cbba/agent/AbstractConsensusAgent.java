@@ -246,7 +246,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     }
 
     protected long calculatePenalty(ArrayList<? extends Parcel> path) {
-        RouteTimes routeTimes = new RouteTimes(this,new ArrayList<Parcel>(path),this.getPosition().get(),this.getCurrentTime(),this.getCurrentTimeLapse().getTimeUnit());
+        RouteTimes routeTimes = new RouteTimes(this.getPDPModel(), this,new ArrayList<Parcel>(path),this.getPosition().get(),this.getCurrentTime(),this.getCurrentTimeLapse().getTimeUnit());
         RouteEvaluation evaluation = new RouteEvaluation(routeTimes);
 
         return evaluation.getPenalty().getRoutePenalty();

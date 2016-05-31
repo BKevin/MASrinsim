@@ -1,9 +1,9 @@
 package main.route.evaluation;
 
+import com.github.rinde.rinsim.core.model.pdp.PDPModel;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
-import com.github.rinde.rinsim.core.model.pdp.Vehicle;
 import com.github.rinde.rinsim.geom.Point;
-import com.github.rinde.rinsim.pdptw.common.RouteFollowingVehicle;
+import main.cbba.agent.AbstractConsensusAgent;
 
 import javax.measure.quantity.Duration;
 import javax.measure.unit.Unit;
@@ -14,7 +14,7 @@ import java.util.*;
  */
 public class RouteTimes{
 
-    private final Collection<? extends Parcel> route;
+    private final Collection<? extends Parcel> path;
 
     // Start time
     private final Long startTime;
@@ -27,32 +27,32 @@ public class RouteTimes{
     private final Map<Parcel, Long> deliveryTimes;
 
 
-    public RouteTimes(RouteFollowingVehicle v, Point startPosition, Long startTime, Unit<Duration> timeUnit) {
-        this.route = v.getRoute();
+//    public RouteTimes(RouteFollowingVehicle v, Point startPosition, Long startTime, Unit<Duration> timeUnit) {
+//        this.route = v.getRoute();
+//
+//        this.startTime = startTime;
+//        this.startPosition = startPosition;
+//
+//        this.pickupTimes = new HashMap<>();
+//        this.deliveryTimes = new HashMap<>();
+//
+//        computeRouteTimes(v, timeUnit);
+//    }
 
+    public RouteTimes(PDPModel pdpModel, AbstractConsensusAgent v, Collection<? extends Parcel> path, Point startPosition, Long startTime, Unit<Duration> timeUnit){
+        this.path = path;
         this.startTime = startTime;
         this.startPosition = startPosition;
 
         this.pickupTimes = new HashMap<>();
         this.deliveryTimes = new HashMap<>();
 
-        computeRouteTimes(v, timeUnit);
-    }
-
-    public RouteTimes(RouteFollowingVehicle v, Collection<? extends Parcel> route, Point startPosition, Long startTime, Unit<Duration> timeUnit){
-        this.route = route;
-        this.startTime = startTime;
-        this.startPosition = startPosition;
-
-        this.pickupTimes = new HashMap<>();
-        this.deliveryTimes = new HashMap<>();
-
-        computeRouteTimes(v, timeUnit);
+        computeRouteTimes(pdpModel, v, timeUnit);
     }
 
 
-    public Collection<? extends Parcel> getRoute() {
-        return route;
+    public Collection<? extends Parcel> getPath() {
+        return path;
     }
 
     public Map<? extends Parcel, Long> getPickupTimes() {
@@ -63,35 +63,53 @@ public class RouteTimes{
         return deliveryTimes;
     }
 
-    protected void computeRouteTimes(Vehicle v, Unit<Duration> timeUnit){
+    protected void computeRouteTimes(PDPModel pdpModel, AbstractConsensusAgent v, Unit<Duration> timeUnit){
 
         final Map<Parcel, Long> pickupTimes = new HashMap();
         final Map<Parcel, Long> deliveryTimes = new HashMap();
 
         Point currentPosition = this.startPosition;
+        long currentTime = this.startTime;
 
-        for(Parcel p : this.getRoute()){
-            //WARNING parcel needs to be in the route of a vehicle twice (once for pickup and once for delivery)
 
-            //From last parcel delivery to current parcel pickup
-            //FIXME not linked yet
-            long pickupTravelTime = 0;//v.computeTravelTimeFromTo(currentPosition, p.getPickupLocation(), timeUnit);
-            //From current parcel pickup to current parcel delivery
-            //FIXME not linked yet
-            long deliveryTravelTime = 0;//v.computeTravelTimeFromTo(p.getPickupLocation(), p.getDeliveryLocation(), timeUnit);
+        for(Parcel p : this.getPath()){
+            long pickupTime;
+            long deliveryTime;
 
-            // Update current position
-            currentPosition = p.getDeliveryLocation();
+            if (pdpModel.getParcelState(p) == PDPModel.ParcelState.AVAILABLE
+                    || pdpModel.getParcelState(p) == PDPModel.ParcelState.ANNOUNCED){ //FIXME niet zeker van ANNOUNCED
 
-            // Assuming TimeWindowPolicy.TimeWindowPolicies.TARDY_ALLOWED
-            long pickupTime = this.startTime
-                    + (p.canBePickedUp(v, pickupTravelTime) ? pickupTravelTime : p.getPickupTimeWindow().begin());
-            long deliveryTime = pickupTime
-                    + p.getPickupDuration()
-                    + (p.canBeDelivered(v, deliveryTravelTime) ? deliveryTravelTime : p.getDeliveryTimeWindow().begin());
+                //From last parcel delivery to current parcel pickup
+                long pickupTravelTime = v.computeTravelTimeFromTo(currentPosition, p.getPickupLocation(), timeUnit);
+                // Assuming TimeWindowPolicy.TimeWindowPolicies.TARDY_ALLOWED
+                pickupTime = currentTime
+                        + (p.canBePickedUp(v, pickupTravelTime) ? pickupTravelTime : p.getPickupTimeWindow().begin());
+                pickupTimes.put(p, pickupTime);
 
-            pickupTimes.put(p, pickupTime);
-            deliveryTimes.put(p, deliveryTime);
+            }
+            else{
+                pickupTime = currentTime;
+            }
+
+            if(pdpModel.getParcelState(p) != PDPModel.ParcelState.DELIVERED
+                    && pdpModel.getParcelState(p) != PDPModel.ParcelState.DELIVERING) {
+
+                //From current parcel pickup to current parcel delivery
+                long deliveryTravelTime = v.computeTravelTimeFromTo(p.getPickupLocation(), p.getDeliveryLocation(), timeUnit);
+                // Assuming TimeWindowPolicy.TimeWindowPolicies.TARDY_ALLOWED
+                deliveryTime = pickupTime
+                        + p.getPickupDuration()
+                        + (p.canBeDelivered(v, deliveryTravelTime) ? deliveryTravelTime : p.getDeliveryTimeWindow().begin());
+                deliveryTimes.put(p, deliveryTime);
+
+
+                // Update current position (only if you had to move to deliver it)
+                currentPosition = p.getDeliveryLocation();
+                // Update current time (only if you had to move to deliver it)
+                currentTime = deliveryTime;
+            }
+
+
         }
 
         this.pickupTimes.putAll(pickupTimes);
@@ -108,7 +126,7 @@ public class RouteTimes{
 
         RouteTimes rt = (RouteTimes) o;
 
-        return this.getRoute().equals(rt.getRoute())
+        return this.getPath().equals(rt.getPath())
                 && this.getDeliveryTimes().equals(rt.getDeliveryTimes())
                 && this.getPickupTimes().equals(rt.getPickupTimes());
     }

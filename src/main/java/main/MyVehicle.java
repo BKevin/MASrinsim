@@ -134,7 +134,7 @@ public class MyVehicle extends RouteFollowingVehicle implements CommUser{
     /**
      * Compute the travel time between two points in the simulation at the speed of this vehicle.
      */
-    protected long computeTravelTimeFromTo(Point a, Point b, Unit<Duration> timeUnit) {
+    public long computeTravelTimeFromTo(Point a, Point b, Unit<Duration> timeUnit) {
         // TODO add caching to travel time calculations
 
         final Measure<Double, Length> distance = Measure.valueOf(Point.distance(
