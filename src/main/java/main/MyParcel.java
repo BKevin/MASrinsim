@@ -5,9 +5,11 @@ import com.github.rinde.rinsim.core.model.pdp.*;
 import com.github.rinde.rinsim.core.model.time.TickListener;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.github.rinde.rinsim.geom.Point;
+import com.github.rinde.rinsim.util.TimeWindow;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import main.comm.*;
+import org.slf4j.LoggerFactory;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
@@ -35,13 +37,14 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
     // Delivery details
     private long pickUpTime = 0;
     private long deliverTime = 0;
-    private Vehicle vehicle;
+    private List<Vehicle> allocatedVehicles;
 
     public MyParcel(ParcelDTO parcelDTO){
         super(parcelDTO);
         this.announced = false;
 //        broadcasted = false;
 //        bids = null;
+        this.allocatedVehicles = new ArrayList<>();
     }
 
     @Override
@@ -160,14 +163,15 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
     public boolean canBePickedUp(Vehicle v, long time){
         // Timewindowpolicy is already check before pickup
         // DefaultPDPModel#pickup:194
-        return this.vehicle == v;
+//        LoggerFactory.getLogger(this.getClass()).info("canBePickedUp = {} -> expect: {} and actual: {}",this.vehicle == v, this.vehicle, v);
+        return this.isAllocated() && this.allocatedVehicles.contains(v);
     }
 
     @Override
     public boolean canBeDelivered(Vehicle v, long time) {
         //Timewindowpolicy is already checked before delivery
         // DefaultPDPModel#deliver:282
-        return v == this.vehicle;
+        return this.isAllocated() && this.allocatedVehicles.contains(v);
     }
 
     /**
@@ -219,7 +223,6 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
      */
     public long computePenalty(Long pickupTime, Long deliveryTime) {
         // TODO add caching to parcel penalty calculations
-
         return this.computePickupPenalty(pickupTime) + this.computeDeliveryPenalty(deliveryTime);
     }
 
@@ -232,9 +235,11 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
 
     private long computePickupPenalty(Long pickupTime) {
         // Linear penalty calculation
-        return pickupTime - this.getPickupTimeWindow().end() > 0
-                ? pickupTime - this.getPickupTimeWindow().end()
-                : 0;
+        TimeWindow pickupTimeWindow = this.getPickupTimeWindow();
+        long end = pickupTimeWindow.end();
+        return pickupTime - end > 0
+                ? pickupTime - end
+                : 0L;
     }
 
     /**
@@ -245,23 +250,31 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
      * @return Whether this parcel is allocated to a vehicle
      */
     public boolean isAllocated() {
-        return this.vehicle != null;
+        return this.allocatedVehicles.size() == 1;
     }
 
     public Vehicle getAllocatedVehicle() {
-        return vehicle;
+        if(isAllocated())
+            return this.allocatedVehicles.get(0);
+        else
+            return null;
     }
 
     public Parcel allocateTo(Vehicle vehicle) {
         if(!this.getPDPModel().getParcels(PDPModel.ParcelState.AVAILABLE, PDPModel.ParcelState.ANNOUNCED).contains(this) ){
             throw new IllegalStateException("Parcel cannot be transferred anymore.");
         }
-        this.vehicle = vehicle;
+        this.allocatedVehicles.add(vehicle);
         return this;
     }
 
+    public Parcel loseAllocation(Vehicle vehicle){
+        this.allocatedVehicles.remove(vehicle);
+        return  this;
+    }
+
     protected Parcel changeAllocation(Vehicle from, Vehicle to){
-        if(from != this.vehicle){
+        if(from != this.getAllocatedVehicle()){
             throw new IllegalArgumentException("'From' vehicle does not match current allocation.");
         }
         // FIXME check if SubParcel method correctly calls this.

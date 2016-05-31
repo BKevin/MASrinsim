@@ -66,6 +66,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
 //        org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick done for {}", this);
 
+//        LoggerFactory.getLogger(this.getClass()).info("Route size: {} for {} ", this.getRoute().size(), this);
     }
 
     public abstract void constructBundle();
@@ -176,7 +177,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                 int ind = this.getB().indexOf(parcel);
                 //make lists of parcels to keep and to remove
                 ImmutableList<Parcel> newB = FluentIterable.from(this.getB()).limit(ind).toList();
-                ImmutableList<Parcel> removedFromB = FluentIterable.from(this.getB()).skip(ind).toList(); //Do take 'parcel' as it should be already handled
+                ImmutableList<Parcel> removedFromB = FluentIterable.from(this.getB()).skip(ind+1).toList(); //Do take 'parcel' as it should be already handled
 
                 this.handleLostParcels(parcel, removedFromB);
 
@@ -190,6 +191,13 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
      * @param parcels
      */
     protected void handleLostParcels(Parcel cause, List<Parcel> parcels){
+        if(cause instanceof MyParcel)
+            ((MyParcel) cause).loseAllocation(this);
+        for(Parcel parcel : parcels){
+            if(parcel instanceof MyParcel)
+                ((MyParcel) parcel).loseAllocation(this);
+        }
+
         this.getP().remove(cause);
         this.getB().remove(cause);
         this.getP().removeAll(parcels);
