@@ -110,7 +110,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
     protected void sendSnapshot(Snapshot snapshot){
         // If the current information is different from the information we sent last time, resend.
-        if(!this.getSnapshot().equals(snapshot)){
+        if(this.getSnapshot() != null && !this.getSnapshot().equals(snapshot)){
 
             this.setSnapshot(snapshot);
 
