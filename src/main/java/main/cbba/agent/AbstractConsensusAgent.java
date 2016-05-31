@@ -22,6 +22,7 @@ import main.route.evaluation.RouteEvaluation;
 import main.route.evaluation.RouteTimes;
 
 import java.util.*;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -48,6 +49,8 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     protected void preTick(TimeLapse time) {
         super.preTick(time);
 
+        org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick start for {0}", this);
+
         ArrayList<Parcel> previous = null;
 
         //"Realtime" implementatie: verander de while loop door een for loop of asynchrone thread,
@@ -57,7 +60,10 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
             previous = new ArrayList<>(getP());
             constructBundle();
             findConsensus();
+//            org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick %s, %s", this, this.getP().size());
         }
+
+        org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick done for {0}", this);
 
     }
 
