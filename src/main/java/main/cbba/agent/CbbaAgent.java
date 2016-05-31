@@ -149,7 +149,7 @@ public class CbbaAgent extends AbstractConsensusAgent {
     private void senderThinksHeWins(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, CbbaSnapshot mySnapshot, CbbaSnapshot otherSnapshot) {
         //I think I win
         if(this.equals(myIdea)){
-            if(otherSnapshot.getY().get(parcel) > mySnapshot.getY().get(parcel))
+            if(compareBids(otherSnapshot.getY().get(parcel),sender,mySnapshot.getY().get(parcel),this))
                 update(parcel, otherSnapshot);
             return;
         }
@@ -160,7 +160,7 @@ public class CbbaAgent extends AbstractConsensusAgent {
         }
         if(myIdea != null && !sender.equals(myIdea) && !this.equals(myIdea)){
             if((otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
-                    || (otherSnapshot.getY().get(parcel) > mySnapshot.getY().get(parcel)))
+                    || (compareBids(otherSnapshot.getY().get(parcel),sender,mySnapshot.getY().get(parcel),myIdea)))
                 update(parcel, otherSnapshot);
             return;
         }
@@ -197,12 +197,12 @@ public class CbbaAgent extends AbstractConsensusAgent {
     private void senderThinksSomeoneElseWins(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, CbbaSnapshot mySnapshot, AbstractConsensusAgent otherIdea, CbbaSnapshot otherSnapshot) {
         if(this.equals(myIdea)) {
             if((otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
-                    && (otherSnapshot.getY().get(parcel) > mySnapshot.getY().get(parcel)))
+                    && (compareBids(otherSnapshot.getY().get(parcel),otherIdea,mySnapshot.getY().get(parcel),myIdea)))
                 update(parcel, otherSnapshot);
             return;
         }
         if(sender.equals(myIdea)){
-            if(otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
+            if(otherSnapshot.getCommunicationTimestamps().get(otherIdea) > mySnapshot.getCommunicationTimestamps().get(otherIdea))
                 update(parcel, otherSnapshot);
             else
                 reset(parcel);
@@ -218,7 +218,7 @@ public class CbbaAgent extends AbstractConsensusAgent {
                     && otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea))
                 update(parcel, otherSnapshot);
             if(otherSnapshot.getCommunicationTimestamps().get(otherIdea) > mySnapshot.getCommunicationTimestamps().get(otherIdea)
-                    && (otherSnapshot.getY().get(parcel) > mySnapshot.getY().get(parcel)))
+                    && (compareBids(otherSnapshot.getY().get(parcel),otherIdea,mySnapshot.getY().get(parcel),myIdea)))
                 update(parcel, otherSnapshot);
             if(otherSnapshot.getCommunicationTimestamps().get(myIdea) > mySnapshot.getCommunicationTimestamps().get(myIdea)
                     && mySnapshot.getCommunicationTimestamps().get(otherIdea) > otherSnapshot.getCommunicationTimestamps().get(otherIdea))
@@ -253,6 +253,11 @@ public class CbbaAgent extends AbstractConsensusAgent {
         }
 
         throw new IllegalArgumentException("Something went wrong in senderThinksNododyWins: unreachable code.");
+    }
+
+    private boolean compareBids(long bid1, AbstractConsensusAgent agent1, long bid2, AbstractConsensusAgent agent2){
+        return isBetterBidThan(bid1,bid2)
+                || (bid1 == bid2 && agent1.hashCode() > agent2.hashCode());
     }
 
     private void update(Parcel parcel, CbbaSnapshot snapshot) {
