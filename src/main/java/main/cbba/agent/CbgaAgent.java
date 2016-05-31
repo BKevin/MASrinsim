@@ -75,6 +75,8 @@ public class CbgaAgent extends AbstractConsensusAgent {
     @Override
     protected void addParcel(Parcel parcel) {
         //FIXME moet er iets worden toegevoegd?
+        for(AbstractConsensusAgent agent : this.X.columnKeySet())
+            this.X.put(parcel,agent, 0L);
     }
 
 //    /**
