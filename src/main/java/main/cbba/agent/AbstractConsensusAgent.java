@@ -7,6 +7,7 @@ import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.Vehicle;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
+import com.github.rinde.rinsim.geom.Point;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -283,9 +284,40 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     }
 
     protected long calculateRouteCost(ArrayList<? extends Parcel> path) {
-        RouteTimes routeTimes = new RouteTimes(this.getPDPModel(), this,new ArrayList<Parcel>(path),this.getPosition().get(),this.getCurrentTime(),this.getCurrentTimeLapse().getTimeUnit());
+        RouteTimes routeTimes = new RouteTimes(
+                this.getPDPModel(),
+                this,
+                new ArrayList<Parcel>(path),
+                this.getProjectedStartPosition(),
+                this.getProjectedStartTime(),
+                this.getCurrentTimeLapse().getTimeUnit());
 
         return routeTimes.getValue(new TotalCostValue());
+    }
+
+    /**
+     * Projected position is the position of the vehicle after the parcel in cargo has been delivered
+     * @return The delivery position of the parcel in cargo or the current position if there is no parcel in cargo
+     */
+    private Point getProjectedStartPosition() {
+        return this.getPDPModel().getContents(this).isEmpty()
+                ? this.getPosition().get()
+                : new ArrayList<Parcel>(this.getPDPModel().getContents(this)).get(0).getDeliveryLocation();
+    }
+
+    /**
+     * Projected time is the moment that the vehicle may assume other tasks. If there are tasks in cargo they will have to be completed first. Their completion time is added to the current time.
+     * @return The delivery time of the parcel in cargo or the current time if there is no parcel in cargo
+     */
+    private Long getProjectedStartTime(){
+
+        return this.getPDPModel().getContents(this).isEmpty()
+                ? this.getCurrentTime()
+                : this.getCurrentTime() + this.computeTravelTimeFromTo(
+                        this.getPosition().get(),
+                        getProjectedStartPosition(),
+                        this.getCurrentTimeLapse().getTimeUnit()
+                );
     }
 
     public Integer calculateBestRouteIndexWith(Parcel parcel) {
