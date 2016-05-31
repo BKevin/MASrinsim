@@ -31,4 +31,8 @@ public class CbbaSnapshot extends Snapshot {
         return z;
     }
 
+    @Override
+    public String toString() {
+        return super.toString() + " \ny= " + y + " \nz= "+ z ;
+    }
 }

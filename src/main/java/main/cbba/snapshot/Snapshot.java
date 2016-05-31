@@ -50,4 +50,9 @@ public abstract class Snapshot implements MessageContents{
         return communicationTimestamps;
     }
 
+
+    @Override
+    public String toString() {
+        return ""+this.timestamp;
+    }
 }
