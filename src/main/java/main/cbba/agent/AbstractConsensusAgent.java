@@ -121,8 +121,10 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
             //TODO getVehicles: send to agent k with g_ik(t) = 1.
             for(Vehicle c : this.getPDPModel().getVehicles()) {
-                MyVehicle v = (MyVehicle) c;
-                this.getCommDevice().get().send(snapshot, v);
+                if(c != this) {
+                    MyVehicle v = (MyVehicle) c;
+                    this.getCommDevice().get().send(snapshot, v);
+                }
             }
 
             LoggerFactory.getLogger(this.getClass()).info("Sent snapshot from {},  {}", this, snapshot);
