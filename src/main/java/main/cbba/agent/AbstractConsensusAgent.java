@@ -3,6 +3,7 @@ package main.cbba.agent;
 import com.github.rinde.rinsim.core.model.comm.CommUser;
 import com.github.rinde.rinsim.core.model.comm.Message;
 import com.github.rinde.rinsim.core.model.comm.MessageContents;
+import com.github.rinde.rinsim.core.model.pdp.PDPModel;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.Vehicle;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
@@ -16,6 +17,7 @@ import main.MyVehicle;
 import main.cbba.parcel.MultiParcel;
 import main.cbba.snapshot.Snapshot;
 import main.comm.ParcelMessage;
+import main.comm.SoldParcelMessage;
 import main.route.evaluation.RouteEvaluation;
 import main.route.evaluation.RouteTimes;
 
@@ -281,11 +283,17 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                 evaluateSnapshot((Snapshot) message.getContents(), (AbstractConsensusAgent) sender );
             }
 
-            if (contents instanceof ParcelMessage){
+            if(contents instanceof SoldParcelMessage){
+                this.removeParcel(((ParcelMessage) contents).getParcel());}
+
+            else if (contents instanceof ParcelMessage){
                 //TODO meer nodig?
                 this.addParcel(((ParcelMessage) contents).getParcel());}
+
         }
     }
+
+    protected abstract void removeParcel(Parcel parcel);
 
     /**
      * Subclasses are given the new Parcel and can change their lists accordingly.
