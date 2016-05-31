@@ -14,12 +14,11 @@ import com.google.common.collect.ImmutableSet;
 import main.MyParcel;
 import main.MyVehicle;
 import main.cbba.parcel.MultiParcel;
-import main.cbba.snapshot.CbbaSnapshot;
 import main.cbba.snapshot.Snapshot;
 import main.comm.ParcelMessage;
 import main.comm.SoldParcelMessage;
-import main.route.evaluation.RouteEvaluation;
 import main.route.evaluation.RouteTimes;
+import main.route.evaluation.strategy.TotalCostValue;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
@@ -275,19 +274,18 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         ArrayList<Parcel> adaptedPath = new ArrayList<Parcel>(path);
         adaptedPath.add(positionOfParcel,parcel);
 
-        long newPathValue = calculatePenalty(adaptedPath);
+        long newPathValue = calculateRouteCost(adaptedPath);
         // FIXME must be cached somewhere
-        long oldPathValue = calculatePenalty(this.getP());
+        long oldPathValue = calculateRouteCost(this.getP());
 
         // return difference
         return newPathValue - oldPathValue;
     }
 
-    protected long calculatePenalty(ArrayList<? extends Parcel> path) {
+    protected long calculateRouteCost(ArrayList<? extends Parcel> path) {
         RouteTimes routeTimes = new RouteTimes(this.getPDPModel(), this,new ArrayList<Parcel>(path),this.getPosition().get(),this.getCurrentTime(),this.getCurrentTimeLapse().getTimeUnit());
-        RouteEvaluation evaluation = new RouteEvaluation(routeTimes);
 
-        return evaluation.getPenalty().getRoutePenalty();
+        return routeTimes.getValue(new TotalCostValue());
     }
 
     public Integer calculateBestRouteIndexWith(Parcel parcel) {

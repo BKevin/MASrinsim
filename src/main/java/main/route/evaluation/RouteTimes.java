@@ -4,6 +4,7 @@ import com.github.rinde.rinsim.core.model.pdp.PDPModel;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.geom.Point;
 import main.cbba.agent.AbstractConsensusAgent;
+import main.route.evaluation.strategy.RouteValueStrategy;
 
 import javax.measure.quantity.Duration;
 import javax.measure.unit.Unit;
@@ -18,26 +19,16 @@ public class RouteTimes{
 
     // Start time
     private final Long startTime;
+
     // Start position
     private final Point startPosition;
-
     // Pickup times for every parcel int he route
     private final Map<Parcel, Long> pickupTimes;
+
     // Delivery times for every parcel in the route
     private final Map<Parcel, Long> deliveryTimes;
-
-
 //    public RouteTimes(RouteFollowingVehicle v, Point startPosition, Long startTime, Unit<Duration> timeUnit) {
-//        this.route = v.getRoute();
-//
-//        this.startTime = startTime;
-//        this.startPosition = startPosition;
-//
-//        this.pickupTimes = new HashMap<>();
-//        this.deliveryTimes = new HashMap<>();
-//
-//        computeRouteTimes(v, timeUnit);
-//    }
+
 
     public RouteTimes(PDPModel pdpModel, AbstractConsensusAgent v, Collection<? extends Parcel> path, Point startPosition, Long startTime, Unit<Duration> timeUnit){
         this.path = path;
@@ -50,10 +41,10 @@ public class RouteTimes{
         computeRouteTimes(pdpModel, v, timeUnit);
     }
 
-
     public Collection<? extends Parcel> getPath() {
         return path;
     }
+
 
     public Map<? extends Parcel, Long> getPickupTimes() {
         return pickupTimes;
@@ -131,7 +122,6 @@ public class RouteTimes{
         this.deliveryTimes.putAll(deliveryTimes);
     }
 
-
     @Override
     public boolean equals(Object o) {
 
@@ -144,6 +134,30 @@ public class RouteTimes{
         return this.getPath().equals(rt.getPath())
                 && this.getDeliveryTimes().equals(rt.getDeliveryTimes())
                 && this.getPickupTimes().equals(rt.getPickupTimes());
+    }
+
+
+    //    }
+//        computeRouteTimes(v, timeUnit);
+//
+//        this.deliveryTimes = new HashMap<>();
+//        this.pickupTimes = new HashMap<>();
+//
+//        this.startPosition = startPosition;
+//        this.startTime = startTime;
+//
+//        this.route = v.getRoute();
+
+    public Point getStartPosition() {
+        return startPosition;
+    }
+
+    public Long getStartTime() {
+        return startTime;
+    }
+
+    public Long getValue(RouteValueStrategy strategy){
+        return strategy.computeValue(this);
     }
 
 }

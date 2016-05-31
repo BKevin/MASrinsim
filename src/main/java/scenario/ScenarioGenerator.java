@@ -19,7 +19,7 @@ public class ScenarioGenerator {
     private static int amountVehiclesAtStart = 2;
     private static int amountParcelsAtStart = 1;
     private static int amountNewVehicles = 0;
-    private static int amountNewParcels = 0;
+    private static int amountNewParcels = 3;
 
 
     private static long vehicleAverageInterArrivalTime; //ms

@@ -29,7 +29,7 @@ public class CbbaAgent extends AbstractConsensusAgent {
 
     public void constructBundle() {
 
-//        long currentPenalty = calculatePenalty(getP());
+//        long currentPenalty = calculateRouteCost(getP());
 
 
         Set<Parcel> parcels = this.z.keySet();
