@@ -4,10 +4,7 @@ import com.github.rinde.rinsim.core.model.pdp.PDPModel;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
 import com.google.common.collect.*;
-import main.MyParcel;
 import main.cbba.parcel.MultiParcel;
-import main.cbba.parcel.SubParcel;
-import main.cbba.snapshot.CbbaSnapshot;
 import main.cbba.snapshot.CbgaSnapshot;
 import main.cbba.snapshot.Snapshot;
 
@@ -161,14 +158,14 @@ public class CbgaAgent extends AbstractConsensusAgent {
     }
 
     @Override
-    public void findConsensus() {
+    public boolean findConsensus() {
 
         // Send snapshot to all agents
         // Construct snapshot message
         //TODO kan ook via this.getCurrentTime(), geeft rechtstreeks long value.
         sendSnapshot(new CbgaSnapshot(this, this.getCurrentTimeLapse()));
 
-        evaluateMessages();
+        return evaluateMessages();
     }
 
     /**
