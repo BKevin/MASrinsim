@@ -63,6 +63,13 @@ public class RouteTimes{
         return deliveryTimes;
     }
 
+    /**
+     * Compute the predicted pickupTimes and deliveryTimes of the parcels on the path.
+     * The times are negative (-1) if they already happened in the past.
+     * @param pdpModel
+     * @param v
+     * @param timeUnit
+     */
     protected void computeRouteTimes(PDPModel pdpModel, AbstractConsensusAgent v, Unit<Duration> timeUnit){
 
         final Map<Parcel, Long> pickupTimes = new HashMap();
@@ -85,17 +92,19 @@ public class RouteTimes{
                 pickupTime = currentTime
                         + (p.canBePickedUp(v, pickupTravelTime) ? pickupTravelTime : p.getPickupTimeWindow().begin());
                 pickupTimes.put(p, pickupTime);
-
+                currentPosition = p.getPickupLocation();
             }
             else{
                 pickupTime = currentTime;
+                //Set pickupTimes as negative,to signify that it happened in the past
+                pickupTimes.put(p, -1L);
             }
 
             if(pdpModel.getParcelState(p) != PDPModel.ParcelState.DELIVERED
                     && pdpModel.getParcelState(p) != PDPModel.ParcelState.DELIVERING) {
 
                 //From current parcel pickup to current parcel delivery
-                long deliveryTravelTime = v.computeTravelTimeFromTo(p.getPickupLocation(), p.getDeliveryLocation(), timeUnit);
+                long deliveryTravelTime = v.computeTravelTimeFromTo(currentPosition, p.getDeliveryLocation(), timeUnit);
                 // Assuming TimeWindowPolicy.TimeWindowPolicies.TARDY_ALLOWED
                 deliveryTime = pickupTime
                         + p.getPickupDuration()
@@ -107,6 +116,12 @@ public class RouteTimes{
                 currentPosition = p.getDeliveryLocation();
                 // Update current time (only if you had to move to deliver it)
                 currentTime = deliveryTime;
+            }
+            else{
+                if(pdpModel.getParcelState(p) != PDPModel.ParcelState.DELIVERED)
+                    deliveryTimes.put(p,-1L);
+                if(pdpModel.getParcelState(p) != PDPModel.ParcelState.DELIVERING)
+                    deliveryTimes.put(p,currentTime);
             }
 
 
