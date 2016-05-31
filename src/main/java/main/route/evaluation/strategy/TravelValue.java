@@ -11,11 +11,13 @@ import java.util.*;
  */
 public class TravelValue implements RouteValueStrategy {
 
-    private Map<MyParcel, Long> violationMap;
-
     @Override
     public Long computeValue(RouteTimes times) {
 
+        // Empty route cost
+        if(times.getPath().size() == 0){
+            return 0L;
+        }
         return getRouteCost(times);
     }
 
@@ -30,20 +32,5 @@ public class TravelValue implements RouteValueStrategy {
 
         return maxDeliveryTime - times.getStartTime();
     }
-
-    public Long getRoutePenalty(){
-
-        Long penalty = 0L;
-
-        for(Parcel p : this.violationMap.keySet()){
-            penalty += violationMap.get(p);
-        }
-
-        return penalty;
-
-    }
-
-
-
 
 }
