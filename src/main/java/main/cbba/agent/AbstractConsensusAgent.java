@@ -3,7 +3,6 @@ package main.cbba.agent;
 import com.github.rinde.rinsim.core.model.comm.CommUser;
 import com.github.rinde.rinsim.core.model.comm.Message;
 import com.github.rinde.rinsim.core.model.comm.MessageContents;
-import com.github.rinde.rinsim.core.model.pdp.PDPModel;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.Vehicle;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
@@ -22,7 +21,6 @@ import main.route.evaluation.RouteEvaluation;
 import main.route.evaluation.RouteTimes;
 
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -56,10 +54,10 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         //"Realtime" implementatie: verander de while loop door een for loop of asynchrone thread,
         // iedere tick wordt er dan een beperkte berekening/communicatie gedaan.
 
-        while (getP() != previous){
-            previous = new ArrayList<>(getP());
+        boolean hasConsensus = false;
+        while (!hasConsensus){
             constructBundle();
-            findConsensus();
+            hasConsensus = findConsensus();
 //            org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick %s, %s", this, this.getP().size());
         }
 
@@ -69,7 +67,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
     public abstract void constructBundle();
 
-    public abstract void findConsensus();
+    public abstract boolean findConsensus();
 
     public abstract void evaluateSnapshot(Snapshot snaphot, AbstractConsensusAgent k);
 
@@ -273,7 +271,9 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     /**
      * Evaluate received message from all agents
      */
-    protected void evaluateMessages() {
+    protected boolean evaluateMessages() {
+
+        boolean hasReceivedSnapshot = false;
 
         for (Message message : this.getCommDevice().get().getUnreadMessages()) {
 
@@ -287,6 +287,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                 this.setCommunicationTimestamp(message);
 
                 evaluateSnapshot((Snapshot) message.getContents(), (AbstractConsensusAgent) sender );
+                hasReceivedSnapshot = true;
             }
 
             if(contents instanceof SoldParcelMessage){
@@ -297,6 +298,8 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                 this.addParcel(((ParcelMessage) contents).getParcel());}
 
         }
+
+        return !hasReceivedSnapshot;
     }
 
     protected abstract void removeParcel(Parcel parcel);

@@ -1,18 +1,10 @@
 package main.cbba.agent;
 
-import com.github.rinde.rinsim.core.model.comm.CommUser;
-import com.github.rinde.rinsim.core.model.comm.Message;
-import com.github.rinde.rinsim.core.model.comm.MessageContents;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
-import com.github.rinde.rinsim.core.model.pdp.Vehicle;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
 import com.google.common.collect.ImmutableMap;
-import main.MyParcel;
-import main.MyVehicle;
 import main.cbba.snapshot.CbbaSnapshot;
 import main.cbba.snapshot.Snapshot;
-import main.route.evaluation.RouteEvaluation;
-import main.route.evaluation.RouteTimes;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -53,7 +45,7 @@ public class CbbaAgent extends AbstractConsensusAgent {
             //look at all parcels
             for(Parcel parcel : notInB){
                 //if you don't own the parcel yet, check it
-                if(!this.z.get(parcel).equals(this)){
+                if(!this.equals(this.z.get(parcel))){
 //
 //                    for(int pos = 0; pos <= getP().size(); pos++){
 //                        //calculate a bid for each position
@@ -95,14 +87,14 @@ public class CbbaAgent extends AbstractConsensusAgent {
 
 
     @Override
-    public void findConsensus() {
+    public boolean findConsensus() {
 
         // Send snapshot to all agents
         // Construct snapshot message
         //TODO kan ook via this.getCurrentTime(), geeft rechtstreeks long value.
         sendSnapshot(new CbbaSnapshot(this, this.getCurrentTimeLapse()));
 
-        evaluateMessages();
+        return evaluateMessages();
     }
 
     /**
