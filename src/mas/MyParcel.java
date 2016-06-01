@@ -11,7 +11,9 @@ import mas.comm.*;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by KevinB on 8/05/2016.
@@ -36,7 +38,7 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
     // Delivery details
     private long pickUpTime = 0;
     private long deliverTime = 0;
-    private List<Vehicle> allocatedVehicles;
+    private Set<Vehicle> allocatedVehicles;
 
     public MyParcel(ParcelDTO parcelDTO){
         super(parcelDTO);
@@ -44,7 +46,7 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
         this.announcedSold = false;
 //        broadcasted = false;
 //        bids = null;
-        this.allocatedVehicles = new ArrayList<>();
+        this.allocatedVehicles = new HashSet<>();
     }
 
     @Override
@@ -276,7 +278,7 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
 
     public Vehicle getAllocatedVehicle() {
         if(isAllocated())
-            return this.allocatedVehicles.get(0);
+            return this.allocatedVehicles.iterator().next();
         else
             return null;
     }
