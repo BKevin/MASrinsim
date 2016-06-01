@@ -51,7 +51,7 @@ public class ScenarioGenerator {
         currentTime = 0;
 
         String filename = filenames.length > 0 ? filenames[0] : "scene"
-                //+"_"+new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date())
+                +"_"+new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date())
                 +".txt";
 
         File file = Paths.get("resources/scenario/"+filename).toFile();

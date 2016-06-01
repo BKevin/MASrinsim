@@ -3,6 +3,7 @@ package mas.cbba.agent;
 import com.github.rinde.rinsim.core.model.comm.CommUser;
 import com.github.rinde.rinsim.core.model.comm.Message;
 import com.github.rinde.rinsim.core.model.comm.MessageContents;
+import com.github.rinde.rinsim.core.model.pdp.PDPModel;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.Vehicle;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
@@ -41,6 +42,9 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     // Previous snapshot
     private Snapshot snapshot;
 
+    private boolean inTick;
+    private boolean error = false;
+
     public AbstractConsensusAgent(VehicleDTO vehicleDTO) {
         super(vehicleDTO);
         this.p = new ArrayList<>();
@@ -50,8 +54,13 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
     protected void preTick(TimeLapse time) {
         super.preTick(time);
+        inTick = true;
 
-//        org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick start for {}", this);
+        if(!this.getPDPModel().getContents(this).isEmpty())
+            LoggerFactory.getLogger(this.getClass()).info("At Start Contents of {} = {}  with State = {}", this, this.getPDPModel().getContents(this), this.getPDPModel().getParcelState(this.getPDPModel().getContents(this).iterator().next()));
+        LoggerFactory.getLogger(this.getClass()).info("At Start Route of {} = {} ", this, this.getRoute());
+
+        org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick start for {}", this);
 
         //"Realtime" implementatie: verander de while loop door een for loop of asynchrone thread,
         // iedere tick wordt er dan een beperkte berekening/communicatie gedaan.
@@ -67,6 +76,26 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 //        org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick done for {}", this);
 
 //        LoggerFactory.getLogger(this.getClass()).info("Route size: {} for {} ", this.getRoute().size(), this);
+        if(!this.getPDPModel().getContents(this).isEmpty())
+            LoggerFactory.getLogger(this.getClass()).info("At End Contents of {} = {}  with State = {}", this, this.getPDPModel().getContents(this), this.getPDPModel().getParcelState(this.getPDPModel().getContents(this).iterator().next()));
+        LoggerFactory.getLogger(this.getClass()).info("At End Route of {} = {} ", this, this.getRoute());
+        if(!this.getRoute().isEmpty()
+                && !this.getPDPModel().getContents(this).isEmpty()
+                && !this.getPDPModel().getContents(this).contains(this.getRoute().iterator().next()))
+            throw new IllegalStateException("Bad Route" + error);
+        inTick = false;
+    }
+
+    @Override
+    public void setRoute(Iterable<? extends Parcel> r) {
+        super.setRoute(r);
+        if(r.iterator().hasNext()
+                && !this.getPDPModel().getContents(this).isEmpty()
+                && !this.getPDPModel().getContents(this).contains(r.iterator().next()))
+            throw new IllegalStateException("Bad Route set");
+        if(!inTick){
+            error = true;
+            throw new IllegalStateException("SetRoute happened outside tick");}
     }
 
     public abstract void constructBundle();
@@ -212,11 +241,17 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
         Debug.logRouteForAgent(this, this.getRoute().stream().collect(Collectors.toMap((Parcel p) -> p, p -> this.getPDPModel().getParcelState(p), (p1, p2) -> p1)));
 
+
         // Update route
+        List<Parcel> routeFrom = this.createRouteFrom(
+                collect);
+        if(!routeFrom.isEmpty()
+                && !this.getPDPModel().getContents(this).isEmpty()
+                && !this.getPDPModel().getContents(this).contains(routeFrom.iterator().next()))
+            throw new IllegalStateException("Bad Route");
         this.setRoute(
                 // Create route with double parcels
-                this.createRouteFrom(
-                        collect));
+                routeFrom);
     }
 
     private Parcel getAllocatedParcel(Parcel p){
@@ -240,6 +275,11 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         // Check for parcels that are picked up but not delivered yet.
 //        List<Parcel> current = this.getRoute().stream().collect(Collectors.toList());
         ImmutableSet<Parcel> currentContents = this.getPDPModel().getContents(this);
+
+        if(this.getPDPModel().getVehicleState(this).equals(PDPModel.VehicleState.PICKING_UP)){
+            if(currentContents.isEmpty())
+                result.add(this.getRoute().iterator().next());
+        }
 
         if(!currentContents.isEmpty()){
             // A parcel is already picked up and must be added.
