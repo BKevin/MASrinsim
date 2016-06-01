@@ -18,6 +18,8 @@ import java.util.List;
  */
 public class MyParcel extends Parcel implements CommUser, TickListener{
 
+    public static int DEFAULT_REQUIRED_AGENTS = 1;
+
     private Optional<CommDevice> device;
 
 //    private boolean auctioned;
@@ -298,5 +300,9 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
         }
         // FIXME check if SubParcel method correctly calls this.
         return this.allocateTo(to);
+    }
+
+    public Integer getRequiredAgents(){
+        return DEFAULT_REQUIRED_AGENTS;
     }
 }

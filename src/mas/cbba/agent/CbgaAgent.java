@@ -4,6 +4,7 @@ import com.github.rinde.rinsim.core.model.pdp.PDPModel;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
 import com.google.common.collect.*;
+import mas.MyParcel;
 import mas.cbba.Debug;
 import mas.cbba.parcel.MultiParcel;
 import mas.cbba.snapshot.CbgaSnapshot;
@@ -191,9 +192,11 @@ public class CbgaAgent extends AbstractConsensusAgent {
         // Convenience variable to adhere to the original algorithm
         CbgaAgent i = this;
 
-        for(Parcel j : bids.rowKeySet()){
+        for(Parcel p : bids.rowKeySet()){
+            MyParcel j = (MyParcel) p;
 
-            if(!(j instanceof MultiParcel)) {
+            // (if) default number of agents required (==1)
+            if(j.getRequiredAgents().equals(MyParcel.DEFAULT_REQUIRED_AGENTS)) {
                 CbbaAgent thisAgent = new CbbaAgent(
                         this,
                         (CbgaSnapshot) this.generateSnapshot(),
@@ -204,9 +207,8 @@ public class CbgaAgent extends AbstractConsensusAgent {
 
                 projectOntoX(thisAgent, j);
             }
-
+            // (else) multiparcel
             else{
-//                MultiParcel mj = (MultiParcel) j;
 
                 Map<AbstractConsensusAgent, Long> timestamps = snapshot.getCommunicationTimestamps();
 
@@ -237,17 +239,15 @@ public class CbgaAgent extends AbstractConsensusAgent {
                 if(m.equals(i) || i.getX().get(j, m).equals(NO_BID))
                     continue;
 
-                MultiParcel mj = (MultiParcel) j;
-
                 // Number of agents assigned to J according to I
                 List<Long> bidsOnJ = i.getX().row(j).values().stream().filter((Long d) -> this.NO_BID < d).collect(Collectors.<Long>toList());
 
                 // There are less than the required number of agents assigned and m does a bid on j according to k
                 // (Sum of all N: Xijn > 0) < Qj
-                if(bidsOnJ.size() < mj.getRequiredAgents()){
+                if(bidsOnJ.size() < j.getRequiredAgents()){
                     // Assign m to j
                     //Xijm = Xkjm
-                    i.setWinningBid(mj, m, bids.get(mj, m));
+                    i.setWinningBid(j, m, bids.get(j, m));
                 }
 
                 // (Assumes the number of required agents is reached)
