@@ -259,25 +259,29 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     protected Long calculateBestRouteWith(Parcel parcel) {
 
         // Calculate minimum penalty
-        return calculatePenaltiesWith(parcel).stream().min(Long::compareTo).get();
+        return calculateRouteCostWith(parcel).stream().min(Long::compareTo).get();
     }
 
-    protected List<Long> calculatePenaltiesWith(Parcel parcel){
+    protected List<Long> calculateRouteCostWith(Parcel parcel){
         // Map route calc for every index position
-        List<Long> penalties = this.getP().stream().map((Parcel p) -> calculatePenaltyAtPosition(this.getP(), parcel, this.getP().indexOf(p))).collect(Collectors.toList());
+        List<Long> penalties = this.getP().stream().map((Parcel p) -> calculateRouteCostAtPosition(this.getP(), parcel, this.getP().indexOf(p))).collect(Collectors.toList());
         // Add extra route when adding at the end.
-        penalties.add(calculatePenaltyAtPosition(this.getP(), parcel, this.getP().size()));
+        penalties.add(calculateRouteCostAtPosition(this.getP(), parcel, this.getP().size()));
 
         return penalties;
     }
 
-    protected long calculatePenaltyAtPosition(ArrayList<? extends Parcel> path, Parcel parcel, int positionOfParcel) {
+    protected long calculateRouteCostAtPosition(ArrayList<? extends Parcel> path, Parcel parcel, int positionOfParcel) {
+
         ArrayList<Parcel> adaptedPath = new ArrayList<Parcel>(path);
         adaptedPath.add(positionOfParcel,parcel);
 
         long newPathValue = calculateRouteCost(adaptedPath);
-        // FIXME must be cached somewhere
+
+        // FIXME should be cached somewhere
         long oldPathValue = calculateRouteCost(this.getP());
+
+        LoggerFactory.getLogger(this.getClass()).info("CalculateRouteCostAtPosition{}: \nParcel {}, \nPath{}", positionOfParcel, parcel, path);
 
         // return difference
         return newPathValue - oldPathValue;
@@ -311,18 +315,23 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
      * @return The delivery time of the parcel in cargo or the current time if there is no parcel in cargo
      */
     private Long getProjectedStartTime(){
+        // FIXME does not include Delivering Time
 
-        return this.getPDPModel().getContents(this).isEmpty()
-                ? this.getCurrentTime()
-                : this.getCurrentTime() + this.computeTravelTimeFromTo(
-                        this.getPosition().get(),
-                        getProjectedStartPosition(),
-                        this.getCurrentTimeLapse().getTimeUnit()
-                );
+        if(!this.getPDPModel().getContents(this).isEmpty()){
+            long travelTimeToDestination = this.computeTravelTimeFromTo(
+                    this.getPosition().get(),
+                    getProjectedStartPosition(),
+                    this.getCurrentTimeLapse().getTimeUnit());
+            long arrivalTime = this.getCurrentTime() + travelTimeToDestination;
+            Parcel parcel = new ArrayList<Parcel>(this.getPDPModel().getContents(this)).get(0);
+            return parcel.canBeDelivered(this, arrivalTime) ? arrivalTime : parcel.getDeliveryTimeWindow().begin();
+        }
+
+        return this.getCurrentTime();
     }
 
     public Integer calculateBestRouteIndexWith(Parcel parcel) {
-        List<Long> penalties = calculatePenaltiesWith(parcel);
+        List<Long> penalties = calculateRouteCostWith(parcel);
         return penalties.indexOf(penalties.stream().min(Long::compareTo).get());
     }
 
