@@ -1,0 +1,141 @@
+vocabulary V{
+
+    type Object
+    type Parcel isa Object
+    type Depot isa Object
+    type Vehicle isa Object
+
+    Destination(Parcel):Depot
+    
+    type Time isa float
+    partial TravelTime(Object, Object): Time
+
+    Deliver(Vehicle, Parcel):Time
+    Pickup(Vehicle, Parcel):Time
+    DeliverDeadline(Parcel):Time
+    PickupDeadline(Parcel):Time
+    
+    Task(Vehicle, Parcel)   
+    First(Vehicle, Parcel)
+    Before(Vehicle, Parcel, Parcel)
+    
+    type Utility isa float
+
+    VehicleUtility(Vehicle):Utility
+    ParcelUtility(Vehicle, Parcel):Utility
+    
+    BaseUtility: Utility    
+    DeliverPenalty(Parcel):Utility
+    PickupPenalty(Parcel):Utility
+
+    LinearPenalty:Utility
+
+
+}
+
+theory Base:V {
+    
+    //Utility calculation for a vehicle
+    {
+        !v[Vehicle]: VehicleUtility(v) = sum{p[Parcel] : ParcelUtility(v, p) = u & Task(v,p) : u }.
+    }
+
+    //Utility calcution for parcel
+    {
+        !p[Parcel] v[Vehicle]: ParcelUtility(v, p) = u <- Task(v, p) & u = BaseUtility() - PickupPenalty(p) - DeliverPenalty(p).
+    }
+
+    //Penalty calculation.
+    {
+        DeliverPenalty(p) = 0 <- ?v: Task(v, p) & Deliver(v, p) < DeliverDeadline(p).
+        DeliverPenalty(p) = d <- ?v: Task(v, p) & Deliver(v, p) > DeliverDeadline(p) & d = (Deliver(v, p) - DeliverDeadline(p)) * LinearPenalty(). // linear for now 
+    }
+    {
+        PickupPenalty(p) = 0 <- ?v: Task(v, p) & Pickup(v, p) < PickupDeadline(p).
+        PickupPenalty(p) = d <- ?v: Task(v, p) & Pickup(v, p) > PickupDeadline(p) & d = (Pickup(v, p) - PickupDeadline(p)) * LinearPenalty(). // linear for now 
+    }
+
+    // Task lists
+    //  "Before" relation should be open, it is what we are searching for
+    {// P1 is handled before P2 if the delivery time is smaller
+        !v1 p1 p2: Before(v1, p1, p2) <- Task(v1, p1) & Task(v1, p2) & p1 ~= p2 & First(v1, p1).
+        !v1 p1 p2: Before(v1, p1, p2) <- Task(v1, p1) & Task(v1, p2) & p1 ~= p2 & Before(v1, p, p1).
+    }
+    
+    // Only one parcel can be first
+    !v : ?=<1 p : Task(v, p) & First(v, p).
+    !v p : First(v, p) => !p2: ~Before(v, p2, p).
+    !v p1 : Task(v, p1) & ?=<1  p2: Task(v, p2) & Before(v, p1, p2).
+
+    {
+
+    }
+
+    // Pickup and delivery time calculations
+    {
+        //if p1 is first, we travel straight to it
+        Pickup(v1, p1) = time <- Task(v1, p1) & First(v1, p1) &  time = TravelTime(p1, v1).
+
+        //if p2 comes after another parcel, we travel from p1's destination to p2.
+        Pickup(v1, p2) = time <- Task(v1, p2) & ?p1: Before(v1, p1, p2) & time = TravelTime(Destination(p1), p2) + Deliver(v1, p1).
+    }
+
+    {
+        Deliver(v1, p1) = time <- Task(v1, p1) & time = TravelTime(p1, Destination(p1)) + Pickup(v1, p1).
+    }
+
+    
+    //!o1[Object] o2[Object]: TravelTime(o1, o2) = TravelTime(o2, o1).
+    
+
+    //unicity constraints
+    !p: ?1 v : Task(v, p).
+//    !p: ?1 
+    
+    !p1: ?=<1 p2 : Task(v1, p2) & Before(v1, p1, p2).
+
+    
+
+    
+    !p1 p2: Before(v1, p1, p2) => ~Before(v1, p2,p1).
+
+   
+}
+
+structure Simple:V{
+
+    Object = {v1; d1; p1; p2}
+    Vehicle = {v1} 
+    Depot = {d1}
+    Parcel = {p1; p2}
+    PickupDeadline = {p1 -> 5; p2 -> 6}
+    DeliverDeadline = {p1 -> 10; p2 -> 10}
+    BaseUtility = { -> 10}
+    LinearPenalty = { -> 1}
+
+    Destination = {p1 -> d1; p2 -> d1}
+    
+    // necessary travel times:
+    //  from each vehicle to each parcel
+    //  from each parcel to its destination
+    Time = {0..20}
+    Utility = { 0..10}
+    TravelTime = {v1, p1 -> 3; p1, v1 -> 3; v1, p2 -> 4; p2, v1 -> 4; p1, d1 -> 4; d1, p1 -> 4; d1, p2 -> 5; p2, d1 -> 5}
+    //Task<ct> = {v1, p2}
+    
+}
+
+Term OptimisedUtility:V{
+	sum{v u : u = VehicleUtility(v): u }
+}
+
+procedure mas() {
+    stdoptions.verbosity.solving = 1 
+    //print(optimalpropagate(Base, Simple))
+    print(propagate(Base, Simple))  
+//    print(allmodels(Base, Simple))
+    //print(explainunsat(Base,Simple,V))
+    print(modelexpandpartial(Base, Simple)[1])
+  //  print(minimize(Base,Simple,OptimisedUtility)[1])
+}
+Delegate MAS for Large Scale and Dynamic PDP
