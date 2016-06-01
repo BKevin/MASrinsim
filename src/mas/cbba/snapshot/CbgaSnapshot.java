@@ -26,7 +26,9 @@ public class CbgaSnapshot extends Snapshot {
         if(result = (super.equals(o) && o instanceof CbgaSnapshot)){
             CbgaSnapshot sn = (CbgaSnapshot) o;
 
-            result = this.getWinningbids().values().equals(((CbgaSnapshot) o).getWinningbids().values());
+            result = this.getWinningbids().values().containsAll((sn.getWinningbids().values()))
+                    && this.getWinningbids().rowKeySet().containsAll(sn.getWinningbids().rowKeySet())
+                    && this.getWinningbids().columnKeySet().containsAll(sn.getWinningbids().columnKeySet());
         }
         return result ;
     }
