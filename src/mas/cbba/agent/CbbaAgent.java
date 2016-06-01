@@ -1,12 +1,15 @@
 package mas.cbba.agent;
 
+import com.github.rinde.rinsim.core.model.pdp.PDPModel;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableMap;
+import mas.cbba.Debug;
 import mas.cbba.snapshot.CbbaSnapshot;
 import mas.cbba.snapshot.CbgaSnapshot;
 import mas.cbba.snapshot.Snapshot;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
@@ -45,10 +48,18 @@ public class CbbaAgent extends AbstractConsensusAgent {
 
     public void constructBundle() {
 
+
 //        long currentPenalty = calculateRouteCost(getP());
 
 
         Set<Parcel> parcels = this.z.keySet();
+
+        Map<Parcel, PDPModel.ParcelState> states = parcels.stream().collect(Collectors.toMap(p -> p, p -> this.getPDPModel().getParcelState(p)));
+
+        Collection<Parcel> availableParcels = this.getPDPModel().getParcels(PDPModel.ParcelState.ANNOUNCED, PDPModel.ParcelState.AVAILABLE);
+
+        Debug.logParcelListForAgent(this, states, availableParcels);
+
         // Get all parcels not already in B
         List<Parcel> notInB = parcels.stream().filter(p -> !this.getB().contains(p)).collect(Collectors.toList());
 
@@ -79,7 +90,7 @@ public class CbbaAgent extends AbstractConsensusAgent {
 //                        }
 //                    }
                     long bid = this.calculateBestRouteWith(parcel);
-                    LoggerFactory.getLogger(this.getClass()).info("CalculateBestRouteWith value for agent {} of parcel {}: {}", this, parcel, bid);
+//                    LoggerFactory.getLogger(this.getClass()).info("CalculateBestRouteWith value for agent {} of parcel {}: {}", this, parcel, bid);
                     //check if bid is better than current best
                     if(isBetterBidThan(bid,this.y.get(parcel))){
                         //check if bid is better than previous best
@@ -363,6 +374,7 @@ public class CbbaAgent extends AbstractConsensusAgent {
     }
 
     protected void removeParcel(Parcel parcel){
+        super.removeParcel(parcel);
         this.y.remove(parcel);
         this.z.remove(parcel);
     }

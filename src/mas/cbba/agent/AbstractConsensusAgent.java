@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import mas.MyParcel;
 import mas.MyVehicle;
+import mas.cbba.Debug;
 import mas.cbba.parcel.MultiParcel;
 import mas.cbba.snapshot.Snapshot;
 import mas.comm.ParcelMessage;
@@ -210,6 +211,8 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
         LoggerFactory.getLogger(this.getClass()).info("RouteUpdate for {} with {}", this, collect);
 
+        Debug.logRouteForAgent((CbbaAgent) this, this.getRoute().stream().collect(Collectors.toMap((Parcel p) -> p, p -> this.getPDPModel().getParcelState(p), (p1, p2) -> p1)));
+
         // Update route
         this.setRoute(
                 // Create route with double parcels
@@ -281,7 +284,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         // FIXME should be cached somewhere
         long oldPathValue = calculateRouteCost(this.getP());
 
-        LoggerFactory.getLogger(this.getClass()).info("CalculateRouteCostAtPosition{}: \nParcel {}, \nPath{}", positionOfParcel, parcel, path);
+//        LoggerFactory.getLogger(this.getClass()).info("CalculateRouteCostAtPosition{}: \nParcel {}, \nPath{}", positionOfParcel, parcel, path);
 
         // return difference
         return newPathValue - oldPathValue;
@@ -387,7 +390,11 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
     }
 
-    protected abstract void removeParcel(Parcel parcel);
+    protected void removeParcel(Parcel parcel){
+        this.getB().remove(parcel);
+        this.getP().remove(parcel);
+//        this.updateRoute();
+    };
 
     /**
      * Subclasses are given the new Parcel and can change their lists accordingly.
