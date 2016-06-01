@@ -41,9 +41,24 @@ public class CbbaAgent extends AbstractConsensusAgent {
      */
     public CbbaAgent(AbstractConsensusAgent k, CbgaSnapshot snapshot, Parcel j) {
         this(k.getDTO());
-        Long bid = snapshot.getWinningbids().row(j).values().stream().max(Long::compareTo).get();
+        Long bid = snapshot.getWinningbids().row(j).values()
+                .stream()
+//                .filter(v -> v.equals(CbgaAgent.NO_BID))
+                .min(Long::compareTo).get();
         this.y.put(j, bid);
-        this.z.put(j, HashBiMap.create(snapshot.getWinningbids().row(j)).inverse().get(bid));
+        // Inverse will fail on the off chance that two agents bid the same:
+        // IllegalArgumentException: value already present
+        for(AbstractConsensusAgent a : snapshot.getWinningbids().row(j).keySet()){
+            if(bid.equals(snapshot.getWinningbids().row(j).get(a))){
+                this.z.put(j, a);
+            }
+        }
+
+//                snapshot.getWinningbids().row(j).entrySet()
+//                        .stream()
+//                        .filter((Map.Entry<AbstractConsensusAgent, Long> e) -> !e.getValue().equals(CbgaAgent.NO_BID))
+//                        .collect(Collectors.toMap((Map.Entry e) -> e.getKey(), (Map.Entry e) -> e.getValue())))
+//                );
     }
 
     public void constructBundle() {
