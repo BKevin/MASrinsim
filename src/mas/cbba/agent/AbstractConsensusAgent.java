@@ -427,6 +427,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
      */
     protected void evaluateMessages() {
 
+        List<Message> snapshots = new LinkedList<>();
         for (Message message : this.getCommDevice().get().getUnreadMessages()) {
 
             //if AuctionedParcelMessage then calculate bid and send BidMessage
@@ -436,10 +437,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
             // Received snapshot, update bid values.
             if (contents instanceof Snapshot) {
-                this.setCommunicationTimestamp(message);
-
-                evaluateSnapshot((Snapshot) message.getContents(), (AbstractConsensusAgent) sender);
-//                LoggerFactory.getLogger(this.getClass()).info("Received Snapshot from {} to {} : {}", sender, this, contents);
+                snapshots.add(message);
             }
 
             if(contents instanceof SoldParcelMessage){
@@ -451,6 +449,14 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                 this.addParcel(((ParcelMessage) contents).getParcel());
                 LoggerFactory.getLogger(this.getClass()).info("Received ParcelMessage from {} to {} : {}", sender, this, contents);
             }
+
+        }
+
+        for(Message snap : snapshots){
+            this.setCommunicationTimestamp(snap);
+
+            evaluateSnapshot((Snapshot) snap.getContents(), (AbstractConsensusAgent) snap.getSender());
+//                LoggerFactory.getLogger(this.getClass()).info("Received Snapshot from {} to {} : {}", sender, this, contents);
 
         }
 

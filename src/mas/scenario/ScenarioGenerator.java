@@ -20,10 +20,10 @@ public class ScenarioGenerator {
     private static double width = 10;
     private static double height = 10;
 
-    private static int amountVehiclesAtStart = 4;
-    private static int amountParcelsAtStart = 3;
+    private static int amountVehiclesAtStart = 6;
+    private static int amountParcelsAtStart = 6;
     private static int amountNewVehicles = 0;
-    private static int amountNewParcels = 100;
+    private static int amountNewParcels = 1000;
 
 
     private static long vehicleAverageInterArrivalTime; //ms
@@ -33,15 +33,15 @@ public class ScenarioGenerator {
 
 
     private static long parcelAverageInterArrivalTime = 50000; //ms
-    private static long parcelInterArrivalTimeVariation = 10000; //ms
+    private static long parcelInterArrivalTimeVariation = 20000; //ms
     private static long parcelAverageTimeWindowVariation = 10000; //ms
-    private static int parcelServiceDuration = 1000;
+    private static int parcelServiceDuration = 0;
     private static int parcelCapacity = 1;
     private static int maxAmountOfRequiredAgents = 1;
     private static double[] distribution = {1,0};
 
-    private static double expectedTravelTime = 20000;
-    private static double travelTimeVariation = 5000;
+    private static double expectedTravelTime = 255555; //from center to a corner
+    private static double travelTimeVariation = 50000;
 
     public static void main(String[] args) {
         generateScenario(args);

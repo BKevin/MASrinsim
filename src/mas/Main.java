@@ -90,8 +90,8 @@ public class Main {
                                         .withMaxSpeed(10000d))
                             .withAllowVehicleDiversion(true))
                 .addModel(DefaultPDPModel.builder())
-                .addModel(CommModel.builder());
-//                .addModel(viewBuilder);
+                .addModel(CommModel.builder())
+                .addModel(viewBuilder);
 
         String filename = filenames.length > 0 ? filenames[0] : "scene.txt";
 

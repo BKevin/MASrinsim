@@ -57,6 +57,11 @@ public class CbbaAgent extends AbstractConsensusAgent {
         // Get all parcels not already in B
         List<Parcel> notInB = parcels.stream().filter(p -> !this.getB().contains(p)).collect(Collectors.toList());
 
+        //remove unavailable
+
+         notInB = notInB.stream().filter(p -> this.getPDPModel().getParcelState(p).equals(PDPModel.ParcelState.ANNOUNCED)
+                 || this.getPDPModel().getParcelState(p).equals(PDPModel.ParcelState.AVAILABLE)).collect(Collectors.toList());
+
         boolean bIsChanging = true;
         while(bIsChanging){
             bIsChanging = false;

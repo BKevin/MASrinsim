@@ -72,13 +72,6 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
             setAnnouncedArrival();
         }
 
-        PDPModel.ParcelState state = this.getPDPModel().getParcelState(this);
-        if(!announcedSold
-                && !state.equals(PDPModel.ParcelState.ANNOUNCED)
-                && !state.equals(PDPModel.ParcelState.AVAILABLE)){
-            this.getCommDevice().get().broadcast(new SoldParcelMessage(this));
-            this.setAnnouncedSold();
-        }
 
         dismissMessages();
 
@@ -173,6 +166,13 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
     @Override
     public void afterTick(TimeLapse timeLapse) {
 
+        PDPModel.ParcelState state = this.getPDPModel().getParcelState(this);
+        if(!announcedSold
+                && !state.equals(PDPModel.ParcelState.ANNOUNCED)
+                && !state.equals(PDPModel.ParcelState.AVAILABLE)){
+            this.getCommDevice().get().broadcast(new SoldParcelMessage(this));
+            this.setAnnouncedSold();
+        }
     }
 
     @Override
@@ -180,14 +180,17 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
         // Timewindowpolicy is already check before pickup
         // DefaultPDPModel#pickup:194
 //        LoggerFactory.getLogger(this.getClass()).info("canBePickedUp = {} -> expect: {} and actual: {}",this.vehicle == v, this.vehicle, v);
-        return this.isAllocated() && this.allocatedVehicles.contains(v);
+
+//        return this.isAllocated() && this.allocatedVehicles.contains(v);
+        return this.allocatedVehicles.contains(v);
     }
 
     @Override
     public boolean canBeDelivered(Vehicle v, long time) {
         //Timewindowpolicy is already checked before delivery
         // DefaultPDPModel#deliver:282
-        return this.isAllocated() && this.allocatedVehicles.contains(v);
+//        return this.isAllocated() && this.allocatedVehicles.contains(v);
+        return true;
     }
 
     /**
