@@ -66,9 +66,9 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
     public void tick(TimeLapse timeLapse) {
 
         if(!announcedArrival){
-            ParcelMessage contents = new ParcelMessage(this);
+            ParcelMessage contents = new NewParcelMessage(this);
             this.getCommDevice().get().broadcast(contents);
-            LoggerFactory.getLogger(this.getClass()).info("Broadcasted ParcelMessage from {} : {}", this, contents);
+            LoggerFactory.getLogger(this.getClass()).info("Broadcasted {} from {} : {}", NewParcelMessage.class, this, contents);
             setAnnouncedArrival();
         }
 
@@ -79,7 +79,6 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
             this.getCommDevice().get().broadcast(new SoldParcelMessage(this));
             this.setAnnouncedSold();
         }
-
 
         dismissMessages();
 
