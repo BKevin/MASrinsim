@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  */
 public class CbgaAgent extends AbstractConsensusAgent {
 
-    private static final Long NO_BID = Long.MAX_VALUE;
+    public static final Long NO_BID = Long.MAX_VALUE;
 
     /* m*n matrix with the winning bids of agents.
      * Xij is equal to the winning bid of agent i for task j or equal to  0 if no assignment has been made.
@@ -236,7 +236,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
             // (for all m E A)
             for(AbstractConsensusAgent m : bids.row(j).keySet()){
                 //(if) m /= i (and) Xijm > 0 (and) Xkjm >= 0
-                if(m.equals(i) || i.getX().get(j, m).equals(NO_BID))
+                if(m.equals(i) || i.getX().get(j, m) == null || i.getX().get(j,m).equals(NO_BID))
                     continue;
 
                 // Number of agents assigned to J according to I
@@ -255,7 +255,8 @@ public class CbgaAgent extends AbstractConsensusAgent {
                 Optional<Long> minBid = bidsOnJ.stream().max(Long::compareTo);
 
                 if(!minBid.isPresent() ) {
-                    throw new IllegalArgumentException("No minimum bid found in bid table.");
+                    continue;
+//                    throw new IllegalArgumentException("No minimum bid found in bid table.");
                 }
                 AbstractConsensusAgent n = HashBiMap.<AbstractConsensusAgent, Long>create(bids.row(j)).inverse().get(minBid.get());
 
