@@ -3,19 +3,19 @@ package mas.cbba.agent;
 import com.github.rinde.rinsim.core.model.pdp.PDPModel;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
-import com.google.common.collect.*;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableTable;
+import com.google.common.collect.Table;
 import mas.MyParcel;
 import mas.cbba.Debug;
-import mas.cbba.parcel.MultiParcel;
 import mas.cbba.snapshot.CbgaSnapshot;
 import mas.cbba.snapshot.Snapshot;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static com.sun.corba.se.impl.orb.ParserTable.get;
-import static java.time.chrono.JapaneseEra.values;
+import java.util.stream.Stream;
 
 /**
  * Created by pieter on 26.05.16.
@@ -80,6 +80,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
     protected void addParcel(Parcel parcel) {
         // Initial case: no agent or parcels are in the table
         if(this.X.cellSet().isEmpty()){
+            // Get all parcels in pdpmodel, get all agents in pdpmodel
             this.X.put(parcel, this, NO_BID);
         }
         else {
@@ -95,8 +96,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
     @Override
     protected void removeParcel(Parcel parcel){
         super.removeParcel(parcel);
-
-        for(AbstractConsensusAgent agent : this.X.columnKeySet()){
+        for(AbstractConsensusAgent agent : ImmutableList.copyOf(this.X.columnKeySet())){
             this.X.remove(parcel, agent);
         }
     }
@@ -153,20 +153,18 @@ public class CbgaAgent extends AbstractConsensusAgent {
                     notInB.stream().collect(Collectors.toMap(Function.identity(), this::calculateBestRouteWith));
 
             // Get the best bid
-            Optional<Map.Entry<Parcel, Long>> optBestEntry = c_ij.entrySet().stream()
+            Stream<Map.Entry<Parcel, Long>> stream = c_ij.entrySet().stream()
                     // Remove all entries for which c_ij < max(y_ij)
                     .filter(entry ->
                             this.isBetterBidThan(
                                     // bid value of the entry
                                     entry.getValue(),
                                     // calculate the current maximum bid for every parcel not in B
-                                    // TODO could be cached?
-                                    this.getX().row(entry.getKey()).values().stream()
-                                            .max(Long::compareTo).get()
+                                    getHighestBid(entry.getKey())
                             )
-                    )
+                    );
                     // Calculate the minimum argument in h_ij
-                    .min(new Comparator<Map.Entry<? extends Parcel, Long>>() {
+            Optional<Map.Entry<Parcel, Long>> optBestEntry = stream.min(new Comparator<Map.Entry<? extends Parcel, Long>>() {
                         @Override
                         public int compare(Map.Entry<? extends Parcel, Long> parcelLongEntry, Map.Entry<? extends Parcel, Long> t1) {
                             return parcelLongEntry.getValue().compareTo(t1.getValue());
@@ -183,6 +181,21 @@ public class CbgaAgent extends AbstractConsensusAgent {
             }
         }
 
+    }
+
+    /**
+     * Highest bid: the worst bid if all the bids that are not MAXVALUE
+     * (otherwise we'd just ask the lowest bid)
+     * @param parcel
+     * @return
+     */
+    private Long getHighestBid(Parcel parcel){
+        Optional<Long> value = this.getX().row(parcel).values()
+                .stream()
+                .filter(p -> p < Long.MAX_VALUE)
+                .min(Long::compareTo);
+
+        return value.isPresent() ? value.get() : Long.MAX_VALUE;
     }
 
     /**
@@ -250,46 +263,46 @@ public class CbgaAgent extends AbstractConsensusAgent {
                         }
                     }
                 }
+//                // (for all m E A)
+//                for(AbstractConsensusAgent m : bids.row(j).keySet()){
+//                    //(if) m /= i (and) Xijm > 0 (and) Xkjm >= 0
+//                    if(m.equals(i) || i.getX().get(j, m) == null || i.getX().get(j,m).equals(NO_BID))
+//                        continue;
+//
+//                    // Number of agents assigned to J according to I
+//                    List<Long> bidsOnJ = i.getX().row(j).values().stream().filter((Long d) -> this.NO_BID < d).collect(Collectors.<Long>toList());
+//
+//                    // There are less than the required number of agents assigned and m does a bid on j according to k
+//                    // (Sum of all N: Xijn > 0) < Qj
+//                    if(bidsOnJ.size() < j.getRequiredAgents()){
+//                        // Assign m to j
+//                        //Xijm = Xkjm
+//                        i.setWinningBid(j, m, bids.get(j, m));
+//                    }
+//
+//                    // (Assumes the number of required agents is reached)
+//                    // Determine the maximum bid value and the associated agent N for task J
+//                    Optional<Long> minBid = bidsOnJ.stream().filter((Long l) -> l < Long.MAX_VALUE).max(Long::compareTo);
+//
+//                    if(!minBid.isPresent() ) {
+//                        continue;
+////                    throw new IllegalArgumentException("No minimum bid found in bid table.");
+//                    }
+//                    AbstractConsensusAgent n = HashBiMap.<AbstractConsensusAgent, Long>create(bids.row(j)).inverse().get(minBid.get());
+//
+//                    // If the maximum bid of N is higher than the bid of M for J, assign M instead of N
+//                    // (Min of all n: Xijn) < Xkjm
+//                    if(this.isBetterBidThan(minBid.get(), bids.get(j, m))){
+//                        i.replaceWinningBid(j, n, m, bids.get(j, m));
+//                    }
+//                    // If the maximum bid of N is equal to the bid of M for J, the greatest ID (hashvalue) wins the assignment of J
+//                    else if(minBid.get().compareTo(bids.get(j, m)) == 0 && i.hashCode() > m.hashCode()){
+//                        i.replaceWinningBid(j, n, m, bids.get(j, m));
+//                    }
+//
+//                }
             }
 
-            // (for all m E A)
-            for(AbstractConsensusAgent m : bids.row(j).keySet()){
-                //(if) m /= i (and) Xijm > 0 (and) Xkjm >= 0
-                if(m.equals(i) || i.getX().get(j, m) == null || i.getX().get(j,m).equals(NO_BID))
-                    continue;
-
-                // Number of agents assigned to J according to I
-                List<Long> bidsOnJ = i.getX().row(j).values().stream().filter((Long d) -> this.NO_BID < d).collect(Collectors.<Long>toList());
-
-                // There are less than the required number of agents assigned and m does a bid on j according to k
-                // (Sum of all N: Xijn > 0) < Qj
-                if(bidsOnJ.size() < j.getRequiredAgents()){
-                    // Assign m to j
-                    //Xijm = Xkjm
-                    i.setWinningBid(j, m, bids.get(j, m));
-                }
-
-                // (Assumes the number of required agents is reached)
-                // Determine the maximum bid value and the associated agent N for task J
-                Optional<Long> minBid = bidsOnJ.stream().max(Long::compareTo);
-
-                if(!minBid.isPresent() ) {
-                    continue;
-//                    throw new IllegalArgumentException("No minimum bid found in bid table.");
-                }
-                AbstractConsensusAgent n = HashBiMap.<AbstractConsensusAgent, Long>create(bids.row(j)).inverse().get(minBid.get());
-
-                // If the maximum bid of N is higher than the bid of M for J, assign M instead of N
-                // (Min of all n: Xijn) < Xkjm
-                if(this.isBetterBidThan(minBid.get(), bids.get(j, m))){
-                    i.replaceWinningBid(j, n, m, bids.get(j, m));
-                }
-                // If the maximum bid of N is equal to the bid of M for J, the greatest ID (hashvalue) wins the assignment of J
-                else if(minBid.get().compareTo(bids.get(j, m)) == 0 && i.hashCode() > m.hashCode()){
-                    i.replaceWinningBid(j, n, m, bids.get(j, m));
-                }
-
-            }
 
         }
     }
