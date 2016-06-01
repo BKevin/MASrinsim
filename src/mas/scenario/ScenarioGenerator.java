@@ -37,8 +37,9 @@ public class ScenarioGenerator {
     private static long parcelAverageTimeWindowVariation = 10000; //ms
     private static int parcelServiceDuration = 0;
     private static int parcelCapacity = 1;
-    private static int maxAmountOfRequiredAgents = 1;
-    private static double[] distribution = {1,0};
+    private static int maxAmountOfRequiredAgents = 2;
+    //Distribution (chances) of required agents: p_1, p_2, p_3
+    private static double[] distribution = {0,1};
 
     private static double expectedTravelTime = 255555; //from center to a corner
     private static double travelTimeVariation = 50000;
@@ -142,7 +143,7 @@ public class ScenarioGenerator {
                     + parcelEventAtTime(-1);
         else
             return "NewMultiParcel "
-                    + parcelEventAtTime(-1)
+                    + parcelEventAtTime(-1) + " "
                     + requiredAgents;
     }
 
@@ -155,7 +156,7 @@ public class ScenarioGenerator {
                     + parcelEventAtTime(rngTime);
         else
             return "NewMultiParcel "
-                    + parcelEventAtTime(rngTime)
+                    + parcelEventAtTime(rngTime) + " "
                     + requiredAgents;
     }
 
