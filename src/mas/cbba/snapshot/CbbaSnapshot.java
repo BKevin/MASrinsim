@@ -46,4 +46,15 @@ public class CbbaSnapshot extends Snapshot {
 
         return result;
     }
+
+    @Override
+    public AbstractConsensusAgent getWinningAgentBy(Parcel parcel) {
+        return this.getZ().get(parcel);
+    }
+
+    @Override
+    public Long getWinningBidBy(Parcel parcel) {
+        return this.getY().get(parcel);
+    }
+
 }

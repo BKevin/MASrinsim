@@ -1,6 +1,7 @@
 package mas.cbba.snapshot;
 
 import com.github.rinde.rinsim.core.model.comm.MessageContents;
+import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import mas.cbba.agent.AbstractConsensusAgent;
 
 import java.util.Map;
@@ -60,4 +61,8 @@ public abstract class Snapshot implements MessageContents{
     public String toString() {
         return ""+this.timestamp;
     }
+
+    public abstract AbstractConsensusAgent getWinningAgentBy(Parcel parcel);
+
+    public abstract Long getWinningBidBy(Parcel parcel);
 }
