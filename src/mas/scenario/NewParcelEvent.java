@@ -9,6 +9,8 @@ import com.github.rinde.rinsim.scenario.TimedEventHandler;
 import com.github.rinde.rinsim.util.TimeWindow;
 import mas.MyParcel;
 
+import java.io.Serializable;
+
 /**
  * Created by KevinB on 9/05/2016.
  */
@@ -43,7 +45,7 @@ public class NewParcelEvent implements TimedEvent {//extends AddParcelEvent
         return new NewParcelEventHandler();
     }
 
-    private static class NewParcelEventHandler implements TimedEventHandler {
+    private static class NewParcelEventHandler implements TimedEventHandler, Serializable {
         @Override
         public void handleTimedEvent(TimedEvent timedEvent, SimulatorAPI simulatorAPI) {
             if(timedEvent.getClass() != NewParcelEvent.class)

@@ -8,6 +8,8 @@ import com.github.rinde.rinsim.scenario.TimedEventHandler;
 import mas.cbba.agent.CbbaAgent;
 import mas.cbba.agent.CbgaAgent;
 
+import java.io.Serializable;
+
 /**
  * Created by KevinB on 9/05/2016.
  */
@@ -57,7 +59,7 @@ public class NewVehicleEvent implements TimedEvent {
     public static TimedEventHandler<NewVehicleEvent> defaultHandler(){
         return new NewParcelEventHandler();
     }
-    private static class NewParcelEventHandler implements TimedEventHandler {
+    private static class NewParcelEventHandler implements TimedEventHandler, Serializable {
 
         @Override
         public void handleTimedEvent(TimedEvent timedEvent, SimulatorAPI simulatorAPI) {

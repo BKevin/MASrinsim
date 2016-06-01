@@ -8,6 +8,8 @@ import com.github.rinde.rinsim.scenario.TimedEventHandler;
 import com.github.rinde.rinsim.util.TimeWindow;
 import mas.cbba.parcel.MultiParcel;
 
+import java.io.Serializable;
+
 /**
  * Created by KevinB on 30/05/2016.
  */
@@ -28,7 +30,7 @@ public class NewMultiParcelEvent extends NewParcelEvent {
         return new NewMultiParcelEventHandler();
     }
 
-    private static class NewMultiParcelEventHandler implements TimedEventHandler {
+    private static class NewMultiParcelEventHandler implements TimedEventHandler, Serializable {
         @Override
         public void handleTimedEvent(TimedEvent timedEvent, SimulatorAPI simulatorAPI) {
             if(timedEvent.getClass() != NewMultiParcelEvent.class)

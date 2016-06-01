@@ -6,6 +6,8 @@ import com.github.rinde.rinsim.scenario.TimedEvent;
 import com.github.rinde.rinsim.scenario.TimedEventHandler;
 import mas.MyDepot;
 
+import java.io.Serializable;
+
 /**
  * Created by KevinB on 12/05/2016.
  */
@@ -38,7 +40,7 @@ public class NewDepotEvent  implements TimedEvent {//extends AddParcelEvent
         return new NewDepotEventHandler();
     }
 
-    private static class NewDepotEventHandler implements  TimedEventHandler{
+    private static class NewDepotEventHandler implements  TimedEventHandler, Serializable{
 
         @Override
         public void handleTimedEvent(TimedEvent event, SimulatorAPI simulator) {
