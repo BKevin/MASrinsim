@@ -29,9 +29,10 @@ public class CbgaAgent extends AbstractConsensusAgent {
         super(vehicleDTO);
 
         this.X = HashBasedTable.create(
-                this.getPDPModel().getParcels(PDPModel.ParcelState.AVAILABLE).size(), //expected parcels
-                this.getPDPModel().getVehicles().size()); //expected vehicles
+//                this.getPDPModel().getParcels(PDPModel.ParcelState.AVAILABLE).size(), //expected parcels
+//                this.getPDPModel().getVehicles().size() //expected vehicles
 
+        );
     }
 
 
@@ -59,7 +60,6 @@ public class CbgaAgent extends AbstractConsensusAgent {
         super.setWinningBid(parcel, agent, bid);
 
         this.X.put(parcel, agent, bid);
-
     }
 
     @Override
