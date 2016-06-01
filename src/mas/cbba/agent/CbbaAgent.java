@@ -32,13 +32,12 @@ public class CbbaAgent extends AbstractConsensusAgent {
         this.z = new HashMap<>();
     }
 
-    public CbbaAgent(CbgaAgent cbgaAgent, Parcel j) {
-        this(cbgaAgent.getDTO());
-        Long bid = cbgaAgent.getX().row(j).values().stream().max(Long::compareTo).get();
-        this.y.put(j, bid);
-        this.z.put(j, HashBiMap.create(cbgaAgent.getX().row(j)).inverse().get(bid));
-    }
-
+    /**
+     * Create single Parcel CbbaAgent based on CbgaAgent.
+     * @param k Agent reference
+     * @param snapshot Snapshot of CbgaAgent
+     * @param j Parcel for which to create CbbaAgent
+     */
     public CbbaAgent(AbstractConsensusAgent k, CbgaSnapshot snapshot, Parcel j) {
         this(k.getDTO());
         Long bid = snapshot.getWinningbids().row(j).values().stream().max(Long::compareTo).get();
