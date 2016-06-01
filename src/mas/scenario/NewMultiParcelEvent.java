@@ -1,6 +1,7 @@
 package mas.scenario;
 
 import com.github.rinde.rinsim.core.SimulatorAPI;
+import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.geom.Point;
 import com.github.rinde.rinsim.scenario.TimedEvent;
 import com.github.rinde.rinsim.scenario.TimedEventHandler;
@@ -35,8 +36,14 @@ public class NewMultiParcelEvent extends NewParcelEvent {
 
             NewMultiParcelEvent newMultiParcelEvent = (NewMultiParcelEvent) timedEvent;
 
-            simulatorAPI.register(new MultiParcel(
-                    newMultiParcelEvent.getParcelDTO(),newMultiParcelEvent.getRequiredAgents()));
+            MultiParcel parcel = new MultiParcel(
+                    newMultiParcelEvent.getParcelDTO(), newMultiParcelEvent.getRequiredAgents());
+            simulatorAPI.register(parcel);
+
+            for(Parcel p : parcel.getSubParcels()){
+                simulatorAPI.register(p);
+            }
+
         }
     }
 }

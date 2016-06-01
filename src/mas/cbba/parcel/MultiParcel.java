@@ -3,6 +3,7 @@ package mas.cbba.parcel;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.ParcelDTO;
 import com.github.rinde.rinsim.core.model.pdp.Vehicle;
+import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.google.common.collect.ImmutableList;
 import mas.MyParcel;
 import mas.cbba.agent.AbstractConsensusAgent;
@@ -43,8 +44,6 @@ public class MultiParcel extends MyParcel {
         for(int i = 0; i < subParcels-1 ; i++) {
             SubParcel subparcel = new SubParcel(builder.buildDTO(), this);
             result.add(subparcel);
-            //TODO we are creating extra object, should we register them?
-//            this.getPDPModel().register(subparcel);
         }
 
         return result;
