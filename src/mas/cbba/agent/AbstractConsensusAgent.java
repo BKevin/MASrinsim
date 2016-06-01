@@ -3,11 +3,10 @@ package mas.cbba.agent;
 import com.github.rinde.rinsim.core.model.comm.CommUser;
 import com.github.rinde.rinsim.core.model.comm.Message;
 import com.github.rinde.rinsim.core.model.comm.MessageContents;
-import com.github.rinde.rinsim.core.model.pdp.PDPModel;
-import com.github.rinde.rinsim.core.model.pdp.Parcel;
-import com.github.rinde.rinsim.core.model.pdp.Vehicle;
-import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
+import com.github.rinde.rinsim.core.model.pdp.*;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
+import com.github.rinde.rinsim.event.Event;
+import com.github.rinde.rinsim.event.Listener;
 import com.github.rinde.rinsim.geom.Point;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
@@ -26,6 +25,7 @@ import mas.route.evaluation.strategy.TotalCostValue;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -54,13 +54,13 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
     protected void preTick(TimeLapse time) {
         super.preTick(time);
-        inTick = true;
-
-        if(!this.getPDPModel().getContents(this).isEmpty())
-            LoggerFactory.getLogger(this.getClass()).info("At Start Contents of {} = {}  with State = {}", this, this.getPDPModel().getContents(this), this.getPDPModel().getParcelState(this.getPDPModel().getContents(this).iterator().next()));
-        LoggerFactory.getLogger(this.getClass()).info("At Start Route of {} = {} ", this, this.getRoute());
-
-        org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick start for {}", this);
+//        inTick = true;
+//
+//        if(!this.getPDPModel().getContents(this).isEmpty())
+//            LoggerFactory.getLogger(this.getClass()).info("At Start Contents of {} = {}  with State = {}", this, this.getPDPModel().getContents(this), this.getPDPModel().getParcelState(this.getPDPModel().getContents(this).iterator().next()));
+//        LoggerFactory.getLogger(this.getClass()).info("At Start Route of {} = {} ", this, this.getRoute());
+//
+//        org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick start for {}", this);
 
         //"Realtime" implementatie: verander de while loop door een for loop of asynchrone thread,
         // iedere tick wordt er dan een beperkte berekening/communicatie gedaan.
@@ -73,29 +73,45 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 //            org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick %s, %s", this, this.getP().size());
         }
 
+        //Route mending
+
+        if(!this.getPDPModel().getContents(this).isEmpty()
+                && !this.getRoute().contains(this.getPDPModel().getContents(this).iterator().next())){
+            updateRoute();
+        }
+
 //        org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick done for {}", this);
 
 //        LoggerFactory.getLogger(this.getClass()).info("Route size: {} for {} ", this.getRoute().size(), this);
-        if(!this.getPDPModel().getContents(this).isEmpty())
-            LoggerFactory.getLogger(this.getClass()).info("At End Contents of {} = {}  with State = {}", this, this.getPDPModel().getContents(this), this.getPDPModel().getParcelState(this.getPDPModel().getContents(this).iterator().next()));
-        LoggerFactory.getLogger(this.getClass()).info("At End Route of {} = {} ", this, this.getRoute());
-        if(!this.getRoute().isEmpty()
-                && !this.getPDPModel().getContents(this).isEmpty()
-                && !this.getPDPModel().getContents(this).contains(this.getRoute().iterator().next()))
-            throw new IllegalStateException("Bad Route" + error);
-        inTick = false;
+//        if(!this.getPDPModel().getContents(this).isEmpty())
+//            LoggerFactory.getLogger(this.getClass()).info("At End Contents of {} = {}  with State = {}", this, this.getPDPModel().getContents(this), this.getPDPModel().getParcelState(this.getPDPModel().getContents(this).iterator().next()));
+//        LoggerFactory.getLogger(this.getClass()).info("At End Route of {} = {} ", this, this.getRoute());
+//            try{
+//                throw new IllegalStateException("Bad Route" + error);
+//            }
+//            catch(Exception e) {
+//                LoggerFactory.getLogger(this.getClass()).warn("Bad route", e
+//                );
+//            }
+//        inTick = false;
     }
 
     @Override
     public void setRoute(Iterable<? extends Parcel> r) {
         super.setRoute(r);
-        if(r.iterator().hasNext()
-                && !this.getPDPModel().getContents(this).isEmpty()
-                && !this.getPDPModel().getContents(this).contains(r.iterator().next()))
-            throw new IllegalStateException("Bad Route set");
-        if(!inTick){
-            error = true;
-            throw new IllegalStateException("SetRoute happened outside tick");}
+//        try{
+//            throw new ConcurrentModificationException("Printing Route stacktrace");
+//        }
+//        catch(Exception e){
+//            e.printStackTrace();
+//        }
+//        if(r.iterator().hasNext()
+//                && !this.getPDPModel().getContents(this).isEmpty()
+//                && !this.getPDPModel().getContents(this).contains(r.iterator().next()))
+//            throw new IllegalStateException("Bad Route set");
+//        if(!inTick){
+//            error = true;
+//            throw new IllegalStateException("SetRoute happened outside tick");}
     }
 
     public abstract void constructBundle();
@@ -191,9 +207,16 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         //Consistency for agent routes when allocating own parcels
         if(agent == this) {
 
-            Parcel p = ((MyParcel) parcel).allocateTo(agent);
+            PDPModel.ParcelState state = this.getPDPModel().getParcelState(parcel);
+            if(state.equals(PDPModel.ParcelState.AVAILABLE) || state.equals(PDPModel.ParcelState.ANNOUNCED)) {
+                Parcel p = ((MyParcel) parcel).allocateTo(agent);
 
-            updateRoute();
+                updateRoute();
+            }else{
+
+                LoggerFactory.getLogger(this.getClass()).warn("Trying to reallocate unavailable parcel {} (state: {}). Allocated to {}", parcel, state, ((MyParcel) parcel).getAllocatedVehicle());
+
+            }
 
 
         }
@@ -217,6 +240,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
      * @param parcels
      */
     protected void handleLostParcels(Parcel cause, List<Parcel> parcels){
+
         if(cause instanceof MyParcel)
             ((MyParcel) cause).loseAllocation(this);
         for(Parcel parcel : parcels){
@@ -228,6 +252,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         this.getB().remove(cause);
         this.getP().removeAll(parcels);
         this.getB().removeAll(parcels);
+
         //Update route
         updateRoute();
     }
@@ -237,7 +262,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         // Fetch actual parcels (in case of MultiParcel and build route
         List<Parcel> collect = this.getP().stream().map(this::getAllocatedParcel).collect(Collectors.toList());
 
-        LoggerFactory.getLogger(this.getClass()).info("RouteUpdate for {} with {}", this, collect);
+//        LoggerFactory.getLogger(this.getClass()).info("RouteUpdate for {} with {}", this, collect);
 
         Debug.logRouteForAgent(this, this.getRoute().stream().collect(Collectors.toMap((Parcel p) -> p, p -> this.getPDPModel().getParcelState(p), (p1, p2) -> p1)));
 
@@ -245,10 +270,12 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         // Update route
         List<Parcel> routeFrom = this.createRouteFrom(
                 collect);
-        if(!routeFrom.isEmpty()
-                && !this.getPDPModel().getContents(this).isEmpty()
-                && !this.getPDPModel().getContents(this).contains(routeFrom.iterator().next()))
-            throw new IllegalStateException("Bad Route");
+
+//        if(!routeFrom.isEmpty()
+//                && !this.getPDPModel().getContents(this).isEmpty()
+//                && !this.getPDPModel().getContents(this).contains(routeFrom.iterator().next()))
+//            throw new IllegalStateException("Bad Route");
+
         this.setRoute(
                 // Create route with double parcels
                 routeFrom);
@@ -273,19 +300,19 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         List<Parcel> result = new LinkedList<Parcel>();
 
         // Check for parcels that are picked up but not delivered yet.
-//        List<Parcel> current = this.getRoute().stream().collect(Collectors.toList());
         ImmutableSet<Parcel> currentContents = this.getPDPModel().getContents(this);
 
-        if(this.getPDPModel().getVehicleState(this).equals(PDPModel.VehicleState.PICKING_UP)){
-            if(currentContents.isEmpty())
-                result.add(this.getRoute().iterator().next());
-        }
+//        if(this.getPDPModel().getVehicleState(this).equals(PDPModel.VehicleState.PICKING_UP)){
+//            if(currentContents.isEmpty())
+//                result.add(this.getRoute().iterator().next());
+//        }
 
-        if(!currentContents.isEmpty()){
+        if(!currentContents.isEmpty()) {
             // A parcel is already picked up and must be added.
-            for(Parcel p : currentContents)
+            for (Parcel p : currentContents){
                 // correct if you have max 1 package in load.
                 result.add(0, p);
+            }
         }
 
         for(Parcel p : parcels){
@@ -425,14 +452,14 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                 LoggerFactory.getLogger(this.getClass()).info("Received ParcelMessage from {} to {} : {}", sender, this, contents);
             }
 
-                }
+        }
 
     }
 
     protected void removeParcel(Parcel parcel){
         this.getB().remove(parcel);
         this.getP().remove(parcel);
-//        this.updateRoute();
+        this.updateRoute();
     };
 
     /**
@@ -441,5 +468,10 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
      */
     protected abstract void addParcel(Parcel parcel);
 
-
+//    @Override
+//    public Collection<Parcel> getRoute() {
+//
+//        LoggerFactory.getLogger(this.getClass()).info("RouteAccess {} {}: {}", this, this.getCurrentTime(), super.getRoute());
+//        return super.getRoute();
+//    }
 }

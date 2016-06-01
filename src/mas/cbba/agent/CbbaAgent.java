@@ -332,9 +332,10 @@ public class CbbaAgent extends AbstractConsensusAgent {
     protected void setWinningBid(Parcel parcel, AbstractConsensusAgent agent, Long bid){
         super.setWinningBid(parcel, agent, bid);
 
-        if(bid == null)
-            throw new IllegalArgumentException("Bids can't be null.");
-        LoggerFactory.getLogger(this.getClass()).info("SetWinningBid {} {} {}", parcel, agent, bid);
+//        if(bid == null)
+//            throw new IllegalArgumentException("Bids can't be null.");
+
+//        LoggerFactory.getLogger(this.getClass()).info("SetWinningBid {} {} {}", parcel, agent, bid);
 
         this.y.put(parcel, bid);
         this.z.put(parcel, agent);

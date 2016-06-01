@@ -62,7 +62,7 @@ public class Debug {
     public static void logRouteForAgent(CbbaAgent agent, Map<Parcel, PDPModel.ParcelState> states){
         Logger logger = LoggerFactory.getLogger(agent.getClass());
 
-        logger.info("Route for {} (Parcels:{}) built from {}: \n {}",
+        logger.info("Route for {} (Parcels:{}) built from {}: \nRoute: {}",
                 agent,
                 agent.getZ().keySet().size(),
                 agent.getZ().keySet(),
@@ -76,7 +76,7 @@ public class Debug {
     public static void logRouteForAgent(CbgaAgent agent, Map<Parcel, PDPModel.ParcelState> states){
         Logger logger = LoggerFactory.getLogger(agent.getClass());
 
-        logger.info("Route for {} (Parcels:{}) built from {}: \n {}",
+        logger.info("Route for {} (Parcels:{}) built from {}: \nRoute: {}",
                 agent,
                 agent.getX().rowKeySet().size(),
                 agent.getX().rowKeySet(),
