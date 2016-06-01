@@ -487,4 +487,8 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 //        LoggerFactory.getLogger(this.getClass()).info("RouteAccess {} {}: {}", this, this.getCurrentTime(), super.getRoute());
 //        return super.getRoute();
 //    }
+
+    protected abstract AbstractConsensusAgent getWinningAgentBy(Parcel parcel);
+
+    protected abstract Long getWinningBidBy(Parcel parcel);
 }

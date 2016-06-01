@@ -48,9 +48,14 @@ public class CbbaAgent extends AbstractConsensusAgent {
         this.y.put(j, bid);
         // Inverse will fail on the off chance that two agents bid the same:
         // IllegalArgumentException: value already present
-        for(AbstractConsensusAgent a : snapshot.getWinningbids().row(j).keySet()){
+        for(final AbstractConsensusAgent a : snapshot.getWinningbids().row(j).keySet()){
             if(bid.equals(snapshot.getWinningbids().row(j).get(a))){
-                this.z.put(j, a);
+                if(a == k){
+                    this.z.put(j, this);
+                }
+                else{
+                    this.z.put(j, a);
+                }
             }
         }
 
@@ -339,7 +344,7 @@ public class CbbaAgent extends AbstractConsensusAgent {
     }
 
     private void reset(Parcel parcel) {
-        this.setWinningBid(parcel, null, NO_BID); //FIXME is dit legaal?
+        this.setWinningBid(parcel, this, NO_BID); //FIXME is dit legaal?
     }
 
     @Override
@@ -381,6 +386,16 @@ public class CbbaAgent extends AbstractConsensusAgent {
                         -> parcels.contains(parcel)
                         ? null
                         : winner));
+    }
+
+    @Override
+    protected AbstractConsensusAgent getWinningAgentBy(Parcel parcel) {
+        return this.getZ().get(parcel);
+    }
+
+    @Override
+    protected Long getWinningBidBy(Parcel parcel) {
+        return this.getY().get(parcel);
     }
 
     /**

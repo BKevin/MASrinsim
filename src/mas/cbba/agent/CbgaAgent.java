@@ -14,6 +14,9 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.sun.corba.se.impl.orb.ParserTable.get;
+import static java.time.chrono.JapaneseEra.values;
+
 /**
  * Created by pieter on 26.05.16.
  */
@@ -122,6 +125,12 @@ public class CbgaAgent extends AbstractConsensusAgent {
 //        }
 //    }
 
+    protected void addAgent(AbstractConsensusAgent k) {
+        for(Parcel p : this.getX().rowKeySet()) {
+            this.X.put(p, k, NO_BID);
+        }
+    }
+
     @Override
     public void constructBundle() {
 
@@ -189,6 +198,10 @@ public class CbgaAgent extends AbstractConsensusAgent {
 
         ImmutableTable<Parcel, AbstractConsensusAgent, Long> bids = snapshot.getWinningbids();
 
+        if(!this.getX().columnKeySet().contains(k)){
+            addAgent(k);
+        }
+
         // Convenience variable to adhere to the original algorithm
         CbgaAgent i = this;
 
@@ -203,9 +216,11 @@ public class CbgaAgent extends AbstractConsensusAgent {
                         j
                 );
 
-                thisAgent.evaluateSnapshot(new CbbaAgent(k, snapshot, j).generateSnapshot(), k);
+                CbbaAgent other = new CbbaAgent(k, snapshot, j);
 
-                projectOntoX(thisAgent, j);
+                thisAgent.evaluateSnapshot(other.generateSnapshot(), other);
+
+                projectOntoX(thisAgent, other, k, j);
             }
             // (else) multiparcel
             else{
@@ -275,13 +290,40 @@ public class CbgaAgent extends AbstractConsensusAgent {
         }
     }
 
-    private void projectOntoX(CbbaAgent agent, Parcel j) {
-        this.setWinningBid(j, agent.getZ().get(j), agent.getY().get(j));
+    private void projectOntoX(CbbaAgent agent, CbbaAgent other, AbstractConsensusAgent realOther, Parcel j) {
+        if(agent.getZ().get(j).equals(agent)){
+            this.setWinningBid(j, this, agent.getY().get(j));
+        }
+        else if(agent.getZ().get(j).equals(other)) {
+            this.setWinningBid(j, realOther, agent.getY().get(j));
+        }
+        else {
+            this.setWinningBid(j, agent.getZ().get(j), agent.getY().get(j));
+        }
     }
 
     @Override
     protected Snapshot generateSnapshot() {
         return new CbgaSnapshot(this, this.getCurrentTime());
+    }
+
+    @Override
+    protected AbstractConsensusAgent getWinningAgentBy(Parcel parcel) {
+
+        Long minBid = getWinningBidBy(parcel);
+
+        for(AbstractConsensusAgent a : this.getX().row(parcel).keySet()){
+            if(this.getX().get(parcel, a).equals(minBid)){
+                return a;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    protected Long getWinningBidBy(Parcel parcel) {
+        Optional<Long> bid = this.getX().row(parcel).values().stream().min(Long::compareTo);
+        return bid.isPresent() ? bid.get() : Long.MAX_VALUE;
     }
 
 }
