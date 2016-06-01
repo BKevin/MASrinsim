@@ -78,7 +78,7 @@ public class RouteTimes{
             //calculate the pickupTime
             long pickupTravelTime = v.computeTravelTimeFromTo(currentPosition, p.getPickupLocation(), timeUnit);
             pickupTime = currentTime
-                    + (p.canBePickedUp(v, pickupTravelTime) ? pickupTravelTime : p.getPickupTimeWindow().begin())
+                    + (!p.getPickupTimeWindow().isBeforeStart(currentTime+pickupTravelTime) ? pickupTravelTime : p.getPickupTimeWindow().begin())
                     + p.getPickupDuration();
             pickupTimes.put(p, pickupTime);
 
@@ -89,8 +89,8 @@ public class RouteTimes{
             //calculate the deliveryTime
             long deliveryTravelTime = v.computeTravelTimeFromTo(currentPosition, p.getDeliveryLocation(), timeUnit);
             deliveryTime = currentTime
-                    + (p.canBeDelivered(v, deliveryTravelTime) ? deliveryTravelTime : p.getDeliveryTimeWindow().begin())
-                    + p.getPickupDuration();
+                    + (!p.getDeliveryTimeWindow().isBeforeStart(currentTime+deliveryTravelTime) ? deliveryTravelTime : p.getDeliveryTimeWindow().begin())
+                    + p.getDeliveryDuration();
             deliveryTimes.put(p, deliveryTime);
 
             //set the time and position correct

@@ -2,6 +2,7 @@ package main.cbba.snapshot;
 
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
+import com.google.common.collect.ImmutableTable;
 import main.cbba.agent.CbbaAgent;
 import main.cbba.agent.AbstractConsensusAgent;
 

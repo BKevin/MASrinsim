@@ -5,6 +5,7 @@ import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
 import com.google.common.collect.*;
 import main.cbba.parcel.MultiParcel;
+import main.cbba.snapshot.CbbaSnapshot;
 import main.cbba.snapshot.CbgaSnapshot;
 import main.cbba.snapshot.Snapshot;
 
@@ -177,7 +178,11 @@ public class CbgaAgent extends AbstractConsensusAgent {
         for(Parcel j : bids.rowKeySet()){
 
             if(!(j instanceof MultiParcel)) {
-                // FIXME link to CBBA table method
+                CbbaAgent thisAgent = new CbbaAgent(this, (CbgaSnapshot) this.generateSnapshot(), j);
+
+                thisAgent.evaluateSnapshot(new CbbaAgent(k, snapshot, j).generateSnapshot(), k);
+
+                projectOntoX(thisAgent, j);
             }
 
             else{
@@ -247,6 +252,10 @@ public class CbgaAgent extends AbstractConsensusAgent {
             }
 
         }
+    }
+
+    private void projectOntoX(CbbaAgent agent, Parcel j) {
+        this.setWinningBid(j, agent.getZ().get(j), agent.getY().get(j));
     }
 
     @Override
