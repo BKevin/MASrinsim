@@ -5,6 +5,7 @@ import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import main.cbba.agent.AbstractConsensusAgent;
 import main.cbba.agent.AbstractConsensusAgent;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -22,7 +23,7 @@ public abstract class Snapshot implements MessageContents{
         // Timestamp static builders are not public, we have to manage with long values.
         this.timestamp = time.getTime(); //Timestamp.now(time.getTime());
         this.agent = agent.hashCode();
-
+        this.communicationTimestamps = agent.getCommunicationTimestamps();
     }
 
     public Long getTimestamp() {
