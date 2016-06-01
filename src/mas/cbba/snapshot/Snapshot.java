@@ -1,7 +1,6 @@
 package mas.cbba.snapshot;
 
 import com.github.rinde.rinsim.core.model.comm.MessageContents;
-import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import mas.cbba.agent.AbstractConsensusAgent;
 
 import java.util.Map;
@@ -16,10 +15,10 @@ public abstract class Snapshot implements MessageContents{
 
     private Map<AbstractConsensusAgent, Long> communicationTimestamps;
 
-    public Snapshot(AbstractConsensusAgent agent, TimeLapse time) {
+    public Snapshot(AbstractConsensusAgent agent, Long time) {
 
         // Timestamp static builders are not public, we have to manage with long values.
-        this.timestamp = time.getTime(); //Timestamp.now(time.getTime());
+        this.timestamp = time; //Timestamp.now(time.getTime());
         this.agent = agent.hashCode();
         this.communicationTimestamps = agent.getCommunicationTimestamps();
     }
@@ -34,7 +33,8 @@ public abstract class Snapshot implements MessageContents{
 
 
     /**
-     * Snapshot can be equal when they are about the same agent.
+     * Snapshot can be equal when they are about the same agent with the same timestamps of
+     * messages from other agents.
      * @param o
      * @return
      */
@@ -46,7 +46,8 @@ public abstract class Snapshot implements MessageContents{
 
         Snapshot sn = (Snapshot) o;
 
-        return sn.getAgentHash().equals(this.getAgentHash());
+        return sn.getAgentHash().equals(this.getAgentHash())
+                && sn.getCommunicationTimestamps().entrySet().containsAll(this.getCommunicationTimestamps().entrySet());
     }
 
     public Map<AbstractConsensusAgent, Long> getCommunicationTimestamps() {

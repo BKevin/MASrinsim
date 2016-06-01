@@ -3,6 +3,7 @@ package mas.cbba.agent;
 import com.github.rinde.rinsim.core.model.pdp.PDPModel;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
+import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableMap;
 import mas.cbba.Debug;
@@ -176,7 +177,11 @@ public class CbbaAgent extends AbstractConsensusAgent {
 
     @Override
     protected Snapshot generateSnapshot() {
-        return new CbbaSnapshot(this, this.getCurrentTimeLapse());
+        return new CbbaSnapshot(this, this.getCurrentTime());
+    }
+
+    protected Snapshot generateSnapshot(Long time){
+        return new CbbaSnapshot(this, time);
     }
 
     private void senderThinksHeWins(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, CbbaSnapshot otherSnapshot) {

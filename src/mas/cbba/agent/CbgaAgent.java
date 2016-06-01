@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
  */
 public class CbgaAgent extends AbstractConsensusAgent {
 
-    // FIXME anders dan in CbbaAgent!
     private static final Long NO_BID = Long.MAX_VALUE;
 
     /* m*n matrix with the winning bids of agents.
@@ -195,7 +194,11 @@ public class CbgaAgent extends AbstractConsensusAgent {
         for(Parcel j : bids.rowKeySet()){
 
             if(!(j instanceof MultiParcel)) {
-                CbbaAgent thisAgent = new CbbaAgent(this, (CbgaSnapshot) this.generateSnapshot(), j);
+                CbbaAgent thisAgent = new CbbaAgent(
+                        this,
+                        (CbgaSnapshot) this.generateSnapshot(),
+                        j
+                );
 
                 thisAgent.evaluateSnapshot(new CbbaAgent(k, snapshot, j).generateSnapshot(), k);
 
@@ -215,7 +218,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
 
                     // Agent i believes an assignment is taking place between agent m and task j
                     //(if) Xijm>0
-                    if(i.getX().get(j, m) != NO_BID) {
+                    if(!i.getX().get(j, m).equals(NO_BID) ){
 
                         // If K has newer information about assignment of task j to  M, update info.
                         //(if) Skm > Sim (or) m = k
@@ -228,13 +231,13 @@ public class CbgaAgent extends AbstractConsensusAgent {
                 }
             }
 
-            MultiParcel mj = (MultiParcel) j;
-
             // (for all m E A)
             for(AbstractConsensusAgent m : bids.row(j).keySet()){
                 //(if) m /= i (and) Xijm > 0 (and) Xkjm >= 0
-                if(m.equals(i) || i.getX().get(j, m) == 0)
+                if(m.equals(i) || i.getX().get(j, m).equals(NO_BID))
                     continue;
+
+                MultiParcel mj = (MultiParcel) j;
 
                 // Number of agents assigned to J according to I
                 List<Long> bidsOnJ = i.getX().row(j).values().stream().filter((Long d) -> this.NO_BID < d).collect(Collectors.<Long>toList());
@@ -277,7 +280,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
 
     @Override
     protected Snapshot generateSnapshot() {
-        return new CbgaSnapshot(this, this.getCurrentTimeLapse());
+        return new CbgaSnapshot(this, this.getCurrentTime());
     }
 
 }

@@ -1,7 +1,6 @@
 package mas.cbba.snapshot;
 
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
-import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import mas.cbba.agent.CbbaAgent;
 import mas.cbba.agent.AbstractConsensusAgent;
 
@@ -15,12 +14,11 @@ public class CbbaSnapshot extends Snapshot {
     private final Map<Parcel, Long> y;
     private final Map<Parcel, AbstractConsensusAgent> z;
 
-    public CbbaSnapshot(CbbaAgent agent, TimeLapse time) {
+    public CbbaSnapshot(CbbaAgent agent, Long time) {
         super(agent, time);
 
         this.y = agent.getY();
         this.z = agent.getZ();
-
     }
 
     public Map<Parcel, Long> getY() {

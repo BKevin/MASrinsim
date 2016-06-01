@@ -1,7 +1,6 @@
 package mas.cbba.snapshot;
 
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
-import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.google.common.collect.ImmutableTable;
 import mas.cbba.agent.AbstractConsensusAgent;
 import mas.cbba.agent.CbgaAgent;
@@ -13,7 +12,7 @@ public class CbgaSnapshot extends Snapshot {
 
     private final ImmutableTable<Parcel, AbstractConsensusAgent, Long> winningbids;
 
-    public CbgaSnapshot(CbgaAgent agent, TimeLapse time) {
+    public CbgaSnapshot(CbgaAgent agent, Long time) {
 
         super(agent, time);
 
@@ -23,8 +22,13 @@ public class CbgaSnapshot extends Snapshot {
 
     @Override
     public boolean equals(Object o) {
-        //TODO implement
-        return super.equals(o);
+        boolean result;
+        if(result = (super.equals(o) && o instanceof CbgaSnapshot)){
+            CbgaSnapshot sn = (CbgaSnapshot) o;
+
+            result = this.getWinningbids().values().equals(((CbgaSnapshot) o).getWinningbids().values());
+        }
+        return result ;
     }
 
     public ImmutableTable<Parcel, AbstractConsensusAgent, Long> getWinningbids() {
