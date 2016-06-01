@@ -2,8 +2,11 @@ package main.cbba.agent;
 
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableMap;
 import main.cbba.snapshot.CbbaSnapshot;
+import main.cbba.snapshot.CbgaSnapshot;
 import main.cbba.snapshot.Snapshot;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +28,20 @@ public class CbbaAgent extends AbstractConsensusAgent {
 
         this.y = new HashMap<>();
         this.z = new HashMap<>();
+    }
+
+    public CbbaAgent(CbgaAgent cbgaAgent, Parcel j) {
+        this(cbgaAgent.getDTO());
+        Long bid = cbgaAgent.getX().row(j).values().stream().max(Long::compareTo).get();
+        this.y.put(j, bid);
+        this.z.put(j, HashBiMap.create(cbgaAgent.getX().row(j)).inverse().get(bid));
+    }
+
+    public CbbaAgent(AbstractConsensusAgent k, CbgaSnapshot snapshot, Parcel j) {
+        this(k.getDTO());
+        Long bid = snapshot.getWinningbids().row(j).values().stream().max(Long::compareTo).get();
+        this.y.put(j, bid);
+        this.z.put(j, HashBiMap.create(snapshot.getWinningbids().row(j)).inverse().get(bid));
     }
 
     public void constructBundle() {
@@ -50,7 +67,7 @@ public class CbbaAgent extends AbstractConsensusAgent {
 //
 //                    for(int pos = 0; pos <= getP().size(); pos++){
 //                        //calculate a bid for each position
-//                        long bid = calculatePenaltyAtPosition(getP(),parcel,pos) - currentPenalty;
+//                        long bid = calculateRouteCostAtPosition(getP(),parcel,pos) - currentPenalty;
 //                        //check if bid is better than current best
 //                        if(isBetterBidThan(bid,newY.get(parcel))){
 //                            //check if bid is better than previous best
@@ -63,7 +80,7 @@ public class CbbaAgent extends AbstractConsensusAgent {
 //                        }
 //                    }
                     long bid = this.calculateBestRouteWith(parcel);
-                    LoggerFactory.getLogger(this.getClass()).info("CalculateBestRouteWith value for {}: {}", parcel, bid);
+                    LoggerFactory.getLogger(this.getClass()).info("CalculateBestRouteWith value for agent {} of parcel {}: {}", this, parcel, bid);
                     //check if bid is better than current best
                     if(isBetterBidThan(bid,this.y.get(parcel))){
                         //check if bid is better than previous best
@@ -116,7 +133,7 @@ public class CbbaAgent extends AbstractConsensusAgent {
 
 
         // TODO Original Cbba Table for bid evaluation.
-        CbbaSnapshot mySnapshot = (CbbaSnapshot) this.getSnapshot();
+        CbbaSnapshot mySnapshot = (CbbaSnapshot) this.generateSnapshot();
 
         for(Parcel parcel : mySnapshot.getZ().keySet()){
             //If the incoming snapshot has no information about this parcel, continue to the next one.
