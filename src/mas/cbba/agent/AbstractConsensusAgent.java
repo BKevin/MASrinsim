@@ -373,7 +373,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                 this.setCommunicationTimestamp(message);
 
                 evaluateSnapshot((Snapshot) message.getContents(), (AbstractConsensusAgent) sender);
-                LoggerFactory.getLogger(this.getClass()).info("Received Snapshot from {} to {} : {}", sender, this, contents);
+//                LoggerFactory.getLogger(this.getClass()).info("Received Snapshot from {} to {} : {}", sender, this, contents);
             }
 
             if(contents instanceof SoldParcelMessage){

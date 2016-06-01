@@ -47,18 +47,13 @@ public class CbbaAgent extends AbstractConsensusAgent {
     }
 
     public void constructBundle() {
-
-
-//        long currentPenalty = calculateRouteCost(getP());
-
-
         Set<Parcel> parcels = this.z.keySet();
 
-        Map<Parcel, PDPModel.ParcelState> states = parcels.stream().collect(Collectors.toMap(p -> p, p -> this.getPDPModel().getParcelState(p)));
+        // Debugging
+//        Map<Parcel, PDPModel.ParcelState> states = parcels.stream().collect(Collectors.toMap(p -> p, p -> this.getPDPModel().getParcelState(p)));
+//        Collection<Parcel> availableParcels = this.getPDPModel().getParcels(PDPModel.ParcelState.ANNOUNCED, PDPModel.ParcelState.AVAILABLE);
+//        Debug.logParcelListForAgent(this, states, availableParcels);
 
-        Collection<Parcel> availableParcels = this.getPDPModel().getParcels(PDPModel.ParcelState.ANNOUNCED, PDPModel.ParcelState.AVAILABLE);
-
-        Debug.logParcelListForAgent(this, states, availableParcels);
 
         // Get all parcels not already in B
         List<Parcel> notInB = parcels.stream().filter(p -> !this.getB().contains(p)).collect(Collectors.toList());
