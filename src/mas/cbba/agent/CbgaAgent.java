@@ -4,6 +4,7 @@ import com.github.rinde.rinsim.core.model.pdp.PDPModel;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
 import com.google.common.collect.*;
+import mas.cbba.Debug;
 import mas.cbba.parcel.MultiParcel;
 import mas.cbba.snapshot.CbgaSnapshot;
 import mas.cbba.snapshot.Snapshot;
@@ -18,7 +19,7 @@ import java.util.stream.Collectors;
 public class CbgaAgent extends AbstractConsensusAgent {
 
     // FIXME anders dan in CbbaAgent!
-    private static final Long NO_BID = 0L;
+    private static final Long NO_BID = Long.MAX_VALUE;
 
     /* m*n matrix with the winning bids of agents.
      * Xij is equal to the winning bid of agent i for task j or equal to  0 if no assignment has been made.
@@ -31,10 +32,9 @@ public class CbgaAgent extends AbstractConsensusAgent {
         this.X = HashBasedTable.create(
 //                this.getPDPModel().getParcels(PDPModel.ParcelState.AVAILABLE).size(), //expected parcels
 //                this.getPDPModel().getVehicles().size() //expected vehicles
-
         );
-    }
 
+    }
 
     /**
      * @return Immutable version of the winning bids array
@@ -75,11 +75,24 @@ public class CbgaAgent extends AbstractConsensusAgent {
 
     @Override
     protected void addParcel(Parcel parcel) {
-        for(AbstractConsensusAgent agent : this.X.columnKeySet())
-            this.X.put(parcel,agent, this.NO_BID);
+        // Initial case: no agent or parcels are in the table
+        if(this.X.cellSet().isEmpty()){
+            this.X.put(parcel, this, NO_BID);
+        }
+        else {
+            // Addition to Table cause columnKeySet to be updated. This yields ConcurrentModificationExceptions.
+            // Use an ImmutableList instead
+            // http://code-o-matic.blogspot.be/2009/06/funny-concurrentmodificationexception.html
+            for (final AbstractConsensusAgent agent : ImmutableList.copyOf(this.X.columnKeySet())) {
+                this.X.put(parcel, agent, this.NO_BID);
+            }
+        }
     }
 
+    @Override
     protected void removeParcel(Parcel parcel){
+        super.removeParcel(parcel);
+
         for(AbstractConsensusAgent agent : this.X.columnKeySet()){
             this.X.remove(parcel, agent);
         }
@@ -114,12 +127,17 @@ public class CbgaAgent extends AbstractConsensusAgent {
 
         Set<Parcel> parcels = X.column(this).keySet();
 
-        // Get all parcels not already in B
-        List<Parcel> notInB = parcels.stream().filter(p -> !this.getB().contains(p)).collect(Collectors.toList());
+        // Debugging
+        Map<Parcel, PDPModel.ParcelState> states = parcels.stream().collect(Collectors.toMap(p -> p, p -> this.getPDPModel().getParcelState(p)));
+        Collection<Parcel> availableParcels = this.getPDPModel().getParcels(PDPModel.ParcelState.ANNOUNCED, PDPModel.ParcelState.AVAILABLE);
+        Debug.logParcelListForAgent(this, states, availableParcels);
 
         boolean bIsChanging = true;
 
         while(bIsChanging) {
+
+            // Get all parcels not already in B
+            List<Parcel> notInB = parcels.stream().filter(p -> !this.getB().contains(p)).collect(Collectors.toList());
 
             // Find best route values for every parcel currently not assigned to this vehicle
             Map<Parcel, Long> c_ij =
@@ -197,7 +215,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
 
                     // Agent i believes an assignment is taking place between agent m and task j
                     //(if) Xijm>0
-                    if(i.getX().get(j, m) > 0) {
+                    if(i.getX().get(j, m) != NO_BID) {
 
                         // If K has newer information about assignment of task j to  M, update info.
                         //(if) Skm > Sim (or) m = k
