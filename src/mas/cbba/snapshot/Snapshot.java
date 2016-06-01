@@ -46,8 +46,9 @@ public abstract class Snapshot implements MessageContents{
 
         Snapshot sn = (Snapshot) o;
 
-        return sn.getAgentHash().equals(this.getAgentHash())
-                && sn.getCommunicationTimestamps().entrySet().containsAll(this.getCommunicationTimestamps().entrySet());
+        return sn.getAgentHash().equals(this.getAgentHash());
+            // Timestamps should not be checked for equality.
+//                && sn.getCommunicationTimestamps().entrySet().containsAll(this.getCommunicationTimestamps().entrySet());
     }
 
     public Map<AbstractConsensusAgent, Long> getCommunicationTimestamps() {

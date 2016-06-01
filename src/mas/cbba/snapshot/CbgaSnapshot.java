@@ -37,4 +37,8 @@ public class CbgaSnapshot extends Snapshot {
         return winningbids;
     }
 
+    @Override
+    public String toString() {
+        return super.toString() + "\nx: " + getWinningbids();
+    }
 }
