@@ -42,17 +42,17 @@ public class Main {
     private static final double NEW_PARCEL_PROB = 0.002;
 
     public static void main(String[] args) {
-        runWithScenario();
+        runWithScenario(args);
     }
 
-    public static void runWithScenario() {
+    public static void runWithScenario(String... args) {
         boolean multi = false;
 
 
         View.Builder viewBuilder = createGUI();
 
         int id = 0;
-        Scenario myScenario = makeScenario(viewBuilder, id);
+        Scenario myScenario = makeScenario(viewBuilder, id, args);
 
         if(multi){
         Simulator.builder()
@@ -78,8 +78,7 @@ public class Main {
         }
     }
 
-
-    private static Scenario makeScenario(View.Builder viewBuilder, int id) {
+    private static Scenario makeScenario(View.Builder viewBuilder, int id, String... filenames) {
         Scenario.Builder scenarioBuilder = Scenario.builder();
 
         scenarioBuilder
@@ -94,7 +93,10 @@ public class Main {
                 .addModel(CommModel.builder())
                 .addModel(viewBuilder);
 
-        File file = Paths.get("resources/new_scenarios/scene_2016.06.01.13.26.txt").toFile();
+        String filename = filenames.length > 0 ? filenames[0] : "scene.txt";
+
+        File file = Paths.get("resources/scenario/" + filename).toFile();
+
         LoggerFactory.getLogger(Main.class).info("Reading from {} - {}", file.getPath(), file.canRead());
         long lastEventTime = -1;
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {

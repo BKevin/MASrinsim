@@ -44,13 +44,25 @@ public class ScenarioGenerator {
     private static double travelTimeVariation = 5000;
 
     public static void main(String[] args) {
-        generateScenario();
+        generateScenario(args);
     }
 
-    private static void generateScenario() {
+    private static void generateScenario(String... filenames) {
         currentTime = 0;
 
-        File file = Paths.get("resources/new_scenarios/scene_"+new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date())+".txt").toFile();
+        String filename = filenames.length > 0 ? filenames[0] : "scene"
+                //+"_"+new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date())
+                +".txt";
+
+        File file = Paths.get("resources/scenario/"+filename).toFile();
+
+        try {
+            file.getParentFile().mkdirs();
+            file.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         try (BufferedWriter br = new BufferedWriter(
                                             new OutputStreamWriter(
                                                     new FileOutputStream(file), "utf-8"))) {
