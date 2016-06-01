@@ -29,11 +29,11 @@ public class ScenarioGenerator {
     private static long vehicleAverageInterArrivalTime; //ms
     private static long vehicleInterArrivalTimeVariation; //ms
     private static int vehicleCapacity = 1;
-    private static int vehicleSpeed = 100;
+    private static int vehicleSpeed = 10;
 
 
-    private static long parcelAverageInterArrivalTime = 50000; //ms
-    private static long parcelInterArrivalTimeVariation = 20000; //ms
+    private static long parcelAverageInterArrivalTime = 500000; //ms
+    private static long parcelInterArrivalTimeVariation = 200000; //ms
     private static long parcelAverageTimeWindowVariation = 10000; //ms
     private static int parcelServiceDuration = 0;
     private static int parcelCapacity = 1;

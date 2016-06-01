@@ -52,6 +52,13 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         this.communicationTimestamps = new HashMap<>();
     }
 
+    @Override
+    public void afterTick(TimeLapse time) {
+        super.afterTick(time);
+//        LoggerFactory.getLogger(this.getClass()).info("AfterTick #messages = {}", this.getCommDevice().get().getUnreadCount());
+
+    }
+
     protected void preTick(TimeLapse time) {
         super.preTick(time);
 //        inTick = true;
