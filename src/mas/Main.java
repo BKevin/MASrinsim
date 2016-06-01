@@ -1,4 +1,4 @@
-package main;
+package mas;
 
 import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.model.comm.CommModel;
@@ -7,12 +7,12 @@ import com.github.rinde.rinsim.core.model.road.RoadModelBuilders;
 import com.github.rinde.rinsim.geom.Point;
 import com.github.rinde.rinsim.pdptw.common.PDPRoadModel;
 import com.github.rinde.rinsim.scenario.*;
+import com.github.rinde.rinsim.ui.View;
 import com.github.rinde.rinsim.ui.renderers.CommRenderer;
 import com.github.rinde.rinsim.ui.renderers.PlaneRoadModelRenderer;
 import com.github.rinde.rinsim.ui.renderers.RoadUserRenderer;
-import com.github.rinde.rinsim.ui.View;
-import com.github.rinde.rinsim.scenario.StopConditions;
-import scenario.*;
+import mas.scenario.*;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -94,7 +94,8 @@ public class Main {
                 .addModel(CommModel.builder())
                 .addModel(viewBuilder);
 
-        File file = Paths.get("src\\main\\resources\\new_scenarios\\scene.txt").toFile();
+        File file = Paths.get("resources/new_scenarios/scene_2016.06.01.13.26.txt").toFile();
+        LoggerFactory.getLogger(Main.class).info("Reading from {} - {}", file.getPath(), file.canRead());
         long lastEventTime = -1;
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;

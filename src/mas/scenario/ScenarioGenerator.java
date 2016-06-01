@@ -1,10 +1,14 @@
-package scenario;
+package mas.scenario;
 
 import com.github.rinde.rinsim.geom.Point;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Created by KevinB on 12/05/2016.
@@ -16,7 +20,7 @@ public class ScenarioGenerator {
     private static double width = 10;
     private static double height = 10;
 
-    private static int amountVehiclesAtStart = 3;
+    private static int amountVehiclesAtStart = 4;
     private static int amountParcelsAtStart = 3;
     private static int amountNewVehicles = 0;
     private static int amountNewParcels = 100;
@@ -46,7 +50,7 @@ public class ScenarioGenerator {
     private static void generateScenario() {
         currentTime = 0;
 
-        File file = Paths.get("src\\main\\resources\\new_scenarios\\scene.txt").toFile();
+        File file = Paths.get("resources/new_scenarios/scene_"+new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date())+".txt").toFile();
         try (BufferedWriter br = new BufferedWriter(
                                             new OutputStreamWriter(
                                                     new FileOutputStream(file), "utf-8"))) {
@@ -80,6 +84,8 @@ public class ScenarioGenerator {
 
 
             br.close();
+
+            LoggerFactory.getLogger(ScenarioGenerator.class).info("Wrote scenario to {} - {}", file.getCanonicalPath(), file.canWrite());
         } catch (IOException e) {
             e.printStackTrace();
         }
