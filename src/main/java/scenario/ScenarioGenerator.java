@@ -16,10 +16,10 @@ public class ScenarioGenerator {
     private static double width = 10;
     private static double height = 10;
 
-    private static int amountVehiclesAtStart = 2;
-    private static int amountParcelsAtStart = 1;
+    private static int amountVehiclesAtStart = 3;
+    private static int amountParcelsAtStart = 3;
     private static int amountNewVehicles = 0;
-    private static int amountNewParcels = 3;
+    private static int amountNewParcels = 100;
 
 
     private static long vehicleAverageInterArrivalTime; //ms
@@ -34,6 +34,10 @@ public class ScenarioGenerator {
     private static int parcelServiceDuration = 1000;
     private static int parcelCapacity = 1;
     private static int maxAmountOfRequiredAgents = 1;
+    private static double[] distribution = {1,0};
+
+    private static double expectedTravelTime = 20000;
+    private static double travelTimeVariation = 5000;
 
     public static void main(String[] args) {
         generateScenario();
@@ -151,9 +155,7 @@ public class ScenarioGenerator {
 
 
     private static String makeTimeWindows(long time, Point location1, Point location2) {
-        //FIXME time calculations probably wrong?
-        double distance = Math.sqrt(Math.pow(location1.x - location2.x,2) + Math.pow(location1.y - location2.y,2));
-        double timeToTravel = distance/vehicleSpeed;
+        double timeToTravel = getExpectedToTravel();
 
         long currentTime = time;
         if( time < 0)
@@ -175,6 +177,11 @@ public class ScenarioGenerator {
 
     }
 
+    private static double getExpectedToTravel() {
+        return expectedTravelTime + ((2*rng.nextDouble() - 1) * travelTimeVariation);
+
+    }
+
     private static Point randomPoint(){
         double x = rng.nextDouble() * height;
         double y = rng.nextDouble() * width;
@@ -184,7 +191,14 @@ public class ScenarioGenerator {
 
 
     private static int getRequiredAgents() {
-        return 1; //FIXME add something to make it randomly generated
+        double value = 0;
+        double random = rng.nextDouble();
+        for(int i = 0; i < maxAmountOfRequiredAgents; i++){
+            value += distribution[i];
+            if(random < value)
+                return i + 1;
+        }
+        return maxAmountOfRequiredAgents; //FIXME add something to make it randomly generated
     }
 
 
