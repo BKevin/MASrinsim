@@ -17,6 +17,7 @@ import mas.MyVehicle;
 import mas.cbba.Debug;
 import mas.cbba.parcel.MultiParcel;
 import mas.cbba.snapshot.Snapshot;
+import mas.comm.NewParcelMessage;
 import mas.comm.ParcelMessage;
 import mas.comm.SoldParcelMessage;
 import mas.route.evaluation.RouteTimes;
@@ -51,8 +52,6 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         super.preTick(time);
 
 //        org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick start for {}", this);
-
-        ArrayList<Parcel> previous = null;
 
         //"Realtime" implementatie: verander de while loop door een for loop of asynchrone thread,
         // iedere tick wordt er dan een beperkte berekening/communicatie gedaan.
@@ -211,7 +210,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
         LoggerFactory.getLogger(this.getClass()).info("RouteUpdate for {} with {}", this, collect);
 
-        Debug.logRouteForAgent((CbbaAgent) this, this.getRoute().stream().collect(Collectors.toMap((Parcel p) -> p, p -> this.getPDPModel().getParcelState(p), (p1, p2) -> p1)));
+        Debug.logRouteForAgent(this, this.getRoute().stream().collect(Collectors.toMap((Parcel p) -> p, p -> this.getPDPModel().getParcelState(p), (p1, p2) -> p1)));
 
         // Update route
         this.setRoute(
@@ -380,7 +379,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                 this.removeParcel(((ParcelMessage) contents).getParcel());
                 LoggerFactory.getLogger(this.getClass()).info("Received SoldParcelMessage from {} to {} : {}", sender, this, contents);
             }
-            else if (contents instanceof ParcelMessage){
+            else if (contents instanceof NewParcelMessage){
                 //TODO meer nodig?
                 this.addParcel(((ParcelMessage) contents).getParcel());
                 LoggerFactory.getLogger(this.getClass()).info("Received ParcelMessage from {} to {} : {}", sender, this, contents);
