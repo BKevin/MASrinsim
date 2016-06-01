@@ -5,8 +5,6 @@ import com.github.rinde.rinsim.core.model.comm.Message;
 import com.github.rinde.rinsim.core.model.comm.MessageContents;
 import com.github.rinde.rinsim.core.model.pdp.*;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
-import com.github.rinde.rinsim.event.Event;
-import com.github.rinde.rinsim.event.Listener;
 import com.github.rinde.rinsim.geom.Point;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
@@ -16,6 +14,7 @@ import mas.MyParcel;
 import mas.MyVehicle;
 import mas.cbba.Debug;
 import mas.cbba.parcel.MultiParcel;
+import mas.cbba.snapshot.CbbaSnapshot;
 import mas.cbba.snapshot.Snapshot;
 import mas.comm.NewParcelMessage;
 import mas.comm.ParcelMessage;
@@ -25,13 +24,14 @@ import mas.route.evaluation.strategy.TotalCostValue;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * Created by pieter on 30.05.16.
  */
 public abstract class AbstractConsensusAgent extends MyVehicle {
+
+    public static final Long NO_BID = Long.MAX_VALUE; //TODO check of dit overal klopt
 
 
     private LinkedList<Parcel> b;
@@ -122,8 +122,6 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     }
 
     public abstract void constructBundle();
-
-    public abstract void evaluateSnapshot(Snapshot snaphot, AbstractConsensusAgent k);
 
     protected abstract Snapshot generateSnapshot();
 
@@ -491,4 +489,203 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     protected abstract AbstractConsensusAgent getWinningAgentBy(Parcel parcel);
 
     protected abstract Long getWinningBidBy(Parcel parcel);
+
+
+    /***************************
+     *
+     * CBBA algorithm
+     *
+     ****************************/
+
+    /**
+     * Evaluate a single snapshot message from another sender
+     */
+    public void evaluateSnapshot(Snapshot s, AbstractConsensusAgent sender){
+//        if(!(s instanceof CbbaSnapshot)){
+//            throw new IllegalArgumentException("Snapshot does not have the right format. Expected CbbaSnapshot");
+//        }
+
+//        CbbaSnapshot s = (CbbaSnapshot) s;
+
+
+
+        // TODO Original Cbba Table for bid evaluation.
+//        CbbaSnapshot mySnapshot = (CbbaSnapshot) this.getSnapshot();
+
+        for(Parcel parcel : this.getParcels()){
+            //If the incoming snapshot has no information about this parcel, continue to the next one.
+            if(s.getWinningAgentBy(parcel) == null){
+                continue;
+            }
+            AbstractConsensusAgent myIdea = this.getWinningAgentBy(parcel);
+            AbstractConsensusAgent otherIdea = s.getWinningAgentBy(parcel);
+
+            if(sender.equals(otherIdea)){
+                senderThinksHeWins(sender, parcel, myIdea, s);
+                continue;
+            }
+            if(this.equals(otherIdea)){
+                senderThinksIWin(sender, parcel, myIdea, s);
+                continue;
+            }
+            if(otherIdea != null && !sender.equals(otherIdea) && !this.equals(otherIdea)){
+                senderThinksSomeoneElseWins(sender, parcel, myIdea, otherIdea, s);
+                continue;
+            }
+            if(otherIdea == null){
+                senderThinksNododyWins(sender, parcel, myIdea, s);
+                continue;
+            }
+
+
+        }
+
+    }
+
+
+    private void senderThinksHeWins(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, Snapshot otherSnapshot) {
+        //I think I win
+        if(this.equals(myIdea)){
+            if(compareBids(otherSnapshot.getWinningBidBy(parcel),sender,this.getWinningBidBy(parcel),this))
+                update(parcel, otherSnapshot);
+            return;
+        }
+        //I think sender wins
+        if(sender.equals(myIdea)){
+            update(parcel, otherSnapshot);
+            return;
+        }
+        if(myIdea != null && !sender.equals(myIdea) && !this.equals(myIdea)){
+            Long otherTimeStamp = otherSnapshot.getCommunicationTimestamps().get(myIdea);
+            Long myTimeStamp = this.getCommunicationTimestamps().get(myIdea);
+            if((otherTimeStamp != null && otherTimeStamp > myTimeStamp)
+                    || (compareBids(otherSnapshot.getWinningBidBy(parcel),sender,this.getWinningBidBy(parcel),myIdea)))
+                update(parcel, otherSnapshot);
+            return;
+        }
+        if(myIdea == null){
+            update(parcel, otherSnapshot);
+            return;
+        }
+
+        throw new IllegalArgumentException("Something went wrong in senderThinksHeWins: unreachable code.");
+    }
+
+    private void senderThinksIWin(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, Snapshot otherSnapshot) {
+        if(this.equals(myIdea)) {
+            leave();
+            return;
+        }
+        if(sender.equals(myIdea)){
+            reset(parcel);
+            return;
+        }
+        if(myIdea != null && !sender.equals(myIdea) && !this.equals(myIdea)){
+            Long otherTimeStamp = otherSnapshot.getCommunicationTimestamps().get(myIdea);
+            Long myTimeStamp = this.getCommunicationTimestamps().get(myIdea);
+            if((otherTimeStamp != null && otherTimeStamp > myTimeStamp))
+                reset(parcel);
+            return;
+        }
+        if(myIdea == null){
+            leave();
+            return;
+        }
+
+        throw new IllegalArgumentException("Something went wrong in senderThinksIWins: unreachable code.");
+    }
+
+    private void senderThinksSomeoneElseWins(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, AbstractConsensusAgent otherIdea, Snapshot otherSnapshot) {
+
+        Long otherTimeStamp = otherSnapshot.getCommunicationTimestamps().get(otherIdea);
+        Long myTimeStamp = this.getCommunicationTimestamps().get(otherIdea);
+        boolean otherHasNewerSnapshotForM = myTimeStamp == null || otherTimeStamp > myTimeStamp;
+
+        if(this.equals(myIdea)) {
+            if(otherHasNewerSnapshotForM
+                    && (compareBids(otherSnapshot.getWinningBidBy(parcel),otherIdea,this.getWinningBidBy(parcel),myIdea)))
+                update(parcel, otherSnapshot);
+            return;
+        }
+        if(sender.equals(myIdea)){
+            if(otherHasNewerSnapshotForM)
+                update(parcel, otherSnapshot);
+            else
+                reset(parcel);
+            return;
+        }
+        if(otherIdea.equals(myIdea)){
+            if(otherHasNewerSnapshotForM)
+                update(parcel, otherSnapshot);
+            return;
+        }
+        if(myIdea != null && !sender.equals(myIdea) && !this.equals(myIdea) && !otherIdea.equals(myIdea)){
+
+            Long otherTimeStampMy = otherSnapshot.getCommunicationTimestamps().get(myIdea);
+            Long myTimeStampMy = this.getCommunicationTimestamps().get(myIdea);
+            boolean otherHasNewerSnapshotForN = otherTimeStampMy != null && otherTimeStampMy >myTimeStampMy;
+
+
+            if(otherHasNewerSnapshotForM
+                    && otherHasNewerSnapshotForN)
+                update(parcel, otherSnapshot);
+            if(otherHasNewerSnapshotForM
+                    && (compareBids(otherSnapshot.getWinningBidBy(parcel),otherIdea,this.getWinningBidBy(parcel),myIdea)))
+                update(parcel, otherSnapshot);
+            if(otherHasNewerSnapshotForN
+                    && !otherHasNewerSnapshotForM)
+                reset(parcel);
+            return;
+        }
+        if(myIdea == null){
+            if(otherHasNewerSnapshotForM)
+                update(parcel, otherSnapshot);
+            return;
+        }
+
+        throw new IllegalArgumentException("Something went wrong in senderThinksSomeoneElseWins: unreachable code.");
+    }
+    private void senderThinksNododyWins(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, Snapshot otherSnapshot) {
+        if(this.equals(myIdea)) {
+            leave();
+            return;
+        }
+        if(sender.equals(myIdea)){
+            update(parcel, otherSnapshot);
+            return;
+        }
+        if(myIdea != null && !sender.equals(myIdea) && !this.equals(myIdea)){
+            Long otherTimeStamp = otherSnapshot.getCommunicationTimestamps().get(myIdea);
+            Long myTimeStamp = this.getCommunicationTimestamps().get(myIdea);
+            if((otherTimeStamp != null && otherTimeStamp > myTimeStamp))
+                update(parcel, otherSnapshot);
+            return;
+        }
+        if(myIdea == null){
+            leave();
+            return;
+        }
+
+        throw new IllegalArgumentException("Something went wrong in senderThinksNododyWins: unreachable code.");
+    }
+
+    private boolean compareBids(long bid1, AbstractConsensusAgent agent1, long bid2, AbstractConsensusAgent agent2){
+        return isBetterBidThan(bid1,bid2)
+                || (bid1 == bid2 && agent1.hashCode() > agent2.hashCode());
+    }
+
+    private void update(Parcel parcel, Snapshot snapshot) {
+        this.setWinningBid(parcel, snapshot.getWinningAgentBy(parcel), snapshot.getWinningBidBy(parcel));
+    }
+
+    private void leave() {
+        //do nothing
+    }
+
+    private void reset(Parcel parcel) {
+        this.setWinningBid(parcel, this, NO_BID);
+    }
+
+
+    public abstract Set<Parcel> getParcels();
 }

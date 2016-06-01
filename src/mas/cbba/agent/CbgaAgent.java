@@ -208,19 +208,23 @@ public class CbgaAgent extends AbstractConsensusAgent {
         for(Parcel p : bids.rowKeySet()){
             MyParcel j = (MyParcel) p;
 
+
             // (if) default number of agents required (==1)
             if(j.getRequiredAgents().equals(MyParcel.DEFAULT_REQUIRED_AGENTS)) {
-                CbbaAgent thisAgent = new CbbaAgent(
-                        this,
-                        (CbgaSnapshot) this.generateSnapshot(),
-                        j
-                );
 
-                CbbaAgent other = new CbbaAgent(k, snapshot, j);
+                super.evaluateSnapshot(snapshot, k);
 
-                thisAgent.evaluateSnapshot(other.generateSnapshot(), other);
+//                CbbaAgent thisAgent = new CbbaAgent(
+//                        this,
+//                        (CbgaSnapshot) this.generateSnapshot(),
+//                        j
+//                );
 
-                projectOntoX(thisAgent, other, k, j);
+//                CbbaAgent other = new CbbaAgent(k, snapshot, j);
+//
+//                thisAgent.evaluateSnapshot(other.generateSnapshot(), other);
+//
+//                projectOntoX(thisAgent, other, k, j);
             }
             // (else) multiparcel
             else{
@@ -290,17 +294,22 @@ public class CbgaAgent extends AbstractConsensusAgent {
         }
     }
 
-    private void projectOntoX(CbbaAgent agent, CbbaAgent other, AbstractConsensusAgent realOther, Parcel j) {
-        if(agent.getZ().get(j).equals(agent)){
-            this.setWinningBid(j, this, agent.getY().get(j));
-        }
-        else if(agent.getZ().get(j).equals(other)) {
-            this.setWinningBid(j, realOther, agent.getY().get(j));
-        }
-        else {
-            this.setWinningBid(j, agent.getZ().get(j), agent.getY().get(j));
-        }
+    @Override
+    public Set<Parcel> getParcels() {
+        return this.getX().rowKeySet();
     }
+
+//    private void projectOntoX(CbbaAgent agent, CbbaAgent other, AbstractConsensusAgent realOther, Parcel j) {
+//        if(agent.getZ().get(j).equals(agent)){
+//            this.setWinningBid(j, this, agent.getY().get(j));
+//        }
+//        else if(agent.getZ().get(j).equals(other)) {
+//            this.setWinningBid(j, realOther, agent.getY().get(j));
+//        }
+//        else {
+//            this.setWinningBid(j, agent.getZ().get(j), agent.getY().get(j));
+//        }
+//    }
 
     @Override
     protected Snapshot generateSnapshot() {
