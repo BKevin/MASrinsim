@@ -18,7 +18,7 @@ public class SubParcel extends MyParcel {
 
         // announcement is handled by parent MultiParcel
         setAnnouncedArrival();
-        setAnnouncedSold();
+//        setAnnouncedSold();
     }
 
     public MultiParcel getParent(){
@@ -33,6 +33,11 @@ public class SubParcel extends MyParcel {
     @Override
     public boolean canBeDelivered(Vehicle v, long time) {
         return parent.canBeDelivered(v, time);
+    }
+
+    @Override
+    public Integer getRequiredAgents() {
+        return parent.getRequiredAgents();
     }
 
     //    @Override
