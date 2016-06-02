@@ -306,6 +306,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
     /**
      * Replace the current bid with the better value of another agent
+     * Handles de-allocation of the from agent
      * @param parcel
      * @param from
      * @param to
@@ -612,24 +613,25 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         //I think I win
         if(this.equals(myIdea)){
             if(compareBids(otherSnapshot.getWinningBidBy(parcel),sender,this.getWinningBidBy(parcel),this))
-                update(parcel, otherSnapshot);
+                update(parcel, myIdea, otherSnapshot);
             return;
         }
         //I think sender wins
         if(sender.equals(myIdea)){
-            update(parcel, otherSnapshot);
+            update(parcel, myIdea, otherSnapshot);
             return;
         }
+        //I think another agent wins (not me, not sender)
         if(myIdea != null && !sender.equals(myIdea) && !this.equals(myIdea)){
             Long otherTimeStamp = otherSnapshot.getCommunicationTimestamps().get(myIdea);
             Long myTimeStamp = this.getCommunicationTimestamps().get(myIdea);
             if((otherTimeStamp != null && otherTimeStamp > myTimeStamp)
                     || (compareBids(otherSnapshot.getWinningBidBy(parcel),sender,this.getWinningBidBy(parcel),myIdea)))
-                update(parcel, otherSnapshot);
+                update(parcel, myIdea, otherSnapshot);
             return;
         }
         if(myIdea == null){
-            update(parcel, otherSnapshot);
+            update(parcel, myIdea, otherSnapshot);
             return;
         }
 
@@ -668,19 +670,19 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         if(this.equals(myIdea)) {
             if(otherHasNewerSnapshotForM
                     && (compareBids(otherSnapshot.getWinningBidBy(parcel),otherIdea,this.getWinningBidBy(parcel),myIdea)))
-                update(parcel, otherSnapshot);
+                update(parcel, myIdea, otherSnapshot);
             return;
         }
         if(sender.equals(myIdea)){
             if(otherHasNewerSnapshotForM)
-                update(parcel, otherSnapshot);
+                update(parcel, myIdea, otherSnapshot);
             else
                 reset(parcel);
             return;
         }
         if(otherIdea.equals(myIdea)){
             if(otherHasNewerSnapshotForM)
-                update(parcel, otherSnapshot);
+                update(parcel, myIdea, otherSnapshot);
             return;
         }
         if(myIdea != null && !sender.equals(myIdea) && !this.equals(myIdea) && !otherIdea.equals(myIdea)){
@@ -692,10 +694,10 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
             if(otherHasNewerSnapshotForM
                     && otherHasNewerSnapshotForN)
-                update(parcel, otherSnapshot);
+                update(parcel, myIdea, otherSnapshot);
             if(otherHasNewerSnapshotForM
                     && (compareBids(otherSnapshot.getWinningBidBy(parcel),otherIdea,this.getWinningBidBy(parcel),myIdea)))
-                update(parcel, otherSnapshot);
+                update(parcel, myIdea, otherSnapshot);
             if(otherHasNewerSnapshotForN
                     && !otherHasNewerSnapshotForM)
                 reset(parcel);
@@ -703,7 +705,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         }
         if(myIdea == null){
             if(otherHasNewerSnapshotForM)
-                update(parcel, otherSnapshot);
+                update(parcel, myIdea, otherSnapshot);
             return;
         }
 
@@ -716,14 +718,14 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
             return;
         }
         if(sender.equals(myIdea)){
-            update(parcel, otherSnapshot);
+            update(parcel, myIdea, otherSnapshot);
             return;
         }
         if(myIdea != null && !sender.equals(myIdea) && !this.equals(myIdea)){
             Long otherTimeStamp = otherSnapshot.getCommunicationTimestamps().get(myIdea);
             Long myTimeStamp = this.getCommunicationTimestamps().get(myIdea);
             if((otherTimeStamp != null && otherTimeStamp > myTimeStamp))
-                update(parcel, otherSnapshot);
+                update(parcel, myIdea, otherSnapshot);
             return;
         }
         if(myIdea == null){
@@ -739,8 +741,13 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                 || (bid1 == bid2 && agent1.hashCode() > agent2.hashCode());
     }
 
-    private void update(Parcel parcel, Snapshot snapshot) {
-        this.setWinningBid(parcel, snapshot.getWinningAgentBy(parcel), snapshot.getWinningBidBy(parcel));
+    /**
+     * Replace the old winner with the new winner
+     * @param parcel
+     * @param snapshot
+     */
+    private void update(Parcel parcel, AbstractConsensusAgent from, Snapshot snapshot) {
+        this.replaceWinningBid(parcel, from, snapshot.getWinningAgentBy(parcel), snapshot.getWinningBidBy(parcel));
     }
 
     private void leave() {
