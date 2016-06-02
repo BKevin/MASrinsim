@@ -257,7 +257,11 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
             ((MyParcel) cause).loseAllocation(this);
             for(Parcel parcel : removedFromB){
-                    ((MyParcel) parcel).loseAllocation(this);
+
+                ((MyParcel) parcel).loseAllocation(this);
+                //TODO move to a less obscure location
+                updateBidValue(parcel, this, NO_BID);
+
             }
 
             ArrayList<Parcel> all = new ArrayList<>(removedFromB);
