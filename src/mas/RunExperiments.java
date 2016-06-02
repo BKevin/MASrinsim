@@ -24,7 +24,6 @@ import mas.scenario.*;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.URI;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -38,7 +37,7 @@ import static com.google.common.base.Preconditions.checkState;
  * Created by KevinB on 2/06/2016.
  */
 public class RunExperiments {
-    static final int amountOfExperiments = 10;
+    static final int amountOfExperiments = 2;
 
 
     static final Point MIN_POINT = new Point(0, 0);
@@ -48,19 +47,29 @@ public class RunExperiments {
     private static final int MAX_AGENTS = 5;
 
     public static void main(String[] args) {
+        //args =  {CBBA,CBGA,BOTH} {Single,Multi,Mixed} distribution (optionalScenarioFile)
+        //example
+        //CBBA Single 1
+        //CBBA Multi 0,0.5,0.5
+        //CBGA Mixed 0.3,0.2,0.5
 
-        if(args.length == 0)
-            runNewExperiments();
-        else
+        if(args.length == 3) {
+            runNewExperiments(args);
+            return;
+        }
+        if(args.length == 4) {
             runExperimentWithScenario(args);
+            return;
+        }
+
+        System.out.println("Arguments not correct, we need: {CBBA,CBGA,BOTH} {Single,Multi,Mixed} distribution (optionalScenarioFile)");
     }
 
-    private static void runExperimentWithScenario(String... filenames) {
-        MASConfiguration config = makeMASConfig();
+    private static void runExperimentWithScenario(String... args) {
+        Experiment.Builder builder = Experiment.builder();
+        builder = makeMASConfig(builder, args);
 
-        Experiment.Builder builder = Experiment.builder()
-                .addConfiguration(config);
-        Scenario scenario = makeScenario(filenames[0]);
+        Scenario scenario = makeScenario(args[3]);
         builder.addScenario(scenario);
 
         ExperimentResults results = builder
@@ -75,21 +84,28 @@ public class RunExperiments {
         putResultsInFile(results, "resources/experiments/singleExperiment/experiment_" + new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date()) +  ".txt");
     }
 
-    private static void runNewExperiments() {
+    private static void runNewExperiments(String... args) {
 
-        MASConfiguration config = makeMASConfig();
 
         String mapName = "resources/experiments/experiment_" + new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date()) + "/";
+
+        String[] split = args[2].split(",");
+
+        double[] distribution = new double[split.length];
+        for(int i = 0; i < split.length; i++){
+            distribution[i] = Double.parseDouble(split[i]);
+        }
 
         for(int i = 0; i < amountOfExperiments; i++){
 
             String filePath = mapName + "scene" + i + ".txt";
-            ScenarioGenerator.generateScenario(filePath);
+            ScenarioGenerator.generateScenario(filePath, distribution);
+            System.out.println("Scene" + i + " is generated.");
         }
 
 
-        Experiment.Builder builder = Experiment.builder()
-                .addConfiguration(config);
+        Experiment.Builder builder = Experiment.builder();
+        builder = makeMASConfig(builder, args);
 
         for(int i = 0; i < amountOfExperiments; i++){
 
@@ -98,10 +114,14 @@ public class RunExperiments {
             builder.addScenario(scenario);
         }
 
+        System.out.println("Start Experiment.");
         ExperimentResults results = builder
                 .usePostProcessor(PostProcessors.statisticsPostProcessor(new MyObjectiveFunction()))
                 .usePostProcessor(new MyPostProcessor())
                 .perform();
+
+        System.out.println("Finish Experiment.");
+
 
         for(Experiment.SimulationResult result : results.getResults()){
             System.out.println(result.getResultObject().toString());
@@ -237,22 +257,65 @@ public class RunExperiments {
         }
     }
 
-    private static MASConfiguration makeMASConfig() {
-        return MASConfiguration.builder()
-                .addModel(
-                        PDPRoadModel.builder(
-                                RoadModelBuilders.plane()
-                                        .withMinPoint(MIN_POINT)
-                                        .withMaxPoint(MAX_POINT)
-                                        .withMaxSpeed(10000d))
-                                .withAllowVehicleDiversion(true))
-                .addModel(DefaultPDPModel.builder())
-                .addModel(CommModel.builder())
-                .addEventHandler(NewParcelEvent.class, NewParcelEvent.defaultHandler())
-                .addEventHandler(NewVehicleEvent.class, NewVehicleEvent.defaultHandler())
-                .addEventHandler(NewDepotEvent.class, NewDepotEvent.defaultHandler())
-                .build();
+    private static Experiment.Builder makeMASConfig(Experiment.Builder builder, String... args) {
 
+        String vehicleMode = args[0];
+        String parcelMode = args[1];
+        if("CBBA".equals(vehicleMode) || "BOTH".equals(vehicleMode)){
+            MASConfiguration.Builder config = MASConfiguration.builder()
+                    .addModel(
+                            PDPRoadModel.builder(
+                                    RoadModelBuilders.plane()
+                                            .withMinPoint(MIN_POINT)
+                                            .withMaxPoint(MAX_POINT)
+                                            .withMaxSpeed(10000d))
+                                    .withAllowVehicleDiversion(true))
+                    .addModel(DefaultPDPModel.builder())
+                    .addModel(CommModel.builder())
+                    .addEventHandler(NewDepotEvent.class, NewDepotEvent.defaultHandler());
+            config = config.addEventHandler(NewVehicleEvent.class, NewVehicleEvent.cbbaHandler());
+
+            if("Single".equals(parcelMode)){
+                config = config.addEventHandler(NewParcelEvent.class, NewParcelEvent.defaultHandler());
+            }
+            if("Multi".equals(parcelMode)){
+                config = config.addEventHandler(NewMultiParcelEvent.class, NewMultiParcelEvent.separateHandler());
+            }
+            if("Mixed".equals(parcelMode)){
+                config = config.addEventHandler(NewParcelEvent.class, NewParcelEvent.defaultHandler());
+                config = config.addEventHandler(NewMultiParcelEvent.class, NewMultiParcelEvent.separateHandler());
+            }
+            builder.addConfiguration(config.build());
+        }
+        if("CBGA".equals(vehicleMode) || "BOTH".equals(vehicleMode)){
+            MASConfiguration.Builder config = MASConfiguration.builder()
+                    .addModel(
+                            PDPRoadModel.builder(
+                                    RoadModelBuilders.plane()
+                                            .withMinPoint(MIN_POINT)
+                                            .withMaxPoint(MAX_POINT)
+                                            .withMaxSpeed(10000d))
+                                    .withAllowVehicleDiversion(true))
+                    .addModel(DefaultPDPModel.builder())
+                    .addModel(CommModel.builder())
+                    .addEventHandler(NewDepotEvent.class, NewDepotEvent.defaultHandler());
+            config = config.addEventHandler(NewVehicleEvent.class, NewVehicleEvent.cbgaHandler());
+
+            if("Single".equals(parcelMode)){
+                config = config.addEventHandler(NewParcelEvent.class, NewParcelEvent.defaultHandler());
+            }
+            if("Multi".equals(parcelMode)){
+                config = config.addEventHandler(NewMultiParcelEvent.class, NewMultiParcelEvent.defaultHandler());
+            }
+            if("Mixed".equals(parcelMode)){
+                config = config.addEventHandler(NewParcelEvent.class, NewParcelEvent.defaultHandler());
+                config = config.addEventHandler(NewMultiParcelEvent.class, NewMultiParcelEvent.defaultHandler());
+            }
+            builder.addConfiguration(config.build());
+        }
+
+
+        return  builder;
     }
 
     private static Scenario makeScenario(String... filenames) {

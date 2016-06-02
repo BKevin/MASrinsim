@@ -41,9 +41,8 @@ public class TimedEventFactory {
         position = new Point(x,y);
         int capacity = Integer.parseInt(split[3]);
         double speed = Double.parseDouble(split[4]);
-        String mode = split[5];
 
-        return new NewVehicleEvent(time, position, capacity, speed, mode);
+        return new NewVehicleEvent(time, position, capacity, speed);
     }
 
     private static TimedEvent makeNewParcelEvent(String[] split) {

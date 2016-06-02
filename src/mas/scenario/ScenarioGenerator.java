@@ -9,7 +9,6 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Created by KevinB on 12/05/2016.
@@ -21,10 +20,10 @@ public class ScenarioGenerator {
     private static double width = 10;
     private static double height = 10;
 
-    private static int amountVehiclesAtStart = 5;
-    private static int amountParcelsAtStart = 10;
+    private static int amountVehiclesAtStart = 6;
+    private static int amountParcelsAtStart = 6;
     private static int amountNewVehicles = 0;
-    private static int amountNewParcels = 100;
+    private static int amountNewParcels = 1000;
 
 
     private static long vehicleAverageInterArrivalTime; //ms
@@ -33,20 +32,19 @@ public class ScenarioGenerator {
     private static int vehicleSpeed = 10;
 
 
-    private static long parcelAverageInterArrivalTime = 500000; //ms
+    private static long parcelAverageInterArrivalTime = 500000; //ms //doubled
     private static long parcelInterArrivalTimeVariation = 200000; //ms
     private static long parcelAverageTimeWindowVariation = 10000; //ms
     private static int parcelServiceDuration = 0;
     private static int parcelCapacity = 1;
-    private static String mode = "CBBA"; // CBBA  or CBGA
     //Distribution (chances) of required agents: p_1, p_2, p_3
-    private static double[] distribution = {1,0};
+    private static double[] parcelDistribution = {1,0};
 
     private static double expectedTravelTime = 255555; //from center to a corner
     private static double travelTimeVariation = 50000;
 
     public static void main(String[] args) {
-        generateScenario(generateFileName(args));
+        generateScenario(generateFileName(args), parcelDistribution);
     }
 
     @NotNull
@@ -59,7 +57,7 @@ public class ScenarioGenerator {
     }
 
 
-    public static void generateScenario(String filePath) {
+    public static void generateScenario(String filePath, double[] distribution) {
         currentTime = 0;
 
         File file = Paths.get(filePath).toFile();
@@ -85,7 +83,7 @@ public class ScenarioGenerator {
                 br.newLine();
             }
             for(int i = 0; i < amountParcelsAtStart; i++){
-                String parcelEvent = makeParcelEventAtStart();
+                String parcelEvent = makeParcelEventAtStart(distribution);
                 br.write(parcelEvent);
                 br.newLine();
             }
@@ -96,7 +94,7 @@ public class ScenarioGenerator {
                 br.newLine();
             }
             for(int i = 0; i < amountNewParcels; i++){
-                String parcelEvent = makeNewParcelEvent();
+                String parcelEvent = makeNewParcelEvent(distribution);
                 br.write(parcelEvent);
                 br.newLine();
             }
@@ -139,12 +137,11 @@ public class ScenarioGenerator {
                 + time + " "
                 + location.x + "," + location.y + " "
                 + vehicleCapacity + " "
-                + vehicleSpeed + " "
-                + mode;
+                + vehicleSpeed;
     }
 
-    private static String makeParcelEventAtStart() {
-        int requiredAgents = getRequiredAgents();
+    private static String makeParcelEventAtStart(double[] distribution) {
+        int requiredAgents = getRequiredAgents(distribution);
         if (requiredAgents == 1)
             return "NewParcel "
                     + parcelEventAtTime(-1);
@@ -154,8 +151,8 @@ public class ScenarioGenerator {
                     + requiredAgents;
     }
 
-    private static String makeNewParcelEvent() {
-        int requiredAgents = getRequiredAgents();
+    private static String makeNewParcelEvent(double[] distribution) {
+        int requiredAgents = getRequiredAgents(distribution);
         long rngTime = (long) (currentTime + parcelAverageInterArrivalTime  + ((2*rng.nextDouble() - 1) * parcelInterArrivalTimeVariation));
         currentTime = rngTime;
         if (requiredAgents == 1)
@@ -216,7 +213,7 @@ public class ScenarioGenerator {
 
 
 
-    private static int getRequiredAgents() {
+    private static int getRequiredAgents(double[] distribution) {
         double value = 0;
         double random = rng.nextDouble();
         for(int i = 0; i < distribution.length; i++){

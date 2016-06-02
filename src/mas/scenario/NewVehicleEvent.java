@@ -19,20 +19,13 @@ public class NewVehicleEvent implements TimedEvent {
     private final Point startLocation;
     private final int capacity;
     private final double speed;
-    private final VehicleType type;
 
 
-    public NewVehicleEvent(long time, Point newStartLocation, int newCapacity, double newSpeed, String mode){
+    public NewVehicleEvent(long time, Point newStartLocation, int newCapacity, double newSpeed){
         triggerTime = time;
         startLocation = newStartLocation;
         capacity = newCapacity;
         speed = newSpeed;
-        if(mode == "CBBA"){
-            type = VehicleType.CBBA;
-        }
-        else {
-            type = VehicleType.CBGA;
-        }
     }
 
     @Override
@@ -56,10 +49,13 @@ public class NewVehicleEvent implements TimedEvent {
 
 
 
-    public static TimedEventHandler<NewVehicleEvent> defaultHandler(){
-        return new NewParcelEventHandler();
+    public static TimedEventHandler<NewVehicleEvent> cbbaHandler(){
+        return new CBBAAgentEventHandler();
     }
-    private static class NewParcelEventHandler implements TimedEventHandler, Serializable {
+    public static TimedEventHandler<NewVehicleEvent> cbgaHandler(){
+        return new CBGAAgentEventHandler();
+    }
+    private static class CBBAAgentEventHandler implements TimedEventHandler, Serializable {
 
         @Override
         public void handleTimedEvent(TimedEvent timedEvent, SimulatorAPI simulatorAPI) {
@@ -68,15 +64,7 @@ public class NewVehicleEvent implements TimedEvent {
 
             NewVehicleEvent newVehicleEvent = (NewVehicleEvent) timedEvent;
 
-            if(newVehicleEvent.type == VehicleType.CBBA)
                 simulatorAPI.register(new CbbaAgent(
-                    VehicleDTO.builder()
-                            .startPosition(newVehicleEvent.getStartLocation())
-                            .capacity(newVehicleEvent.getCapacity())
-                            .speed(newVehicleEvent.getSpeed())
-                            .build()));
-            if(newVehicleEvent.type == VehicleType.CBGA)
-                simulatorAPI.register(new CbgaAgent(
                         VehicleDTO.builder()
                                 .startPosition(newVehicleEvent.getStartLocation())
                                 .capacity(newVehicleEvent.getCapacity())
@@ -85,10 +73,23 @@ public class NewVehicleEvent implements TimedEvent {
 
         }
     }
+    private static class CBGAAgentEventHandler implements TimedEventHandler, Serializable {
 
-    enum VehicleType {
-        CBBA,
-        CBGA;
+        @Override
+        public void handleTimedEvent(TimedEvent timedEvent, SimulatorAPI simulatorAPI) {
+            if(timedEvent.getClass() != NewVehicleEvent.class)
+                throw new IllegalArgumentException("NewVehicleEventHandler can only handle NewVehicleEvents and not " + timedEvent.getClass().toString());
 
+            NewVehicleEvent newVehicleEvent = (NewVehicleEvent) timedEvent;
+
+            simulatorAPI.register(new CbgaAgent(
+                    VehicleDTO.builder()
+                            .startPosition(newVehicleEvent.getStartLocation())
+                            .capacity(newVehicleEvent.getCapacity())
+                            .speed(newVehicleEvent.getSpeed())
+                            .build()));
+
+        }
     }
+
 }
