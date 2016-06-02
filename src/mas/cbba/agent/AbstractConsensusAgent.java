@@ -3,7 +3,10 @@ package mas.cbba.agent;
 import com.github.rinde.rinsim.core.model.comm.CommUser;
 import com.github.rinde.rinsim.core.model.comm.Message;
 import com.github.rinde.rinsim.core.model.comm.MessageContents;
-import com.github.rinde.rinsim.core.model.pdp.*;
+import com.github.rinde.rinsim.core.model.pdp.PDPModel;
+import com.github.rinde.rinsim.core.model.pdp.Parcel;
+import com.github.rinde.rinsim.core.model.pdp.Vehicle;
+import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.github.rinde.rinsim.geom.Point;
 import com.google.common.collect.FluentIterable;
@@ -581,30 +584,37 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     public void evaluateSnapshot(Snapshot s, AbstractConsensusAgent sender){
 
         for(Parcel parcel : this.getParcels()){
-            //If the incoming snapshot has no information about this parcel, continue to the next one.
-            if(s.getWinningAgentBy(parcel) == null){
-                continue;
-            }
-            AbstractConsensusAgent myIdea = this.getWinningAgentBy(parcel);
-            AbstractConsensusAgent otherIdea = s.getWinningAgentBy(parcel);
 
-            if(sender.equals(otherIdea)){
-                senderThinksHeWins(sender, parcel, myIdea, s);
-                continue;
-            }
-            if(this.equals(otherIdea)){
-                senderThinksIWin(sender, parcel, myIdea, s);
-                continue;
-            }
-            if(otherIdea != null && !sender.equals(otherIdea) && !this.equals(otherIdea)){
-                senderThinksSomeoneElseWins(sender, parcel, myIdea, otherIdea, s);
-                continue;
-            }
-            if(otherIdea == null){
-                senderThinksNododyWins(sender, parcel, myIdea, s);
-                continue;
-            }
+            evaluateSnapshotForParcel(parcel, s, sender);
 
+        }
+
+    }
+
+    public void evaluateSnapshotForParcel(Parcel parcel, Snapshot s, AbstractConsensusAgent sender) {
+
+        //If the incoming snapshot has no information about this parcel, continue to the next one.
+        if(s.getWinningAgentBy(parcel) == null){
+            return;
+        }
+        AbstractConsensusAgent myIdea = this.getWinningAgentBy(parcel);
+        AbstractConsensusAgent otherIdea = s.getWinningAgentBy(parcel);
+
+        if(sender.equals(otherIdea)){
+            senderThinksHeWins(sender, parcel, myIdea, s);
+            return;
+        }
+        if(this.equals(otherIdea)){
+            senderThinksIWin(sender, parcel, myIdea, s);
+            return;
+        }
+        if(otherIdea != null && !sender.equals(otherIdea) && !this.equals(otherIdea)){
+            senderThinksSomeoneElseWins(sender, parcel, myIdea, otherIdea, s);
+            return;
+        }
+        if(otherIdea == null){
+            senderThinksNododyWins(sender, parcel, myIdea, s);
+            return;
         }
 
     }
@@ -755,7 +765,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     }
 
     private void reset(Parcel parcel) {
-        this.setWinningBid(parcel, this, NO_BID);
+        this.updateBidValue(parcel, this, NO_BID);
     }
 
     public Integer getNumberOfSentMessages() {
@@ -781,4 +791,5 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     public double getAverageClaimedParcels() {
         return averageClaimedParcels;
     }
+
 }

@@ -270,7 +270,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
             // (if) default number of agents required (==1)
             if(j.getRequiredAgents().equals(MyParcel.DEFAULT_REQUIRED_AGENTS)) {
 
-                super.evaluateSnapshot(snapshot, k);
+                super.evaluateSnapshotForParcel(j, snapshot, k);
             }
 
             // (else) multiparcel
