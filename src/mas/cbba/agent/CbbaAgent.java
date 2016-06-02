@@ -155,8 +155,8 @@ public class CbbaAgent extends AbstractConsensusAgent {
 
     @Override
     public void updateBidValue(Parcel j, AbstractConsensusAgent m, Long aLong) {
-        this.getY().put(j, aLong);
-        this.getZ().put(j, m);
+        this.y.put(j, aLong);
+        this.z.put(j, m);
     }
 
     // FIXME kijk na of dit juist gebeurd door setWinningBid en updateBidValue
