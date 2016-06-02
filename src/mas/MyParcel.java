@@ -284,7 +284,7 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
     }
 
     public Parcel allocateTo(Vehicle vehicle) {
-        if(!this.getPDPModel().getParcels(PDPModel.ParcelState.AVAILABLE, PDPModel.ParcelState.ANNOUNCED).contains(this) ){
+        if(!isAvailable()){
             throw new IllegalStateException("Parcel cannot be transferred anymore: " + this);
         }
         this.allocatedVehicles.add(vehicle);
@@ -306,8 +306,12 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
 
     public Integer getRequiredAgents(){
         return //(if) parcel is not available
-                !this.getPDPModel().getParcels(PDPModel.ParcelState.ANNOUNCED,PDPModel.ParcelState.AVAILABLE).contains(this)
+                !this.isAvailable()
                         ? 0
                         : DEFAULT_REQUIRED_AGENTS;
+    }
+
+    public boolean isAvailable(){
+        return this.getPDPModel().getParcels(PDPModel.ParcelState.ANNOUNCED, PDPModel.ParcelState.AVAILABLE).contains(this);
     }
 }

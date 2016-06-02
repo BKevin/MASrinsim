@@ -191,7 +191,7 @@ public class MultiParcel extends MyParcel {
      * Return the subparcel by determining your own rank in the bidding.
      * @return
      */
-    public Parcel getAllocatedSubParcel(Vehicle v){
+    public Parcel getDelegateSubParcel(Vehicle v){
         Integer rank = this.getAllocations().get(v);
         if(this.getAllocations().get(v) == this.getRequiredAgents()-1){
             return this;
