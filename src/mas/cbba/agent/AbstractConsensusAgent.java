@@ -14,7 +14,6 @@ import mas.MyParcel;
 import mas.MyVehicle;
 import mas.cbba.Debug;
 import mas.cbba.parcel.MultiParcel;
-import mas.cbba.snapshot.CbbaSnapshot;
 import mas.cbba.snapshot.Snapshot;
 import mas.comm.NewParcelMessage;
 import mas.comm.ParcelMessage;
@@ -63,18 +62,10 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         averageClaimedParcels = 0;
     }
 
-    @Override
-    public void afterTick(TimeLapse time) {
-        super.afterTick(time);
-//        LoggerFactory.getLogger(this.getClass()).info("AfterTick #messages = {}", this.getCommDevice().get().getUnreadCount());
-
-    }
-
     protected void preTick(TimeLapse time) {
         super.preTick(time);
 
-//        inTick = true;
-//
+
 //        if(!this.getPDPModel().getContents(this).isEmpty())
 //            LoggerFactory.getLogger(this.getClass()).info("At Start Contents of {} = {}  with State = {}", this, this.getPDPModel().getContents(this), this.getPDPModel().getParcelState(this.getPDPModel().getContents(this).iterator().next()));
 //        LoggerFactory.getLogger(this.getClass()).info("At Start Route of {} = {} ", this, this.getRoute());
@@ -106,14 +97,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 //        if(!this.getPDPModel().getContents(this).isEmpty())
 //            LoggerFactory.getLogger(this.getClass()).info("At End Contents of {} = {}  with State = {}", this, this.getPDPModel().getContents(this), this.getPDPModel().getParcelState(this.getPDPModel().getContents(this).iterator().next()));
 //        LoggerFactory.getLogger(this.getClass()).info("At End Route of {} = {} ", this, this.getRoute());
-//            try{
-//                throw new IllegalStateException("Bad Route" + error);
-//            }
-//            catch(Exception e) {
-//                LoggerFactory.getLogger(this.getClass()).warn("Bad route", e
-//                );
-//            }
-//        inTick = false;
+
         calculateAverages(time);
 
 
@@ -132,27 +116,38 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         averageClaimedParcels = ((double)temp2) / (time.getEndTime()/time.getTickLength());
     }
 
-    @Override
-    public void setRoute(Iterable<? extends Parcel> r) {
-        super.setRoute(r);
-//        try{
-//            throw new ConcurrentModificationException("Printing Route stacktrace");
-//        }
-//        catch(Exception e){
-//            e.printStackTrace();
-//        }
-//        if(r.iterator().hasNext()
-//                && !this.getPDPModel().getContents(this).isEmpty()
-//                && !this.getPDPModel().getContents(this).contains(r.iterator().next()))
-//            throw new IllegalStateException("Bad Route set");
-//        if(!inTick){
-//            error = true;
-//            throw new IllegalStateException("SetRoute happened outside tick");}
-    }
+//    @Override
+//    public void setRoute(Iterable<? extends Parcel> r) {
+//        super.setRoute(r);
+////        try{
+////            throw new ConcurrentModificationException("Printing Route stacktrace");
+////        }
+////        catch(Exception e){
+////            e.printStackTrace();
+////        }
+////        if(r.iterator().hasNext()
+////                && !this.getPDPModel().getContents(this).isEmpty()
+////                && !this.getPDPModel().getContents(this).contains(r.iterator().next()))
+////            throw new IllegalStateException("Bad Route set");
+////        if(!inTick){
+////            error = true;
+////            throw new IllegalStateException("SetRoute happened outside tick");}
+//    }
 
-    public abstract void constructBundle();
+    /****
+     * Abstract methods
+     *****/
 
     protected abstract Snapshot generateSnapshot();
+
+
+    public abstract Set<Parcel> getParcels();
+
+    public boolean hasMoreRecentTimestampFor(AbstractConsensusAgent m, Long otherTimestamp){
+        return this.getCommunicationTimestamps().get(m).compareTo(otherTimestamp) > 0;
+    }
+
+
 
     public LinkedList<Parcel> getB() {
         return b;
@@ -215,9 +210,78 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         };
     }
 
-    protected void replaceWinningBid(Parcel parcel, AbstractConsensusAgent from, AbstractConsensusAgent to, Long bid){
-        this.setWinningBid(parcel, to, bid);
+
+    /**
+     * Routes and allocations
+     */
+
+    /**
+     * Add this agent to the allocation of the parcel.
+     */
+    private void addParcelAllocationToYourself(Parcel p) {
+
+        if(!(p instanceof MyParcel)) {
+            throw new IllegalArgumentException("Parcel is not the right type. Expected "+ MyParcel.class.getName());
+        }
+
+        MyParcel parcel = (MyParcel) p;
+
+        if(parcel.isAvailable()) {
+
+            parcel.allocateTo(this);
+
+            updateRoute();
+        }else{
+            LoggerFactory.getLogger(this.getClass()).error(
+                    "Trying to reallocate unavailable parcel {} (state: {}). Allocated to {}",
+                    parcel, this.getPDPModel().getParcelState(parcel),
+                    parcel.getAllocatedVehicle());
+        }
     }
+
+    /**
+     * Remove this agent from the allocation of the parcel
+     */
+    protected void removeParcelAllocationFromYourself(Parcel cause){
+
+        //Handle the loss of a parcel (since you (the previous winner) are replaced)
+        if(this.getB().contains(cause)){
+
+            int ind = this.getB().indexOf(cause);
+            //make lists of parcels to keep and to remove
+            ImmutableList<Parcel> newB = FluentIterable.from(this.getB()).limit(ind).toList();
+            ImmutableList<Parcel> removedFromB = FluentIterable.from(this.getB()).skip(ind+1).toList(); //Do take 'parcel' as it should be already handled
+
+            ((MyParcel) cause).loseAllocation(this);
+            for(Parcel parcel : removedFromB){
+                    ((MyParcel) parcel).loseAllocation(this);
+            }
+
+            ArrayList<Parcel> all = new ArrayList<>(removedFromB);
+            all.add(cause);
+            this.removeFromRouteAndBundle(all);
+
+//            this.getP().remove(cause);
+//            this.getB().remove(cause);
+//            this.getP().removeAll(removedFromB);
+//            this.getB().removeAll(removedFromB);
+
+            //Update route
+            updateRoute();
+        }
+    }
+
+    protected void removeFromRouteAndBundle(List<Parcel> parcels){
+
+        this.getB().removeAll(parcels);
+        this.getP().removeAll(parcels);
+
+    }
+
+
+    /***
+     * Bid lists
+     */
 
     /**
      * Set winning bid value for the given Parcel and AbstractConsensusAgent
@@ -226,99 +290,83 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
      * @param bid
      */
     protected void setWinningBid(Parcel parcel, AbstractConsensusAgent agent, Long bid){
-        this.allocateParcelToWinner(parcel, agent);
-    }
-
-    /**
-     * Change allocation of the given parcel to the given agent.
-     * @param parcel
-     * @param agent
-     */
-    protected void allocateParcelToWinner(Parcel parcel, AbstractConsensusAgent agent){
-        if(!(parcel instanceof MyParcel)) {
-            throw new IllegalArgumentException("Parcel is not the right type. Expected "+ MyParcel.class.getName());
-        }
-
-        //Consistency for agent routes when allocating own parcels
+        // Only allocate parcel to yourself
         if(agent == this) {
-
-            PDPModel.ParcelState state = this.getPDPModel().getParcelState(parcel);
-            if(state.equals(PDPModel.ParcelState.AVAILABLE) || state.equals(PDPModel.ParcelState.ANNOUNCED)) {
-                Parcel p = ((MyParcel) parcel).allocateTo(agent);
-
-                updateRoute();
-            }else{
-
-                LoggerFactory.getLogger(this.getClass()).warn("Trying to reallocate unavailable parcel {} (state: {}). Allocated to {}", parcel, state, ((MyParcel) parcel).getAllocatedVehicle());
-
-            }
-
-
+            this.addParcelAllocationToYourself(parcel);
         }
-        else{
-            //Handle the loss of a parcel (since you (the previous winner) are replaced)
-            if(this.getB().contains(parcel)){
-                int ind = this.getB().indexOf(parcel);
-                //make lists of parcels to keep and to remove
-                ImmutableList<Parcel> newB = FluentIterable.from(this.getB()).limit(ind).toList();
-                ImmutableList<Parcel> removedFromB = FluentIterable.from(this.getB()).skip(ind+1).toList(); //Do take 'parcel' as it should be already handled
-
-                this.handleLostParcels(parcel, removedFromB);
-
-            }
-        }
-
     }
 
     /**
-     * Subclasses need to handle the loss of parcels due to the loss of an earlier assigned parcel.
-     * @param parcels
+     * Change the bid value of the given parcel and agent
+     * @param j
+     * @param m
+     * @param aLong
      */
-    protected void handleLostParcels(Parcel cause, List<Parcel> parcels){
+    public abstract void updateBidValue(Parcel j, AbstractConsensusAgent m, Long aLong);
 
-        if(cause instanceof MyParcel)
-            ((MyParcel) cause).loseAllocation(this);
-        for(Parcel parcel : parcels){
-            if(parcel instanceof MyParcel)
-                ((MyParcel) parcel).loseAllocation(this);
-        }
+    /**
+     * Replace the current bid with the better value of another agent
+     * @param parcel
+     * @param from
+     * @param to
+     * @param bid
+     */
+    protected abstract void replaceWinningBid(Parcel parcel, AbstractConsensusAgent from, AbstractConsensusAgent to, Long bid);
 
-        this.getP().remove(cause);
-        this.getB().remove(cause);
-        this.getP().removeAll(parcels);
-        this.getB().removeAll(parcels);
+    /**
+     * Getter for bid list
+     * @param parcel
+     * @return
+     */
+    protected abstract AbstractConsensusAgent getWinningAgentBy(Parcel parcel);
 
-        //Update route
-        updateRoute();
+    /**
+     * Getter for bid list
+     * @param parcel
+     * @return
+     */
+    protected abstract Long getWinningBidBy(Parcel parcel);
+
+    /**
+     * Subclasses are given the new Parcel and can change their lists accordingly.
+     * @param parcel
+     */
+    protected abstract void addParcelToBidList(Parcel parcel);
+
+    protected void removeParcelFromBidList(Parcel parcel){
+        // Remove a parcel from your route and bundle
+        this.getB().remove(parcel);
+        this.getP().remove(parcel);
+        // Update the route, as it may have changed (only when you are the carrier of the parcel
+        this.updateRoute();
     }
 
+    /****
+     * Route creation and evaluation
+     */
+
+    /**
+     * Update the route using the current values of P and B
+     */
     public void updateRoute() {
 
         // Fetch actual parcels (in case of MultiParcel and build route
-        List<Parcel> collect = this.getP().stream().map(this::getAllocatedParcel).collect(Collectors.toList());
+        List<Parcel> collect = this.getP().stream().map(this::getDelegateParcel).collect(Collectors.toList());
 
 //        LoggerFactory.getLogger(this.getClass()).info("RouteUpdate for {} with {}", this, collect);
 
         Debug.logRouteForAgent(this, this.getRoute().stream().collect(Collectors.toMap((Parcel p) -> p, p -> this.getPDPModel().getParcelState(p), (p1, p2) -> p1)));
 
-
         // Update route
-        List<Parcel> routeFrom = this.createRouteFrom(
-                collect);
-
-//        if(!routeFrom.isEmpty()
-//                && !this.getPDPModel().getContents(this).isEmpty()
-//                && !this.getPDPModel().getContents(this).contains(routeFrom.iterator().next()))
-//            throw new IllegalStateException("Bad Route");
-
         this.setRoute(
                 // Create route with double parcels
-                routeFrom);
+                this.createRouteFrom(
+                        collect));
     }
 
-    private Parcel getAllocatedParcel(Parcel p){
+    private Parcel getDelegateParcel(Parcel p){
         if(p instanceof MultiParcel){
-            return ((MultiParcel) p).getAllocatedSubParcel(this);
+            return ((MultiParcel) p).getDelegateSubParcel(this);
         }
         else{
             return p;
@@ -342,6 +390,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 //                result.add(this.getRoute().iterator().next());
 //        }
 
+        // Handle parcels in cargo
         if(!currentContents.isEmpty()) {
             // A parcel is already picked up and must be added.
             for (Parcel p : currentContents){
@@ -445,6 +494,22 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         return bid < otherBid;
     }
 
+
+/***************************
+ *
+ * CBBA algorithm
+ *
+ ****************************/
+
+    /**
+     * CBBA phase 1 Construct a bundle of parcels
+     */
+    public abstract void constructBundle();
+
+    /**
+     * Second phase of CBBA
+     * @return
+     */
     public boolean findConsensus() {
 
         // Send snapshot to all agents
@@ -460,7 +525,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     }
 
     /**
-     * Evaluate received message from all agents
+     * Evaluate received snapshot message from other agents
      */
     protected void evaluateMessages() {
 
@@ -479,12 +544,12 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
             }
 
             if(contents instanceof SoldParcelMessage){
-                this.removeParcel(((ParcelMessage) contents).getParcel());
+                this.removeParcelFromBidList(((ParcelMessage) contents).getParcel());
                 LoggerFactory.getLogger(this.getClass()).info("Received SoldParcelMessage from {} to {} : {}", sender, this, contents);
             }
             else if (contents instanceof NewParcelMessage){
                 //TODO meer nodig?
-                this.addParcel(((ParcelMessage) contents).getParcel());
+                this.addParcelToBidList(((ParcelMessage) contents).getParcel());
                 LoggerFactory.getLogger(this.getClass()).info("Received ParcelMessage from {} to {} : {}", sender, this, contents);
             }
 
@@ -500,50 +565,11 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
     }
 
-    protected void removeParcel(Parcel parcel){
-        this.getB().remove(parcel);
-        this.getP().remove(parcel);
-        this.updateRoute();
-    };
-
-    /**
-     * Subclasses are given the new Parcel and can change their lists accordingly.
-     * @param parcel
-     */
-    protected abstract void addParcel(Parcel parcel);
-
-//    @Override
-//    public Collection<Parcel> getRoute() {
-//
-//        LoggerFactory.getLogger(this.getClass()).info("RouteAccess {} {}: {}", this, this.getCurrentTime(), super.getRoute());
-//        return super.getRoute();
-//    }
-
-    protected abstract AbstractConsensusAgent getWinningAgentBy(Parcel parcel);
-
-    protected abstract Long getWinningBidBy(Parcel parcel);
-
-
-    /***************************
-     *
-     * CBBA algorithm
-     *
-     ****************************/
 
     /**
      * Evaluate a single snapshot message from another sender
      */
     public void evaluateSnapshot(Snapshot s, AbstractConsensusAgent sender){
-//        if(!(s instanceof CbbaSnapshot)){
-//            throw new IllegalArgumentException("Snapshot does not have the right format. Expected CbbaSnapshot");
-//        }
-
-//        CbbaSnapshot s = (CbbaSnapshot) s;
-
-
-
-        // TODO Original Cbba Table for bid evaluation.
-//        CbbaSnapshot mySnapshot = (CbbaSnapshot) this.getSnapshot();
 
         for(Parcel parcel : this.getParcels()){
             //If the incoming snapshot has no information about this parcel, continue to the next one.
@@ -570,11 +596,9 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                 continue;
             }
 
-
         }
 
     }
-
 
     private void senderThinksHeWins(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, Snapshot otherSnapshot) {
         //I think I win
@@ -627,7 +651,6 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
         throw new IllegalArgumentException("Something went wrong in senderThinksIWins: unreachable code.");
     }
-
     private void senderThinksSomeoneElseWins(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, AbstractConsensusAgent otherIdea, Snapshot otherSnapshot) {
 
         Long otherTimeStamp = otherSnapshot.getCommunicationTimestamps().get(otherIdea);
@@ -678,6 +701,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
         throw new IllegalArgumentException("Something went wrong in senderThinksSomeoneElseWins: unreachable code.");
     }
+
     private void senderThinksNododyWins(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, Snapshot otherSnapshot) {
         if(this.equals(myIdea)) {
             leave();
@@ -718,9 +742,6 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     private void reset(Parcel parcel) {
         this.setWinningBid(parcel, this, NO_BID);
     }
-
-
-    public abstract Set<Parcel> getParcels();
 
     public Integer getNumberOfSentMessages() {
         return numberOfSentMessages;
