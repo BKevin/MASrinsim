@@ -41,6 +41,7 @@ public class Main {
     private static final int SERVICE_DURATION = 1000; // in ms
     private static final double NEW_PARCEL_PROB = 0.002;
 
+    //args =  {CBBA,CBGA,BOTH} {Single,Multi,Mixed} (optionalScenarioFile)
     public static void main(String[] args) {
         runWithScenario(args);
     }
@@ -54,28 +55,45 @@ public class Main {
         int id = 0;
         Scenario myScenario = makeScenario(viewBuilder, id, args);
 
-        if(multi){
-        Simulator.builder()
-                .addModel(ScenarioController
-                                .builder(myScenario)
-                        .withEventHandler(NewParcelEvent.class, NewParcelEvent.defaultHandler())
-                        .withEventHandler(NewMultiParcelEvent.class, NewMultiParcelEvent.defaultHandler())
-                        .withEventHandler(NewVehicleEvent.class, NewVehicleEvent.defaultHandler())
-                        .withEventHandler(NewDepotEvent.class, NewDepotEvent.defaultHandler()))
-                .build()
-                .start();
-        }
-        else{
-            Simulator.builder()
-                    .addModel(ScenarioController
-                            .builder(myScenario)
-                            .withEventHandler(NewParcelEvent.class, NewParcelEvent.defaultHandler())
-                            .withEventHandler(NewVehicleEvent.class, NewVehicleEvent.defaultHandler())
-                            .withEventHandler(NewDepotEvent.class, NewDepotEvent.defaultHandler()))
-                    .build()
-                    .start();
+        ScenarioController.Builder builder = (ScenarioController
+                        .builder(myScenario)
+                        .withEventHandler(NewDepotEvent.class, NewDepotEvent.defaultHandler()));
+        String vehicleMode = args[0];
+        String parcelMode = args[1];
 
+        if("CBBA".equals(vehicleMode)){
+            builder = builder.withEventHandler(NewVehicleEvent.class, NewVehicleEvent.cbbaHandler());
+
+            if("Single".equals(parcelMode)){
+                builder = builder.withEventHandler(NewParcelEvent.class, NewParcelEvent.defaultHandler());
+            }
+            if("Multi".equals(parcelMode)){
+                builder = builder.withEventHandler(NewMultiParcelEvent.class, NewMultiParcelEvent.separateHandler());
+            }
+            if("Mixed".equals(parcelMode)){
+                builder = builder.withEventHandler(NewParcelEvent.class, NewParcelEvent.defaultHandler());
+                builder = builder.withEventHandler(NewMultiParcelEvent.class, NewMultiParcelEvent.separateHandler());
+            }
         }
+        if("CBGA".equals(vehicleMode)){
+            builder = builder.withEventHandler(NewVehicleEvent.class, NewVehicleEvent.cbgaHandler());
+
+            if("Single".equals(parcelMode)){
+                builder = builder.withEventHandler(NewParcelEvent.class, NewParcelEvent.defaultHandler());
+            }
+            if("Multi".equals(parcelMode)){
+                builder = builder.withEventHandler(NewMultiParcelEvent.class, NewMultiParcelEvent.defaultHandler());
+            }
+            if("Mixed".equals(parcelMode)){
+                builder = builder.withEventHandler(NewParcelEvent.class, NewParcelEvent.defaultHandler());
+                builder = builder.withEventHandler(NewMultiParcelEvent.class, NewMultiParcelEvent.defaultHandler());
+            }
+        }
+
+        Simulator.builder()
+                .addModel(builder)
+                 .build()
+                .start();
     }
 
     private static Scenario makeScenario(View.Builder viewBuilder, int id, String... filenames) {
@@ -93,7 +111,7 @@ public class Main {
                 .addModel(CommModel.builder())
                 .addModel(viewBuilder);
 
-        String filename = filenames.length > 0 ? filenames[0] : "scene.txt";
+        String filename = filenames.length > 2 ? filenames[2] : "scene.txt";
 
         File file = Paths.get("resources/scenario/" + filename).toFile();
 
