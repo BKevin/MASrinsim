@@ -18,15 +18,16 @@ import com.github.rinde.rinsim.scenario.StopConditions;
 import com.github.rinde.rinsim.scenario.TimedEvent;
 import com.github.rinde.rinsim.ui.View;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import mas.cbba.agent.AbstractConsensusAgent;
 import mas.scenario.*;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
+import java.net.URI;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -37,26 +38,32 @@ import static com.google.common.base.Preconditions.checkState;
  * Created by KevinB on 2/06/2016.
  */
 public class RunExperiments {
+    static final int amountOfExperiments = 10;
+
+
     static final Point MIN_POINT = new Point(0, 0);
     static final Point MAX_POINT = new Point(10, 10);
 
+    static final String seperator = ",";
+    private static final int MAX_AGENTS = 5;
 
     public static void main(String[] args) {
-        runExperiments(args);
+
+        if(args.length == 0)
+            runNewExperiments();
+        else
+            runExperimentWithScenario(args);
     }
 
-    private static void runExperiments(String[] args) {
-
+    private static void runExperimentWithScenario(String... filenames) {
         MASConfiguration config = makeMASConfig();
-//        Scenario scenario = makeScenario("testDistance.txt");;
-        Scenario scenario = makeScenario("scene_2016.06.01.23.02.txt");;
-        int numRepeats= 1;
 
+        Experiment.Builder builder = Experiment.builder()
+                .addConfiguration(config);
+        Scenario scenario = makeScenario(filenames[0]);
+        builder.addScenario(scenario);
 
-        ExperimentResults results = Experiment.builder()
-                .addConfiguration(config)
-                .addScenario(scenario)
-                .repeat(numRepeats)
+        ExperimentResults results = builder
                 .usePostProcessor(PostProcessors.statisticsPostProcessor(new MyObjectiveFunction()))
                 .usePostProcessor(new MyPostProcessor())
                 .perform();
@@ -65,7 +72,169 @@ public class RunExperiments {
             System.out.println(result.getResultObject().toString());
         }
 
+        putResultsInFile(results, "resources/experiments/singleExperiment/experiment_" + new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date()) +  ".txt");
+    }
 
+    private static void runNewExperiments() {
+
+        MASConfiguration config = makeMASConfig();
+
+        String mapName = "resources/experiments/experiment_" + new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date()) + "/";
+
+        for(int i = 0; i < amountOfExperiments; i++){
+
+            String filePath = mapName + "scene" + i + ".txt";
+            ScenarioGenerator.generateScenario(filePath);
+        }
+
+
+        Experiment.Builder builder = Experiment.builder()
+                .addConfiguration(config);
+
+        for(int i = 0; i < amountOfExperiments; i++){
+
+            String filePath = mapName + "scene" + i + ".txt";
+            Scenario scenario = makeScenario(filePath);
+            builder.addScenario(scenario);
+        }
+
+        ExperimentResults results = builder
+                .usePostProcessor(PostProcessors.statisticsPostProcessor(new MyObjectiveFunction()))
+                .usePostProcessor(new MyPostProcessor())
+                .perform();
+
+        for(Experiment.SimulationResult result : results.getResults()){
+            System.out.println(result.getResultObject().toString());
+        }
+
+        putResultsInFile(results, mapName+"results.txt");
+
+
+    }
+
+    private static void putResultsInFile(ExperimentResults results,String... filenames) {
+
+//        String filename = filenames.length > 0 ? filenames[0] : "result"
+//                +"_"+new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date())
+//                +".txt";
+//
+//        String path = "resources/results/" + filename;
+
+        String path = filenames[0];
+
+        File file = Paths.get(path).toFile();
+
+        try {
+            file.getParentFile().mkdirs();
+            file.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try (BufferedWriter br = new BufferedWriter(
+                new OutputStreamWriter(
+                        new FileOutputStream(file), "utf-8"))) {
+            ImmutableSet<Experiment.SimulationResult> simResults = results.getResults();
+
+            String header =
+                    "MASConfig" + seperator
+                            + "Scenario" + seperator
+                            + "computationTime" + seperator
+                            + "simulationTime" + seperator
+                            + "numParcels" + seperator
+                            + "numVehicles" + seperator
+                            + "pickupTardiness" + seperator
+                            + "deliveryTardiness" + seperator;
+            for(int i = 0; i < MAX_AGENTS; i++){
+                header += "messagesSentByByAgent" + i + seperator;
+            }
+            header += "totalMessagesSent" + seperator;
+            for(int i = 0; i < MAX_AGENTS; i++){
+                header += "messagesReceivedByAgent" + i + seperator;
+            }
+            header += "totalMessagesReceived" + seperator;
+            for(int i = 0; i < MAX_AGENTS; i++){
+                header += "averageAvailableParcelsByAgent" + i + seperator;
+            }
+            for(int i = 0; i < MAX_AGENTS; i++){
+                header += "averageClaimedParcelsByAgent" + i + seperator;
+            }
+            for(int i = 0; i < MAX_AGENTS; i++){
+                header += "routeCostCalculationsByAgent" + i + seperator;
+            }
+            header += "totalRouteCostCalculations" + seperator;
+            for(int i = 0; i < MAX_AGENTS; i++){
+                header += "constructBundleCalculationsByAgent" + i + seperator;
+            }
+            header += "totalConstructBundleCalculations";
+
+
+            br.write(header);
+            br.newLine();
+
+            for(int i = 0; i < simResults.size(); i++){
+                Experiment.SimulationResult simResult = (Experiment.SimulationResult) simResults.toArray()[i];
+                MyResults myResults = (MyResults) simResult.getResultObject();
+
+                Set<Vehicle> vehicleList = myResults.getVehicles();
+
+                br.write(String.valueOf(simResult.getSimArgs().getMasConfig().hashCode()) + seperator);
+                br.write(String.valueOf(simResult.getSimArgs().getScenario().hashCode()) + seperator);
+                br.write(String.valueOf(myResults.getStatistics().computationTime) + seperator);
+                br.write(String.valueOf(myResults.getStatistics().simulationTime) + seperator);
+                br.write(String.valueOf(myResults.getStatistics().acceptedParcels) + seperator);
+                br.write(String.valueOf(myResults.getStatistics().movedVehicles) + seperator);
+                br.write(String.valueOf(myResults.getStatistics().pickupTardiness) + seperator);
+                br.write(String.valueOf(myResults.getStatistics().deliveryTardiness) + seperator);
+
+
+                for(Vehicle v: vehicleList)
+                    br.write(myResults.getMessagesSentByAgent().get(v) + seperator);
+                setEmpty(br, vehicleList);
+
+                br.write(myResults.getTotalAmountOfMessagesSentByAgents() + seperator);
+
+                for(Vehicle v: vehicleList)
+                    br.write(myResults.getMessagesReceivedByAgent().get(v) + seperator);
+                setEmpty(br, vehicleList);
+
+                br.write(myResults.getTotalAmountOfMessagesReceivedByAgents() + seperator);
+
+
+                for(Vehicle v: vehicleList)
+                    br.write(myResults.getAverageAvailableParcel().get(v) + seperator);
+                setEmpty(br, vehicleList);
+                for(Vehicle v: vehicleList)
+                    br.write(myResults.getAverageClaimedParcel().get(v) + seperator);
+                setEmpty(br, vehicleList);
+
+
+                for(Vehicle v: vehicleList)
+                    br.write(myResults.getRouteCostCalculationsByAgent().get(v) + seperator);
+                setEmpty(br, vehicleList);
+
+                br.write(myResults.getTotalAmountOfRouteCostCalculationsByAgents() + seperator);
+
+                for(Vehicle v: vehicleList)
+                    br.write(myResults.getConstructBundleCallsByAgent().get(v) + seperator);
+                setEmpty(br, vehicleList);
+
+                br.write(myResults.getTotalConstructBundleCallsByAgents() + "");
+
+
+                br.newLine();
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private static void setEmpty(BufferedWriter br, Set<Vehicle> vehicleList) throws IOException {
+        for(int k = vehicleList.size(); k < MAX_AGENTS; k++){
+            br.write(seperator);
+        }
     }
 
     private static MASConfiguration makeMASConfig() {
@@ -89,10 +258,12 @@ public class RunExperiments {
     private static Scenario makeScenario(String... filenames) {
         Scenario.Builder scenarioBuilder = Scenario.builder();
 
-
-        String filename = filenames.length > 0 ? filenames[0] : "scene.txt";
-
-        File file = Paths.get("resources/scenario/" + filename).toFile();
+//
+//        String filename = filenames.length > 0 ? filenames[0] : "scene.txt";
+//
+//        String path = "resources/scenario/" + filename;
+        String path = filenames[0];
+        File file = Paths.get(path).toFile();
 
         LoggerFactory.getLogger(Main.class).info("Reading from {} - {}", file.getPath(), file.canRead());
         long lastEventTime = -1;
@@ -262,6 +433,9 @@ public class RunExperiments {
         //amount of calculate bestRoute (total)
         HashMap<Vehicle,Integer> routeCostCalculationsByAgent;
 
+        public Set<Vehicle> getVehicles(){
+            return messagesSentByAgent.keySet();
+        }
 
         public void setMessagesSentByAgent(HashMap<Vehicle, Integer> messagesSentByAgent) {
             this.messagesSentByAgent = messagesSentByAgent;
@@ -338,6 +512,14 @@ public class RunExperiments {
 
         public void setConstructBundleCallsByAgent(HashMap<Vehicle, Integer> constructBundleCallsByAgent) {
             this.constructBundleCallsByAgent = constructBundleCallsByAgent;
+        }
+
+
+        public int getTotalConstructBundleCallsByAgents() {
+            int value = 0;
+            for(int v : constructBundleCallsByAgent.values())
+                value += v;
+            return value;
         }
 
         @Override

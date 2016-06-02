@@ -22,15 +22,15 @@ public class NewVehicleEvent implements TimedEvent {
     private final VehicleType type;
 
 
-    public NewVehicleEvent(long time, Point newStartLocation, int newCapacity, double newSpeed, int maxRequiredAgents){
+    public NewVehicleEvent(long time, Point newStartLocation, int newCapacity, double newSpeed, String mode){
         triggerTime = time;
         startLocation = newStartLocation;
         capacity = newCapacity;
         speed = newSpeed;
-        if(maxRequiredAgents == 1){
+        if(mode == "CBBA"){
             type = VehicleType.CBBA;
         }
-        else{
+        else {
             type = VehicleType.CBGA;
         }
     }

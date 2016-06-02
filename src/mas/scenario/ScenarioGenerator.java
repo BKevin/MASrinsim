@@ -1,6 +1,7 @@
 package mas.scenario;
 
 import com.github.rinde.rinsim.geom.Point;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
@@ -20,10 +21,10 @@ public class ScenarioGenerator {
     private static double width = 10;
     private static double height = 10;
 
-    private static int amountVehiclesAtStart = 6;
-    private static int amountParcelsAtStart = 6;
+    private static int amountVehiclesAtStart = 5;
+    private static int amountParcelsAtStart = 10;
     private static int amountNewVehicles = 0;
-    private static int amountNewParcels = 1000;
+    private static int amountNewParcels = 100;
 
 
     private static long vehicleAverageInterArrivalTime; //ms
@@ -37,25 +38,31 @@ public class ScenarioGenerator {
     private static long parcelAverageTimeWindowVariation = 10000; //ms
     private static int parcelServiceDuration = 0;
     private static int parcelCapacity = 1;
-    private static int maxAmountOfRequiredAgents = 2;
+    private static String mode = "CBBA"; // CBBA  or CBGA
     //Distribution (chances) of required agents: p_1, p_2, p_3
-    private static double[] distribution = {0,1};
+    private static double[] distribution = {1,0};
 
     private static double expectedTravelTime = 255555; //from center to a corner
     private static double travelTimeVariation = 50000;
 
     public static void main(String[] args) {
-        generateScenario(args);
+        generateScenario(generateFileName(args));
     }
 
-    private static void generateScenario(String... filenames) {
-        currentTime = 0;
-
+    @NotNull
+    private static String generateFileName(String[] filenames) {
         String filename = filenames.length > 0 ? filenames[0] : "scene"
                 +"_"+new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date())
                 +".txt";
 
-        File file = Paths.get("resources/scenario/"+filename).toFile();
+        return "resources/scenario/" + filename;
+    }
+
+
+    public static void generateScenario(String filePath) {
+        currentTime = 0;
+
+        File file = Paths.get(filePath).toFile();
 
         try {
             file.getParentFile().mkdirs();
@@ -133,7 +140,7 @@ public class ScenarioGenerator {
                 + location.x + "," + location.y + " "
                 + vehicleCapacity + " "
                 + vehicleSpeed + " "
-                + maxAmountOfRequiredAgents;
+                + mode;
     }
 
     private static String makeParcelEventAtStart() {
@@ -212,12 +219,12 @@ public class ScenarioGenerator {
     private static int getRequiredAgents() {
         double value = 0;
         double random = rng.nextDouble();
-        for(int i = 0; i < maxAmountOfRequiredAgents; i++){
+        for(int i = 0; i < distribution.length; i++){
             value += distribution[i];
             if(random < value)
                 return i + 1;
         }
-        return maxAmountOfRequiredAgents; //FIXME add something to make it randomly generated
+        return distribution.length; //FIXME add something to make it randomly generated
     }
 
 
