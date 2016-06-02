@@ -16,6 +16,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.sun.corba.se.impl.orb.ParserTable.get;
+
 /**
  * Created by pieter on 26.05.16.
  */
@@ -179,21 +181,24 @@ public class CbgaAgent extends AbstractConsensusAgent {
             // Get the best bid
             Stream<Map.Entry<Parcel, Long>> stream = c_ij.entrySet().stream()
                     // Remove all entries for which c_ij < max(y_ij)
-                    .filter(entry ->
-                            this.isBetterBidThan(
-                                    // bid value of the entry
-                                    entry.getValue(),
-                                    // calculate the current maximum bid for every parcel not in B
-                                    getHighestBid(entry.getKey()).get()
-                            )
+                    .filter(entry -> {
+                                Optional<Long> bid = getHighestBid(entry.getKey());
+                                return this.isBetterBidThan(
+                                        // bid value of the entry
+                                        entry.getValue(),
+                                        // calculate the current maximum bid for every parcel not in B
+                                        bid.isPresent() ? bid.get() : Long.MAX_VALUE
+                                );
+                            }
                     );
-                    // Calculate the minimum argument in h_ij
+
+            // Calculate the minimum argument in h_ij
             Optional<Map.Entry<Parcel, Long>> optBestEntry = stream.min(new Comparator<Map.Entry<? extends Parcel, Long>>() {
-                        @Override
-                        public int compare(Map.Entry<? extends Parcel, Long> parcelLongEntry, Map.Entry<? extends Parcel, Long> t1) {
-                            return parcelLongEntry.getValue().compareTo(t1.getValue());
-                        }
-                    });
+                @Override
+                public int compare(Map.Entry<? extends Parcel, Long> parcelLongEntry, Map.Entry<? extends Parcel, Long> t1) {
+                    return parcelLongEntry.getValue().compareTo(t1.getValue());
+                }
+            });
 
             if(bIsChanging = optBestEntry.isPresent()) {
                 Map.Entry<? extends Parcel, Long> bestEntry = optBestEntry.get();
@@ -216,7 +221,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
     private Optional<Long> getHighestBid(Parcel parcel){
         Optional<Long> value = this.getX().row(parcel).values()
                 .stream()
-                .filter(p -> p < Long.MAX_VALUE)
+                .filter(p -> this.isValidBid(p))
                 .min(Long::compareTo);
 
         return value;
