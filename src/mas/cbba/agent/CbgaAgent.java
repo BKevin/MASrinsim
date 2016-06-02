@@ -382,7 +382,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
      * @param p
      * @return
      */
-    protected static List<Long> getValidBidsForParcel(ImmutableTable<Parcel, AbstractConsensusAgent, Long> x, Parcel p) {
+    public static List<Long> getValidBidsForParcel(ImmutableTable<Parcel, AbstractConsensusAgent, Long> x, Parcel p) {
         //TODO move to util
 
         return x.row(p).values().stream().filter(l -> !NO_BID.equals(l)).collect(Collectors.toList());

@@ -57,7 +57,13 @@ public class MultiParcel extends MyParcel {
      */
     private void triggerReEvaluation() {
         for(Vehicle v : this.getAllocations().keySet()){
-            ((CbgaAgent) v).updateRoute();
+            CbgaAgent agent = ((CbgaAgent) v);
+
+            //Trigger allocation onto this object for vehicles that are in the allocation list
+            // TODO unencapsulated allocation changes!
+            this.allocateTo(agent);
+
+            agent.updateRoute();
         }
     }
 
@@ -149,7 +155,7 @@ public class MultiParcel extends MyParcel {
      * @return
      */
     protected Integer getBidRank(CbgaAgent p) {
-        List<Long> sortedList = p.getX().row(this).values().stream().filter(v -> v < Long.MAX_VALUE).sorted().collect(Collectors.toList());
+        List<Long> sortedList = CbgaAgent.getValidBidsForParcel(p.getX(), this).stream().sorted().collect(Collectors.toList());
 
         return sortedList.indexOf(p.getX().get(this, p));
     }
