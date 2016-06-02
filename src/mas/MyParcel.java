@@ -186,7 +186,7 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
 //        LoggerFactory.getLogger(this.getClass()).info("canBePickedUp = {} -> expect: {} and actual: {}",this.vehicle == v, this.vehicle, v);
 
 //        return this.isAllocated() && this.allocatedVehicles.contains(v);
-        return this.allocatedVehicles.contains(v) && this.getRequiredAgents().equals(this.allocatedVehicles.size());
+        return this.allocatedVehicles.contains(v);
     }
 
     @Override
@@ -305,6 +305,9 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
     }
 
     public Integer getRequiredAgents(){
-        return DEFAULT_REQUIRED_AGENTS;
+        return //(if) parcel is not available
+                !this.getPDPModel().getParcels(PDPModel.ParcelState.ANNOUNCED,PDPModel.ParcelState.AVAILABLE).contains(this)
+                        ? 0
+                        : DEFAULT_REQUIRED_AGENTS;
     }
 }
