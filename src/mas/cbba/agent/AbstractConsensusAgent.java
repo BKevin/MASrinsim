@@ -802,4 +802,26 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         return averageClaimedParcels;
     }
 
+
+
+    public Long getProjectedPickupTime(Parcel parcel) {
+
+        if(!this.getB().contains(parcel)){
+            LoggerFactory.getLogger(this.getClass()).error(
+                    "{} cannot project pickup time for parcel not in B. B:{}",
+                    this,
+                    this.getB());
+        }
+
+        RouteTimes routeTimes = new RouteTimes(
+                this.getPDPModel(),
+                this,
+                this.getP(),
+                this.getProjectedStartPosition(),
+                this.getProjectedStartTime(),
+                this.getCurrentTimeLapse().getTimeUnit());
+
+        return routeTimes.getPickupTimes().get(parcel);
+
+    }
 }

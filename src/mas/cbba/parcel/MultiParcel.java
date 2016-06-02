@@ -22,7 +22,7 @@ public class MultiParcel extends MyParcel {
     //    ParcelDTO baseParcel;
     private List<SubParcel> subParcels;
 
-    private Map<Vehicle, Integer> allocations;
+    private Map<CbgaAgent, Long> allocations;
 
     public MultiParcel(ParcelDTO parcel, Integer requiredAgents) {
         super(parcel);
@@ -35,20 +35,20 @@ public class MultiParcel extends MyParcel {
 
     }
 
-    @Override
-    public void tick(TimeLapse timeLapse) {
-
-        if(isNotAllocatedEvenly()){
-            LoggerFactory.getLogger(this.getClass()).info("Triggered reallocation for {}: \nAllocations: {}", this, this.getAllocations());
-
-            triggerRerankOfAllocatedAgents();
-
-            LoggerFactory.getLogger(this.getClass()).info("Finished reallocation for {}:" +
-                    "\nAllocation: {}", this, this.getAllocations());
-        }
-        super.tick(timeLapse);
-    }
-
+//    @Override
+//    public void tick(TimeLapse timeLapse) {
+//
+//        if(isNotAllocatedEvenly()){
+//            LoggerFactory.getLogger(this.getClass()).info("Triggered reallocation for {}: \nAllocations: {}", this, this.getAllocations());
+//
+//            triggerRerankOfAllocatedAgents();
+//
+//            LoggerFactory.getLogger(this.getClass()).info("Finished reallocation for {}:" +
+//                    "\nAllocation: {}", this, this.getAllocations());
+//        }
+//        super.tick(timeLapse);
+//    }
+//
     /**
      * Trigger updateRoute in every CbgaAgent
      */
@@ -63,18 +63,18 @@ public class MultiParcel extends MyParcel {
             agent.updateRoute();
         }
     }
-
-    /**
-     * Even allocation means every rank only occurs once.
-     * @return
-     */
-    public boolean isNotAllocatedEvenly() {
-//        boolean hasDoubles = !((new HashSet<>(this.getAllocations().values())).size() == this.getAllocations().values().size());;
-
-        //maxSum ensures that every index occurs once.
-        boolean maxSum = this.getAllocations().values().stream().mapToInt(Integer::valueOf).sum() == countSum(this.getAllocations().size()-1);
-        return !maxSum;
-    }
+//
+//    /**
+//     * Even allocation means every rank only occurs once.
+//     * @return
+//     */
+//    public boolean isNotAllocatedEvenly() {
+////        boolean hasDoubles = !((new HashSet<>(this.getAllocations().values())).size() == this.getAllocations().values().size());;
+//
+//        //maxSum ensures that every index occurs once.
+//        boolean maxSum = this.getAllocations().values().stream().mapToInt(Integer::valueOf).sum() == countSum(this.getAllocations().size()-1);
+//        return !maxSum;
+//    }
 
     private int countSum(int size) {
         if(size <= 0)
@@ -82,7 +82,7 @@ public class MultiParcel extends MyParcel {
         return countSum(size-1) + size;
     }
 
-    public Map<Vehicle, Integer> getAllocations() {
+    public Map<CbgaAgent, Long> getAllocations() {
         return allocations;
     }
 
@@ -101,7 +101,7 @@ public class MultiParcel extends MyParcel {
     }
 
     public Integer getRequiredAgents(){
-        return 1 + subParcels.size();
+        return subParcels.size() + (this.isAvailable() ? 1 : 0);
     }
 
     public List<SubParcel> getSubParcels(){
@@ -129,19 +129,8 @@ public class MultiParcel extends MyParcel {
      */
     public Parcel allocateTo(Vehicle vehicle) {
 
-        Integer rank = this.getBidRank((CbgaAgent) vehicle);
-
-        if(rank < 0){
-            if(this.allocations.containsKey(vehicle)){
-                // Wait for inconsistencies to go away
-                return getDelegateSubParcel(vehicle);
-            }
-            else {
-                throw new IllegalArgumentException("Vehicle is not ranked in best bids.");
-            }
-        }
-
-        this.allocations.put(vehicle, rank);
+        // Calculate rank
+        this.setBidRank((CbgaAgent) vehicle);
 
         return getDelegateSubParcel(vehicle);
 
@@ -152,10 +141,15 @@ public class MultiParcel extends MyParcel {
      * @param p
      * @return
      */
-    protected Integer getBidRank(CbgaAgent p) {
-        List<Long> sortedList = CbgaAgent.getValidBidsForParcel(p.getX(), this).stream().sorted().collect(Collectors.toList());
+    protected int getBidRank(CbgaAgent p) {
+//        List<Long> sortedList = CbgaAgent.getValidBidsForParcel(p.getX(), this).stream().sorted().collect(Collectors.toList());
 
-        return sortedList.indexOf(p.getX().get(this, p));
+        return new ArrayList<>(new TreeSet(this.allocations.values())).indexOf(this.allocations.get(p));
+
+    }
+
+    protected void setBidRank(CbgaAgent p){
+        this.allocations.put(p, p.getProjectedPickupTime(this));
     }
 
     @Override
@@ -196,9 +190,10 @@ public class MultiParcel extends MyParcel {
      * @return
      */
     public Parcel getDelegateSubParcel(Vehicle v){
-        Integer rank = this.getAllocations().get(v);
 
-        if(this.getAllocations().get(v) == this.getRequiredAgents()-1 || rank >= subParcels.size()){
+        int rank = this.getBidRank((CbgaAgent) v);
+
+        if(rank == this.getRequiredAgents()-1 || rank >= subParcels.size()){
             return this;
         }
         return subParcels.get(rank);
