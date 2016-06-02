@@ -132,38 +132,19 @@ public class MultiParcel extends MyParcel {
         Integer rank = this.getBidRank((CbgaAgent) vehicle);
 
         if(rank < 0){
-            throw new IllegalArgumentException("Vehicle is not ranked in best bids.");
+            if(this.allocations.containsKey(vehicle)){
+                // Wait for inconsistencies to go away
+                return getDelegateSubParcel(vehicle);
+            }
+            else {
+                throw new IllegalArgumentException("Vehicle is not ranked in best bids.");
+            }
         }
 
         this.allocations.put(vehicle, rank);
 
-        return rank < this.subParcels.size() ? this.subParcels.get(rank) : this;
+        return getDelegateSubParcel(vehicle);
 
-//        if(vehicle instanceof CbgaAgent){
-//            CbgaAgent agent = (CbgaAgent) vehicle;
-//
-//            // Get allocated agents according to the given vehicle.
-//            Set<AbstractConsensusAgent> agents = agent.getX().row(this)
-//                    .entrySet().stream()
-//                    .filter(entry -> entry.getValue() > 0)
-//                    .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()))
-//                    .keySet();
-//
-//            List<Vehicle> allocated = getAllocatedVehicles();
-//
-//            // Difference between allocated and to-be assigned
-//            allocated.removeAll(agents);
-//
-//            if(allocated.size() > 0){
-//                // The allocated agents loses the subparcel to the calling vehicle
-//                changeAllocation(allocated.get(0), vehicle);
-//            }
-//            else{
-//                //nothing happens otherwise, the allocation didn't really change.
-//            }
-//        }
-//
-//        return changeAllocation(null, vehicle);
     }
 
     /**
