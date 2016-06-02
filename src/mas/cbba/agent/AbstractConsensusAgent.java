@@ -292,7 +292,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         updateRoute();
     }
 
-    private void updateRoute() {
+    public void updateRoute() {
 
         // Fetch actual parcels (in case of MultiParcel and build route
         List<Parcel> collect = this.getP().stream().map(this::getAllocatedParcel).collect(Collectors.toList());

@@ -5,13 +5,13 @@ import com.github.rinde.rinsim.core.model.pdp.ParcelDTO;
 import com.github.rinde.rinsim.core.model.pdp.Vehicle;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.google.common.collect.ImmutableList;
+import com.sun.jna.WeakIdentityHashMap;
 import mas.MyParcel;
 import mas.cbba.agent.AbstractConsensusAgent;
 import mas.cbba.agent.CbgaAgent;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -24,6 +24,8 @@ public class MultiParcel extends MyParcel {
     //    ParcelDTO baseParcel;
     private List<SubParcel> subParcels;
 
+    private Map<Vehicle, Integer> allocations;
+
     public MultiParcel(ParcelDTO parcel, Integer requiredAgents) {
         super(parcel);
 
@@ -31,6 +33,43 @@ public class MultiParcel extends MyParcel {
 
         subParcels = generateParcels(parcel, requiredAgents);
 
+        allocations = new HashMap<>();
+
+    }
+
+    @Override
+    public void tick(TimeLapse timeLapse) {
+        super.tick(timeLapse);
+
+        if(isNotAllocatedEvenly()){
+            LoggerFactory.getLogger(this.getClass()).info("Triggered reallocation for {}: \nAllocations: {}", this, this.getAllocations());
+
+            triggerReEvaluation();
+
+            LoggerFactory.getLogger(this.getClass()).info("Finished reallocation for {}:" +
+                    "\nAllocation: {}", this, this.getAllocations());
+        }
+    }
+
+    /**
+     * Trigger updateRoute in every CbgaAgent
+     */
+    private void triggerReEvaluation() {
+        for(Vehicle v : this.getAllocations().keySet()){
+            ((CbgaAgent) v).updateRoute();
+        }
+    }
+
+    /**
+     * Even allocation means every rank only occurs once.
+     * @return
+     */
+    public boolean isNotAllocatedEvenly() {
+        return (new HashSet<>(this.getAllocations().values())).size() == this.getAllocations().values().size();
+    }
+
+    public Map<Vehicle, Integer> getAllocations() {
+        return allocations;
     }
 
     private List<SubParcel> generateParcels(ParcelDTO parcelDto, Integer subParcels){
@@ -66,54 +105,80 @@ public class MultiParcel extends MyParcel {
      * @param vehicle
      * @return
      */
-    @Override
     public Parcel allocateTo(Vehicle vehicle) {
-        if(vehicle instanceof CbgaAgent){
-            CbgaAgent agent = (CbgaAgent) vehicle;
 
-            // Get allocated agents according to the given vehicle.
-            Set<AbstractConsensusAgent> agents = agent.getX().row(this)
-                    .entrySet().stream()
-                    .filter(entry -> entry.getValue() > 0)
-                    .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()))
-                    .keySet();
+        Integer rank = this.getBidRank((CbgaAgent) vehicle);
 
-            List<Vehicle> allocated = getAllocatedVehicles();
-
-            // Difference between allocated and to-be assigned
-            allocated.removeAll(agents);
-
-            if(allocated.size() > 0){
-                // The allocated agents loses the subparcel to the calling vehicle
-                changeAllocation(allocated.get(0), vehicle);
-            }
-            else{
-                //nothing happens otherwise, the allocation didn't really change.
-            }
+        if(rank < 0){
+            throw new IllegalArgumentException("Vehicle is not ranked in best bids.");
         }
 
-        return changeAllocation(null, vehicle);
+        this.allocations.put(vehicle, rank);
+
+        return rank < this.subParcels.size() ? this.subParcels.get(rank) : this;
+
+//        if(vehicle instanceof CbgaAgent){
+//            CbgaAgent agent = (CbgaAgent) vehicle;
+//
+//            // Get allocated agents according to the given vehicle.
+//            Set<AbstractConsensusAgent> agents = agent.getX().row(this)
+//                    .entrySet().stream()
+//                    .filter(entry -> entry.getValue() > 0)
+//                    .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()))
+//                    .keySet();
+//
+//            List<Vehicle> allocated = getAllocatedVehicles();
+//
+//            // Difference between allocated and to-be assigned
+//            allocated.removeAll(agents);
+//
+//            if(allocated.size() > 0){
+//                // The allocated agents loses the subparcel to the calling vehicle
+//                changeAllocation(allocated.get(0), vehicle);
+//            }
+//            else{
+//                //nothing happens otherwise, the allocation didn't really change.
+//            }
+//        }
+//
+//        return changeAllocation(null, vehicle);
     }
 
-    public Parcel changeAllocation(Vehicle from, Vehicle to){
-        List<SubParcel> matches;
-        if(from == null) {
-            matches = subParcels.stream().filter((SubParcel s) -> !s.isAllocated()).collect(Collectors.<SubParcel>toList());
-            if(matches.size() == 0){
-                throw new IllegalArgumentException("All subparcels are allocated, you can only change allocations now.");
-            }
-        }
-        else{
-            matches = subParcels.stream().filter((SubParcel s) -> !s.getAllocatedVehicle().equals(from)).collect(Collectors.<SubParcel>toList());
-        }
+    /**
+     * The rank of this bid in relation to others.
+     * @param p
+     * @return
+     */
+    protected Integer getBidRank(CbgaAgent p) {
+        List<Long> sortedList = p.getX().row(this).values().stream().filter(v -> v < Long.MAX_VALUE).sorted().collect(Collectors.toList());
 
-        /**
-         * TODO consistency problem
-         * Allocation cannot change after pickup, if some subparcel is not yet picked up and changes owner, but another
-         * subparcel in the list is changed owner, then this allocation change can fail.
-         */
-        return matches.get(0).allocateTo(to);
+        return sortedList.indexOf(p.getX().get(this, p));
     }
+
+    @Override
+    public boolean canBePickedUp(Vehicle v, long time) {
+        return super.canBePickedUp(v, time);
+    }
+//    public Parcel changeAllocation(Vehicle from, Vehicle to){
+//        List<SubParcel> matches;
+//        if(from == null) {
+//            matches = subParcels.stream().filter((SubParcel s) -> !s.isAllocated()).collect(Collectors.<SubParcel>toList());
+//            if(matches.size() == 0){
+//                throw new IllegalArgumentException("All subparcels are allocated, you can only change allocations now.");
+//            }
+//        }
+//        else{
+//            matches = subParcels.stream().filter((SubParcel s) -> !s.getAllocatedVehicle().equals(from)).collect(Collectors.<SubParcel>toList());
+//        }
+//
+//        /**
+//         * TODO consistency problem
+//         * Allocation cannot change after pickup, if some subparcel is not yet picked up and changes owner, but another
+//         * subparcel in the list is changed owner, then this allocation change can fail.
+//         */
+//        return matches.get(0).allocateTo(to);
+
+//    }
 
     public Vehicle getAllocatedVehicle(){
         throw new UnsupportedOperationException("MultiParcel is not allocated directly. Use getAllocatedVehicles instead.");
@@ -123,8 +188,22 @@ public class MultiParcel extends MyParcel {
         return subParcels.stream().map(SubParcel::getAllocatedVehicle).collect(Collectors.toList());
     }
 
-    public Parcel getAllocatedSubParcel(Vehicle vehicle){
-        return subParcels.stream().filter((SubParcel s) -> s.getAllocatedVehicle() == vehicle).collect(Collectors.<Parcel>toList()).get(0);
+    /**
+     * Return the subparcel by determining your own rank in the bidding.
+     * @return
+     */
+    public Parcel getAllocatedSubParcel(Vehicle v){
+        Integer rank = this.getAllocations().get(v);
+        if(this.getAllocations().get(v) == this.getRequiredAgents()-1){
+            return this;
+        }
+        return subParcels.get(rank);
+    }
+
+    @Override
+    public Parcel loseAllocation(Vehicle vehicle) {
+        allocations.remove(vehicle);
+        return null;
     }
 
 }

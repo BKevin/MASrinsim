@@ -186,7 +186,7 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
 //        LoggerFactory.getLogger(this.getClass()).info("canBePickedUp = {} -> expect: {} and actual: {}",this.vehicle == v, this.vehicle, v);
 
 //        return this.isAllocated() && this.allocatedVehicles.contains(v);
-        return this.allocatedVehicles.contains(v);
+        return this.allocatedVehicles.contains(v) && this.getRequiredAgents().equals(this.allocatedVehicles.size());
     }
 
     @Override
