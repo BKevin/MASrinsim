@@ -3,7 +3,10 @@ package mas.cbba.agent;
 import com.github.rinde.rinsim.core.model.pdp.PDPModel;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
-import com.google.common.collect.*;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableTable;
+import com.google.common.collect.Table;
 import mas.MyParcel;
 import mas.cbba.Debug;
 import mas.cbba.parcel.MultiParcel;
@@ -15,8 +18,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.sun.corba.se.impl.orb.ParserTable.get;
 
 /**
  * Created by pieter on 26.05.16.
@@ -236,7 +237,10 @@ public class CbgaAgent extends AbstractConsensusAgent {
      * @return
      */
     private Optional<Long> getHighestBid(Parcel parcel){
-        Optional<Long> value = this.getX().row(parcel).values()
+        HashMap<AbstractConsensusAgent, Long> notMyBids = new HashMap<>(this.getX().row(parcel));
+        notMyBids.remove(this);
+        Optional<Long> value = notMyBids
+                .values()
                 .stream()
                 .filter(p -> this.isValidBid(p))
                 .min(Long::compareTo);
@@ -267,14 +271,14 @@ public class CbgaAgent extends AbstractConsensusAgent {
         for(Parcel p : bids.rowKeySet()){
             MyParcel j = (MyParcel) p;
 
-            // (if) default number of agents required (==1)
-            if(j.getRequiredAgents().equals(MyParcel.DEFAULT_REQUIRED_AGENTS)) {
-
-                super.evaluateSnapshotForParcel(j, snapshot, k);
-            }
-
-            // (else) multiparcel
-            else{
+//            // (if) default number of agents required (==1)
+//            if(j.getRequiredAgents().equals(MyParcel.DEFAULT_REQUIRED_AGENTS)) {
+//
+//                super.evaluateSnapshotForParcel(j, snapshot, k);
+//            }
+//
+//            // (else) multiparcel
+//            else{
 
                 // Communication timestamps
                 Map<AbstractConsensusAgent, Long> timestamps = snapshot.getCommunicationTimestamps();
@@ -348,7 +352,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
                     }
                 }
             }
-        }
+//        }
     }
 
     private boolean isValidBid(Long aLong) {
