@@ -42,14 +42,25 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     // Previous snapshot
     private Snapshot snapshot;
 
-    private boolean inTick;
-    private boolean error = false;
+    //Statistics fields
+    private int numberOfSentMessages;
+    private int numberOfReceivedMessages;
+    private int numberOfRouteCostCalculations;
+    private int numberOfConstructBundleCalls;
+    private double averageAvailableParcels;
+    private double averageClaimedParcels;
 
     public AbstractConsensusAgent(VehicleDTO vehicleDTO) {
         super(vehicleDTO);
         this.p = new ArrayList<>();
         this.b = new LinkedList<>();
         this.communicationTimestamps = new HashMap<>();
+        numberOfSentMessages = 0;
+        numberOfReceivedMessages = 0;
+        numberOfRouteCostCalculations = 0;
+        numberOfConstructBundleCalls = 0;
+        averageAvailableParcels = 0;
+        averageClaimedParcels = 0;
     }
 
     @Override
@@ -61,6 +72,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
     protected void preTick(TimeLapse time) {
         super.preTick(time);
+
 //        inTick = true;
 //
 //        if(!this.getPDPModel().getContents(this).isEmpty())
@@ -74,6 +86,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
         boolean hasConsensus = false;
         while (!hasConsensus){
+            numberOfConstructBundleCalls += 1;
             constructBundle();
             hasConsensus = findConsensus();
 
@@ -101,6 +114,22 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 //                );
 //            }
 //        inTick = false;
+        calculateAverages(time);
+
+
+    }
+
+    private void calculateAverages(TimeLapse time) {
+        //Calculate average available parcel
+        int currentAvailable = this.getPDPModel().getParcels(PDPModel.ParcelState.AVAILABLE).size();
+        currentAvailable += this.getPDPModel().getParcels(PDPModel.ParcelState.ANNOUNCED).size();
+        long temp =  (long)(averageAvailableParcels * (time.getEndTime()/time.getTickLength() - 1));
+        temp += currentAvailable;
+        averageAvailableParcels = ((double)temp) / (time.getEndTime()/time.getTickLength());
+        //Calculate average claimed parcel
+        long temp2 =  (long)(averageClaimedParcels * (time.getEndTime()/time.getTickLength() - 1));
+        temp2 += this.getB().size();
+        averageClaimedParcels = ((double)temp2) / (time.getEndTime()/time.getTickLength());
     }
 
     @Override
@@ -178,6 +207,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                 if(c != this) {
                     MyVehicle v = (MyVehicle) c;
                     this.getCommDevice().get().send(snapshot, v);
+                    this.numberOfSentMessages += 1;
                 }
             }
 
@@ -362,6 +392,8 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     }
 
     protected long calculateRouteCost(ArrayList<? extends Parcel> path) {
+        this.numberOfRouteCostCalculations += 1;
+
         RouteTimes routeTimes = new RouteTimes(
                 this.getPDPModel(),
                 this,
@@ -434,6 +466,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
         List<Message> snapshots = new LinkedList<>();
         for (Message message : this.getCommDevice().get().getUnreadMessages()) {
+            this.numberOfReceivedMessages += 1;
 
             //if AuctionedParcelMessage then calculate bid and send BidMessage
             final MessageContents contents = message.getContents();
@@ -688,4 +721,28 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
 
     public abstract Set<Parcel> getParcels();
+
+    public Integer getNumberOfSentMessages() {
+        return numberOfSentMessages;
+    }
+
+    public Integer getNumberOfReceivedMessages() {
+        return numberOfReceivedMessages;
+    }
+
+    public int getNumberOfRouteCostCalculations() {
+        return numberOfRouteCostCalculations;
+    }
+
+    public int getNumberOfConstructBundleCalls() {
+        return numberOfConstructBundleCalls;
+    }
+
+    public double getAverageAvailableParcels() {
+        return averageAvailableParcels;
+    }
+
+    public double getAverageClaimedParcels() {
+        return averageClaimedParcels;
+    }
 }
