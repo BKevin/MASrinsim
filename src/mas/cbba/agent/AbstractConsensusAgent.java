@@ -311,7 +311,15 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
      * @param to
      * @param bid
      */
-    protected abstract void replaceWinningBid(Parcel parcel, AbstractConsensusAgent from, AbstractConsensusAgent to, Long bid);
+    protected void replaceWinningBid(Parcel parcel, AbstractConsensusAgent from, AbstractConsensusAgent to, Long bid){
+        updateBidValue(parcel, from, this.NO_BID);
+
+        if(from == this){
+            removeParcelAllocationFromYourself(parcel);
+        }
+
+        setWinningBid(parcel, to, bid);
+    }
 
     /**
      * Getter for bid list
