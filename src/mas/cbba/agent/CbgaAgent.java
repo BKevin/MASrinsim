@@ -177,7 +177,11 @@ public class CbgaAgent extends AbstractConsensusAgent {
 
         // Debugging
         Map<Parcel, PDPModel.ParcelState> states = parcels.stream().collect(Collectors.toMap(p -> p, p -> this.getPDPModel().getParcelState(p)));
-        Collection<Parcel> availableParcels = this.getPDPModel().getParcels(PDPModel.ParcelState.ANNOUNCED, PDPModel.ParcelState.AVAILABLE).stream().filter(p -> !this.unAllocatable.contains(p)).collect(Collectors.toList());
+        Collection<Parcel> availableParcels = parcels
+                .stream()
+                .filter(p -> !this.unAllocatable.contains(p) )
+                .collect(Collectors.toList());
+
         Debug.logParcelListForAgent(this, states, availableParcels);
 
         boolean bIsChanging = true;
@@ -185,7 +189,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
         while(bIsChanging) {
 
             // Get all parcels not already in B
-            List<Parcel> notInB = parcels.stream().filter(p -> !this.getB().contains(p)).collect(Collectors.toList());
+            List<Parcel> notInB = parcels.stream().filter(p -> !this.getB().contains(p) && ((MyParcel) p).isAvailable()).collect(Collectors.toList());
 
             // Find best route values for every parcel currently not assigned to this vehicle
             Map<Parcel, Long> c_ij =
