@@ -1,14 +1,11 @@
 package mas.cbba.parcel;
 
-import com.github.rinde.rinsim.core.model.pdp.PDPModel;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.ParcelDTO;
 import com.github.rinde.rinsim.core.model.pdp.Vehicle;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.google.common.collect.ImmutableList;
-import com.sun.jna.WeakIdentityHashMap;
 import mas.MyParcel;
-import mas.cbba.agent.AbstractConsensusAgent;
 import mas.cbba.agent.CbgaAgent;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +41,7 @@ public class MultiParcel extends MyParcel {
         if(isNotAllocatedEvenly()){
             LoggerFactory.getLogger(this.getClass()).info("Triggered reallocation for {}: \nAllocations: {}", this, this.getAllocations());
 
-            triggerReEvaluation();
+            triggerRerankOfAllocatedAgents();
 
             LoggerFactory.getLogger(this.getClass()).info("Finished reallocation for {}:" +
                     "\nAllocation: {}", this, this.getAllocations());
@@ -55,7 +52,7 @@ public class MultiParcel extends MyParcel {
     /**
      * Trigger updateRoute in every CbgaAgent
      */
-    private void triggerReEvaluation() {
+    private void triggerRerankOfAllocatedAgents() {
         for(Vehicle v : this.getAllocations().keySet()){
             CbgaAgent agent = ((CbgaAgent) v);
 
@@ -72,7 +69,17 @@ public class MultiParcel extends MyParcel {
      * @return
      */
     public boolean isNotAllocatedEvenly() {
-        return !((new HashSet<>(this.getAllocations().values())).size() == this.getAllocations().values().size());
+//        boolean hasDoubles = !((new HashSet<>(this.getAllocations().values())).size() == this.getAllocations().values().size());;
+
+        //maxSum ensures that every index occurs once.
+        boolean maxSum = this.getAllocations().values().stream().mapToInt(Integer::valueOf).sum() == countSum(this.getAllocations().size()-1);
+        return !maxSum;
+    }
+
+    private int countSum(int size) {
+        if(size <= 0)
+            return 0;
+        return countSum(size-1) + size;
     }
 
     public Map<Vehicle, Integer> getAllocations() {
@@ -94,11 +101,21 @@ public class MultiParcel extends MyParcel {
     }
 
     public Integer getRequiredAgents(){
-        return 1 + (int) subParcels.stream().filter(p -> this.getPDPModel().getParcels(PDPModel.ParcelState.AVAILABLE, PDPModel.ParcelState.ANNOUNCED).contains(p)).count();
+        return 1 + subParcels.size();
     }
 
     public List<SubParcel> getSubParcels(){
-        return this.subParcels;
+        return ImmutableList.copyOf(this.subParcels);
+    }
+
+    /**
+     * Remove a subparcel.
+     * Triggers reranking of all allocated agents
+     * @param parcel
+     */
+    public void removeSubParcel(Parcel parcel){
+        this.subParcels.remove(parcel);
+        triggerRerankOfAllocatedAgents();
     }
 
     /*
@@ -199,7 +216,8 @@ public class MultiParcel extends MyParcel {
      */
     public Parcel getDelegateSubParcel(Vehicle v){
         Integer rank = this.getAllocations().get(v);
-        if(this.getAllocations().get(v) == this.getRequiredAgents()-1){
+
+        if(this.getAllocations().get(v) == this.getRequiredAgents()-1 || rank >= subParcels.size()){
             return this;
         }
         return subParcels.get(rank);

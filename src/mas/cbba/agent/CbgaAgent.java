@@ -136,9 +136,22 @@ public class CbgaAgent extends AbstractConsensusAgent {
             }
             if(parcel instanceof MultiParcel &&
                     this.getPDPModel().getContents(this).contains(((MultiParcel) parcel).getDelegateSubParcel(this))){
-                this.X.put(parcel, this, NO_BID);
-                ((MultiParcel) parcel).getSubParcels().remove(((MultiParcel) parcel).getDelegateSubParcel(this));
+
+                // Grab reference to subparcel
+                Parcel subParcel = ((MultiParcel) parcel).getDelegateSubParcel(this);
+
+                // Remove allocation from parent parcel
+                parcel.loseAllocation(this);
+
+                // Update bid
+                updateBidValue(parcel, this, NO_BID);
+
+                // Make unallocateble in the next round
                 this.unAllocatable.add(parcel);
+
+                // Remove parcel from multiparcel
+                ((MultiParcel) parcel).removeSubParcel(subParcel);
+
             }
         }
         else {
@@ -292,7 +305,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
                     //ORIGINAL (if) m /= i (and) Xijm > 0 (and) Xkjm >= 0
                     //CHANGED (if) m /= i (and) Xkjm > 0 (and) Xkjm /= Xijm
                     //TODO laatste check mag weg wanneer we eindelijk consistentie hebben in X.
-                    if(m.equals(i) || this.isValidBid(snapshot.getWinningbids().get(j, m)) || i.getX().get(j, m).equals(snapshot.getWinningbids().get(j, m)))
+                    if(m.equals(i) || !this.isValidBid(snapshot.getWinningbids().get(j, m)) )
                         continue;
 
                     // Number of agents assigned to J according to I
@@ -308,25 +321,25 @@ public class CbgaAgent extends AbstractConsensusAgent {
 
                     // (Assumes the number of required agents is reached)
                     // Determine the maximum bid value and the associated agent N for task J
-                    Optional<Long> maximumBid = getHighestBid(j);
+                    Optional<Long> worstBid = getHighestBid(j);
 
 
-                    if(!maximumBid.isPresent() ) {
+                    if(!worstBid.isPresent() ) {
                         continue;
 //                    throw new IllegalArgumentException("No minimum bid found in bid table.");
                     }
 
-                    Long maximum = maximumBid.get();
+                    Long worstValue = worstBid.get();
 
-                    AbstractConsensusAgent n = getAgentByBid(maximum, p);
+                    AbstractConsensusAgent n = getAgentByBid(worstValue, p);
 
                     // If the maximum bid of N is higher than the bid of M for J, assign M instead of N
                     // (Max of all n: Xijn) > Xkjm
-                    if(this.isBetterBidThan(bids.get(j, m), maximum)){
+                    if(this.isBetterBidThan(bids.get(j, m), worstValue)){
                         i.replaceWinningBid(j, n, m, bids.get(j, m));
                     }
                     // If the maximum bid of N is equal to the bid of M for J, the greatest ID (hashvalue) wins the assignment of J
-                    else if(maximum.equals(bids.get(j, m)) && i.hashCode() > m.hashCode()){
+                    else if(worstValue.equals(bids.get(j, m)) && i.hashCode() > m.hashCode()){
                         i.replaceWinningBid(j, n, m, bids.get(j, m));
                     }
                 }
