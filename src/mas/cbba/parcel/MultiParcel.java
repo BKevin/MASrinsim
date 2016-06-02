@@ -1,5 +1,6 @@
 package mas.cbba.parcel;
 
+import com.github.rinde.rinsim.core.model.pdp.PDPModel;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.ParcelDTO;
 import com.github.rinde.rinsim.core.model.pdp.Vehicle;
@@ -39,7 +40,6 @@ public class MultiParcel extends MyParcel {
 
     @Override
     public void tick(TimeLapse timeLapse) {
-        super.tick(timeLapse);
 
         if(isNotAllocatedEvenly()){
             LoggerFactory.getLogger(this.getClass()).info("Triggered reallocation for {}: \nAllocations: {}", this, this.getAllocations());
@@ -49,6 +49,7 @@ public class MultiParcel extends MyParcel {
             LoggerFactory.getLogger(this.getClass()).info("Finished reallocation for {}:" +
                     "\nAllocation: {}", this, this.getAllocations());
         }
+        super.tick(timeLapse);
     }
 
     /**
@@ -65,7 +66,7 @@ public class MultiParcel extends MyParcel {
      * @return
      */
     public boolean isNotAllocatedEvenly() {
-        return (new HashSet<>(this.getAllocations().values())).size() == this.getAllocations().values().size();
+        return !((new HashSet<>(this.getAllocations().values())).size() == this.getAllocations().values().size());
     }
 
     public Map<Vehicle, Integer> getAllocations() {
@@ -77,8 +78,6 @@ public class MultiParcel extends MyParcel {
 
         List<SubParcel> result = new ArrayList<SubParcel>();
 
-        // Create first subparcel from the given DTO
-        result.add(new SubParcel(parcelDto, this));
         // Generate n-1 other subparcels
         for(int i = 0; i < subParcels-1 ; i++) {
             SubParcel subparcel = new SubParcel(builder.buildDTO(), this);
@@ -89,11 +88,11 @@ public class MultiParcel extends MyParcel {
     }
 
     public Integer getRequiredAgents(){
-        return subParcels.size();
+        return 1 + (int) subParcels.stream().filter(p -> this.getPDPModel().getParcels(PDPModel.ParcelState.AVAILABLE, PDPModel.ParcelState.ANNOUNCED).contains(p)).count();
     }
 
     public List<SubParcel> getSubParcels(){
-        return ImmutableList.copyOf(this.subParcels);
+        return this.subParcels;
     }
 
     /*
@@ -157,7 +156,7 @@ public class MultiParcel extends MyParcel {
 
     @Override
     public boolean canBePickedUp(Vehicle v, long time) {
-        return super.canBePickedUp(v, time);
+        return this.getAllocations().keySet().size() == this.getRequiredAgents();
     }
 //    public Parcel changeAllocation(Vehicle from, Vehicle to){
 //        List<SubParcel> matches;
