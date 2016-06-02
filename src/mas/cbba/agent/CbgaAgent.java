@@ -189,7 +189,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
         while(bIsChanging) {
 
             // Get all parcels not already in B
-            List<Parcel> notInB = parcels.stream().filter(p -> !this.getB().contains(p) && ((MyParcel) p).isAvailable()).collect(Collectors.toList());
+            List<Parcel> notInB = parcels.stream().filter(p -> !this.getB().contains(p) && !this.unAllocatable.contains(p)).collect(Collectors.toList());
 
             // Find best route values for every parcel currently not assigned to this vehicle
             Map<Parcel, Long> c_ij =
