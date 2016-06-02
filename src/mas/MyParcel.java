@@ -287,11 +287,13 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
         if(!isAvailable()){
             throw new IllegalStateException("Parcel cannot be transferred anymore: " + this);
         }
+        LoggerFactory.getLogger(vehicle.getClass()).info("Allocate: {} takes {}",vehicle,this);
         this.allocatedVehicles.add(vehicle);
         return this;
     }
 
     public Parcel loseAllocation(Vehicle vehicle){
+        LoggerFactory.getLogger(vehicle.getClass()).info("LoseAllocation: {} loses {}",vehicle,this);
         this.allocatedVehicles.remove(vehicle);
         return  this;
     }

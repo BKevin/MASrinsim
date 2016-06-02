@@ -81,7 +81,9 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         boolean hasConsensus = false;
         while (!hasConsensus){
             numberOfConstructBundleCalls += 1;
+            LoggerFactory.getLogger(this.getClass()).info("Do ConstructBundle {}", this);
             constructBundle();
+            LoggerFactory.getLogger(this.getClass()).info("FindConsensus {}", this);
             hasConsensus = findConsensus();
 
 //            org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick %s, %s", this, this.getP().size());
@@ -371,13 +373,16 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
 //        LoggerFactory.getLogger(this.getClass()).info("RouteUpdate for {} with {}", this, collect);
 
-        Debug.logRouteForAgent(this, this.getRoute().stream().collect(Collectors.toMap((Parcel p) -> p, p -> this.getPDPModel().getParcelState(p), (p1, p2) -> p1)));
 
         // Update route
+        List<Parcel> routeFrom = this.createRouteFrom(
+                collect);
         this.setRoute(
                 // Create route with double parcels
-                this.createRouteFrom(
-                        collect));
+                routeFrom);
+
+        Debug.logRouteForAgent(this, routeFrom.stream().collect(Collectors.toMap((Parcel p) -> p, p -> this.getPDPModel().getParcelState(p), (p1, p2) -> p1)));
+
     }
 
     private Parcel getDelegateParcel(Parcel p){
@@ -574,6 +579,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         for(Message snap : snapshots){
             this.setCommunicationTimestamp(snap);
 
+            LoggerFactory.getLogger(this.getClass()).info("Do evaluate snapshot of {}", snap.getSender());
             evaluateSnapshot((Snapshot) snap.getContents(), (AbstractConsensusAgent) snap.getSender());
 //                LoggerFactory.getLogger(this.getClass()).info("Received Snapshot from {} to {} : {}", sender, this, contents);
 
