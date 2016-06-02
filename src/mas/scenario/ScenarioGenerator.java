@@ -23,7 +23,7 @@ public class ScenarioGenerator {
     private static int amountVehiclesAtStart = 6;
     private static int amountParcelsAtStart = 6;
     private static int amountNewVehicles = 0;
-    private static int amountNewParcels = 1000;
+    private static int amountNewParcels = 10;
 
 
     private static long vehicleAverageInterArrivalTime; //ms
@@ -32,13 +32,13 @@ public class ScenarioGenerator {
     private static int vehicleSpeed = 10;
 
 
-    private static long parcelAverageInterArrivalTime = 500000; //ms //doubled
+    private static long parcelAverageInterArrivalTime = 1000000; //ms //doubled
     private static long parcelInterArrivalTimeVariation = 200000; //ms
     private static long parcelAverageTimeWindowVariation = 10000; //ms
     private static int parcelServiceDuration = 0;
     private static int parcelCapacity = 1;
     //Distribution (chances) of required agents: p_1, p_2, p_3
-    private static double[] parcelDistribution = {1,0};
+    private static double[] parcelDistribution = {0,1};
 
     private static double expectedTravelTime = 255555; //from center to a corner
     private static double travelTimeVariation = 50000;

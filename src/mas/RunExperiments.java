@@ -26,10 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -37,14 +34,14 @@ import static com.google.common.base.Preconditions.checkState;
  * Created by KevinB on 2/06/2016.
  */
 public class RunExperiments {
-    static final int amountOfExperiments = 2;
+    static final int amountOfExperiments = 10;
 
 
     static final Point MIN_POINT = new Point(0, 0);
     static final Point MAX_POINT = new Point(10, 10);
 
     static final String seperator = ",";
-    private static final int MAX_AGENTS = 5;
+    private static final int MAX_AGENTS = 6;
 
     public static void main(String[] args) {
         //args =  {CBBA,CBGA,BOTH} {Single,Multi,Mixed} distribution (optionalScenarioFile)
@@ -69,7 +66,9 @@ public class RunExperiments {
         Experiment.Builder builder = Experiment.builder();
         builder = makeMASConfig(builder, args);
 
+        LinkedList<Scenario> scenarios = new LinkedList<>();
         Scenario scenario = makeScenario(args[3]);
+        scenarios.add(scenario);
         builder.addScenario(scenario);
 
         ExperimentResults results = builder
@@ -81,7 +80,7 @@ public class RunExperiments {
             System.out.println(result.getResultObject().toString());
         }
 
-        putResultsInFile(results, "resources/experiments/singleExperiment/experiment_" + new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date()) +  ".txt");
+        putResultsInFile(results,scenarios, "resources/experiments/singleExperiment/experiment_" + new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date()) +  ".txt");
     }
 
     private static void runNewExperiments(String... args) {
@@ -107,10 +106,12 @@ public class RunExperiments {
         Experiment.Builder builder = Experiment.builder();
         builder = makeMASConfig(builder, args);
 
+        LinkedList<Scenario> scenarios = new LinkedList<>();
         for(int i = 0; i < amountOfExperiments; i++){
 
             String filePath = mapName + "scene" + i + ".txt";
             Scenario scenario = makeScenario(filePath);
+            scenarios.add(scenario);
             builder.addScenario(scenario);
         }
 
@@ -127,12 +128,12 @@ public class RunExperiments {
             System.out.println(result.getResultObject().toString());
         }
 
-        putResultsInFile(results, mapName+"results.txt");
+        putResultsInFile(results, scenarios, mapName+"results.txt");
 
 
     }
 
-    private static void putResultsInFile(ExperimentResults results,String... filenames) {
+    private static void putResultsInFile(ExperimentResults results, LinkedList<Scenario> scenarios, String... filenames) {
 
 //        String filename = filenames.length > 0 ? filenames[0] : "result"
 //                +"_"+new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date())
@@ -199,7 +200,7 @@ public class RunExperiments {
                 Set<Vehicle> vehicleList = myResults.getVehicles();
 
                 br.write(String.valueOf(simResult.getSimArgs().getMasConfig().hashCode()) + seperator);
-                br.write(String.valueOf(simResult.getSimArgs().getScenario().hashCode()) + seperator);
+                br.write(String.valueOf(scenarios.indexOf(simResult.getSimArgs().getScenario())) + seperator);
                 br.write(String.valueOf(myResults.getStatistics().computationTime) + seperator);
                 br.write(String.valueOf(myResults.getStatistics().simulationTime) + seperator);
                 br.write(String.valueOf(myResults.getStatistics().acceptedParcels) + seperator);
