@@ -29,10 +29,8 @@ public class CbgaSnapshot extends Snapshot {
             CbgaSnapshot sn = (CbgaSnapshot) o;
 
             result = this.getWinningbids().values().containsAll((sn.getWinningbids().values()))
-                    && this.getWinningbids().rowKeySet().containsAll(sn.getWinningbids().rowKeySet())
-                    && this.getWinningbids().columnKeySet().containsAll(sn.getWinningbids().columnKeySet())
-                    && sn.getWinningbids().columnKeySet().containsAll(this.getWinningbids().columnKeySet())
-                    && sn.getWinningbids().rowKeySet().containsAll(this.getWinningbids().rowKeySet());
+                    && sn.getWinningbids().values().containsAll(this.getWinningbids().values());
+
         }
         return result ;
     }
