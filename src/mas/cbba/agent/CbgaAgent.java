@@ -135,8 +135,10 @@ public class CbgaAgent extends AbstractConsensusAgent {
             if(parcel instanceof SubParcel){
                 parcel = ((SubParcel) parcel).getParent();
             }
-            if(parcel instanceof MultiParcel &&
-                    this.getPDPModel().getContents(this).contains(((MultiParcel) parcel).getDelegateSubParcel(this))){
+            if(parcel instanceof MultiParcel
+                    && !this.unAllocatable.contains(parcel)
+                    && this.getPDPModel().getContents(this).contains(((MultiParcel) parcel).getDelegateSubParcel(this))
+                    ){
 
                 // Grab reference to subparcel
                 Parcel subParcel = ((MultiParcel) parcel).getDelegateSubParcel(this);
@@ -153,6 +155,8 @@ public class CbgaAgent extends AbstractConsensusAgent {
                 // Remove parcel from multiparcel
                 ((MultiParcel) parcel).removeSubParcel(subParcel);
 
+                super.removeParcelFromBidList(parcel);
+
             }
         }
         else {
@@ -160,9 +164,11 @@ public class CbgaAgent extends AbstractConsensusAgent {
                 this.X.remove(parcel, agent);
             }
             this.unAllocatable.remove(parcel);
+
+            super.removeParcelFromBidList(parcel);
         }
 
-        super.removeParcelFromBidList(parcel);
+
     }
 
     protected void addAgent(AbstractConsensusAgent k) {
@@ -271,14 +277,14 @@ public class CbgaAgent extends AbstractConsensusAgent {
         for(Parcel p : bids.rowKeySet()){
             MyParcel j = (MyParcel) p;
 
-//            // (if) default number of agents required (==1)
-//            if(j.getRequiredAgents().equals(MyParcel.DEFAULT_REQUIRED_AGENTS)) {
-//
-//                super.evaluateSnapshotForParcel(j, snapshot, k);
-//            }
-//
-//            // (else) multiparcel
-//            else{
+            // (if) default number of agents required (==1)
+            if(!(j instanceof MultiParcel)) {
+
+                super.evaluateSnapshotForParcel(j, snapshot, k);
+            }
+
+            // (else) multiparcel
+            else{
 
                 // Communication timestamps
                 Map<AbstractConsensusAgent, Long> timestamps = snapshot.getCommunicationTimestamps();
@@ -305,54 +311,54 @@ public class CbgaAgent extends AbstractConsensusAgent {
                         }
                     }
                 }
+            }
 
-                // Check all agents, not yourself, for better bids
-                // (for all m E A)
-                for(AbstractConsensusAgent m : bids.row(j).keySet()){
+            // Check all agents, not yourself, for better bids
+            // (for all m E A)
+            for(AbstractConsensusAgent m : bids.row(j).keySet()){
 
-                    //ORIGINAL (if) m /= i (and) Xijm > 0 (and) Xkjm >= 0
-                    //CHANGED (if) m /= i (and) Xkjm > 0 (and) Xkjm /= Xijm
-                    //TODO laatste check mag weg wanneer we eindelijk consistentie hebben in X.
-                    if(m.equals(i) || !this.isValidBid(snapshot.getWinningbids().get(j, m)) )
-                        continue;
+                //ORIGINAL (if) m /= i (and) Xijm > 0 (and) Xkjm >= 0
+                //CHANGED (if) m /= i (and) Xkjm > 0 (and) Xkjm /= Xijm
+                //TODO laatste check mag weg wanneer we eindelijk consistentie hebben in X.
+                if(m.equals(i) || !this.isValidBid(snapshot.getWinningbids().get(j, m)) )
+                    continue;
 
-                    // Number of agents assigned to J according to I
-                    List<Long> bidsOnJ = getValidBidsForParcel(i.getX(), j);
+                // Number of agents assigned to J according to I
+                List<Long> bidsOnJ = getValidBidsForParcel(i.getX(), j);
 
-                    // There are less than the required number of agents assigned and m does a bid on j according to k
-                    // (Sum of all N: Xijn > 0) < Qj
-                    if(bidsOnJ.size() < j.getRequiredAgents()){
-                        // Assign m to j
-                        //Xijm = Xkjm
-                        i.setWinningBid(j, m, bids.get(j, m));
-                    }
+                // There are less than the required number of agents assigned and m does a bid on j according to k
+                // (Sum of all N: Xijn > 0) < Qj
+                if(bidsOnJ.size() < j.getRequiredAgents()){
+                    // Assign m to j
+                    //Xijm = Xkjm
+                    i.setWinningBid(j, m, bids.get(j, m));
+                }
 
-                    // (Assumes the number of required agents is reached)
-                    // Determine the maximum bid value and the associated agent N for task J
-                    Optional<Long> worstBid = getHighestBid(j);
+                // (Assumes the number of required agents is reached)
+                // Determine the maximum bid value and the associated agent N for task J
+                Optional<Long> worstBid = getHighestBid(j);
 
 
-                    if(!worstBid.isPresent() ) {
-                        continue;
+                if(!worstBid.isPresent() ) {
+                    continue;
 //                    throw new IllegalArgumentException("No minimum bid found in bid table.");
-                    }
+                }
 
-                    Long worstValue = worstBid.get();
+                Long worstValue = worstBid.get();
 
-                    AbstractConsensusAgent n = getAgentByBid(worstValue, p);
+                AbstractConsensusAgent n = getAgentByBid(worstValue, p);
 
-                    // If the maximum bid of N is higher than the bid of M for J, assign M instead of N
-                    // (Max of all n: Xijn) > Xkjm
-                    if(this.isBetterBidThan(bids.get(j, m), worstValue)){
-                        i.replaceWinningBid(j, n, m, bids.get(j, m));
-                    }
-                    // If the maximum bid of N is equal to the bid of M for J, the greatest ID (hashvalue) wins the assignment of J
-                    else if(worstValue.equals(bids.get(j, m)) && i.hashCode() > m.hashCode()){
-                        i.replaceWinningBid(j, n, m, bids.get(j, m));
-                    }
+                // If the maximum bid of N is higher than the bid of M for J, assign M instead of N
+                // (Max of all n: Xijn) > Xkjm
+                if(this.isBetterBidThan(bids.get(j, m), worstValue)){
+                    i.replaceWinningBid(j, n, m, bids.get(j, m));
+                }
+                // If the maximum bid of N is equal to the bid of M for J, the greatest ID (hashvalue) wins the assignment of J
+                else if(worstValue.equals(bids.get(j, m)) && i.hashCode() > m.hashCode()){
+                    i.replaceWinningBid(j, n, m, bids.get(j, m));
                 }
             }
-//        }
+        }
     }
 
     private boolean isValidBid(Long aLong) {
