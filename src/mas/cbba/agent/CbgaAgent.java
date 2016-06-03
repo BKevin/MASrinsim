@@ -294,14 +294,14 @@ public class CbgaAgent extends AbstractConsensusAgent {
         for(Parcel p : bids.rowKeySet()){
             MyParcel j = (MyParcel) p;
 
-            // (if) default number of agents required (==1)
-            if(!(j instanceof MultiParcel)) {
-
-                super.evaluateSnapshotForParcel(j, snapshot, k);
-            }
-
-            // (else) multiparcel
-            else{
+//            // (if) default number of agents required (==1)
+//            if(!(j instanceof MultiParcel)) {
+//
+//                super.evaluateSnapshotForParcel(j, snapshot, k);
+//            }
+//
+//            // (else) multiparcel
+//            else{
 
                 // Communication timestamps
                 Map<AbstractConsensusAgent, Long> timestamps = snapshot.getCommunicationTimestamps();
@@ -327,7 +327,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
                             i.updateBidValue(j, m, bids.get(j, m));
                         }
                     }
-                }
+//                }
             }
 
             // Check all agents, not yourself, for better bids
