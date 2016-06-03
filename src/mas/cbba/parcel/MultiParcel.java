@@ -193,7 +193,13 @@ public class MultiParcel extends MyParcel {
 
         int rank = this.getBidRank((CbgaAgent) v);
 
-
+        if(rank > subParcels.size() || rank < 0) {
+            LoggerFactory.getLogger(this.getClass()).warn(
+                    "Parcel {} resolving bad rank {} for {}.",
+                    this,
+                    rank,
+                    v);
+        }
 
         Parcel result;
 
@@ -204,7 +210,7 @@ public class MultiParcel extends MyParcel {
             result = subParcels.get(rank);
         }
 
-        LoggerFactory.getLogger(this.getClass()).info(
+        LoggerFactory.getLogger(this.getClass()).debug(
                 "Agent {}  Parcel {} Delegate {} Rank {} Subparcels {}, Path: {} ",
                 v, this, result, rank, subParcels.size(), ((CbgaAgent) v).getP());
 
