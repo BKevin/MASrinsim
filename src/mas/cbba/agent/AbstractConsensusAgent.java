@@ -17,6 +17,7 @@ import mas.MyParcel;
 import mas.MyVehicle;
 import mas.cbba.Debug;
 import mas.cbba.parcel.MultiParcel;
+import mas.cbba.parcel.SubParcel;
 import mas.cbba.snapshot.Snapshot;
 import mas.comm.LockParcelMessage;
 import mas.comm.NewParcelMessage;
@@ -602,7 +603,17 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
             }
             if(contents instanceof SoldParcelMessage){
                 this.removeParcelFromBidList(((ParcelMessage) contents).getParcel());
-                LoggerFactory.getLogger(this.getClass()).info("Received SoldParcelMessage from {} to {} : {}", sender, this, contents);
+                if(((SoldParcelMessage) contents).getParcel() instanceof SubParcel){
+                    LoggerFactory.getLogger(this.getClass()).info(
+                            "Received SoldParcelMessage from {} (parent {}) to {} : {}",
+                            sender,
+                            ((SubParcel) ((SoldParcelMessage) contents).getParcel()).getParent(),
+                            this,
+                            contents);
+                }
+                else{
+                    LoggerFactory.getLogger(this.getClass()).info("Received SoldParcelMessage from {} to {} : {}", sender, this, contents);
+                }
             }
             else if (contents instanceof NewParcelMessage){
                 //TODO meer nodig?
