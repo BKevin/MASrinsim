@@ -39,14 +39,18 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
     private long pickUpTime = 0;
     private long deliverTime = 0;
     private Set<Vehicle> allocatedVehicles;
+    private boolean locked;
 
     public MyParcel(ParcelDTO parcelDTO){
         super(parcelDTO);
         this.announcedArrival = false;
         this.announcedSold = false;
+        this.locked = false;
+
 //        broadcasted = false;
 //        bids = null;
         this.allocatedVehicles = new HashSet<>();
+
     }
 
     @Override
@@ -77,17 +81,33 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
         }
 
 
-        dismissMessages();
+        evaluateMessages();
 
+    }
+
+    private void evaluateMessages() {
+        for(Message m : this.getCommDevice().get().getUnreadMessages()){
+            MessageContents contents = m.getContents();
+            if(contents instanceof LockParcelMessage){
+                if(!((LockParcelMessage) contents).getParcel().equals(this)){
+                    LoggerFactory.getLogger(this.getClass()).error(
+                            "Parcel cannot be locked by this LockParcelMessage. This: {}, LockParcelMessage content: {}",
+                            this,
+                            ((LockParcelMessage) contents).getParcel());
+                    throw new IllegalArgumentException("Parcel cannot be locked by this LockParcelMessage");
+                }
+
+                this.setLocked();
+            }
+            continue;
+        }
     }
 
     /**
      * Ignore all incoming messages
      */
     private void dismissMessages() {
-        for(Message m : this.getCommDevice().get().getUnreadMessages()){
-            continue;
-        }
+
     }
 
     protected void setAnnouncedArrival(){ this.announcedArrival = true; }
@@ -316,4 +336,14 @@ public class MyParcel extends Parcel implements CommUser, TickListener{
     public boolean isAvailable(){
         return this.getPDPModel().getParcels(PDPModel.ParcelState.ANNOUNCED, PDPModel.ParcelState.AVAILABLE).contains(this);
     }
+
+
+    private boolean isLocked(){
+        return this.locked;
+    }
+
+    private void setLocked(){
+        this.locked = true;
+    }
+
 }
