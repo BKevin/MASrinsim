@@ -181,20 +181,20 @@ public class CbgaAgent extends AbstractConsensusAgent {
 
         boolean bIsChanging = true;
 
-        // Debugging
-        Map<Parcel, PDPModel.ParcelState> states = parcels.stream().collect(Collectors.toMap(p -> p, p -> this.getPDPModel().getParcelState(p)));
-        List<Parcel> available = parcels
-                .stream()
-                .filter(p -> !this.getB().contains(p)
-                        && !this.getUnallocatable().contains(p)
-                        // FIXME should not use isAvailable here
-                        /**
-                         * We expect to know which parcels are available and which aren't based on communication
-                         */
-                        && ((MyParcel) p).isAvailable()
-                )
-                .collect(Collectors.toList());
-        Debug.logParcelListForAgent(this.getCurrentTime(), this, states, available);
+//        // Debugging
+//        Map<Parcel, PDPModel.ParcelState> states = parcels.stream().collect(Collectors.toMap(p -> p, p -> this.getPDPModel().getParcelState(p)));
+//        List<Parcel> available = parcels
+//                .stream()
+//                .filter(p -> !this.getB().contains(p)
+//                        && !this.getUnallocatable().contains(p)
+//                        // FIXME should not use isAvailable here
+//                        /**
+//                         * We expect to know which parcels are available and which aren't based on communication
+//                         */
+//                        && ((MyParcel) p).isAvailable()
+//                )
+//                .collect(Collectors.toList());
+//        Debug.logParcelListForAgent(this.getCurrentTime(), this, states, available);
         // /debugging
 
         while(bIsChanging) {
@@ -411,9 +411,18 @@ public class CbgaAgent extends AbstractConsensusAgent {
                     }
                 }
             }
+            //Consistency checks
+            if(this.getValidBidsForParcel(this.getX(), j).size() > j.getRequiredAgents()){
+                LoggerFactory.getLogger(this.getClass()).warn(
+                        "{} {} has more bids for {} in Bidlist than required agents (bids: {} required:{}).",
+                        this.getCurrentTime(),
+                        this,
+                        j,
+                        this.getValidBidsForParcel(this.getX(), j).size(),
+                        j.getRequiredAgents());
+            }
         }
 
-        //Consistency checks
     }
 
     private boolean isValidBid(Long aLong) {
