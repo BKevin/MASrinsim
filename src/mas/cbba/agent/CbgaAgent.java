@@ -13,6 +13,7 @@ import mas.cbba.parcel.MultiParcel;
 import mas.cbba.parcel.SubParcel;
 import mas.cbba.snapshot.CbgaSnapshot;
 import mas.cbba.snapshot.Snapshot;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.function.Function;
@@ -207,6 +208,25 @@ public class CbgaAgent extends AbstractConsensusAgent {
                     )
                     .collect(Collectors.toList());
 
+            List<Parcel> regularNotInB = parcels
+                    .stream()
+                    .filter(p -> !this.getB().contains(p)
+                            && !this.unAllocatable.contains(p)
+                    )
+                    .collect(Collectors.toList());
+
+            if(!notInB.containsAll(regularNotInB)) {
+                LoggerFactory.getLogger(this.getClass()).warn(
+                        "notInB depends on isAvailable(). " +
+                                "\n NotInB (with    isAvailable) ({}): {}" +
+                                "\n NotInB (without isAvailable) ({}): {}",
+                        notInB.size(),
+                        notInB,
+                        regularNotInB.size(),
+                        regularNotInB
+                        );
+            }
+
             // Find best route values for every parcel currently not assigned to this vehicle
             Map<Parcel, Long> c_ij =
                     notInB.stream().collect(Collectors.toMap(Function.identity(), this::calculateBestRouteWith));
@@ -308,30 +328,30 @@ public class CbgaAgent extends AbstractConsensusAgent {
 //            // (else) multiparcel
 //            else{
 
-                // Communication timestamps
-                Map<AbstractConsensusAgent, Long> timestamps = snapshot.getCommunicationTimestamps();
+            // Communication timestamps
+            Map<AbstractConsensusAgent, Long> timestamps = snapshot.getCommunicationTimestamps();
 
-                // Check all other agents, not yourself
-                // (for all m) m /= i
-                for(AbstractConsensusAgent m : bids.row(j).keySet()){
-                    if(m.equals(i))
-                        continue;
+            // Check all other agents, not yourself
+            // (for all m) m /= i
+            for(AbstractConsensusAgent m : bids.row(j).keySet()){
+                if(m.equals(i))
+                    continue;
 
-                    // Agent i believes an assignment is taking place between agent m and task j
-                    //(if) Xijm>0
-                    if(isValidBid(i.getX().get(j, m))){
+                // Agent i believes an assignment is taking place between agent m and task j
+                //(if) Xijm>0
+                if(isValidBid(i.getX().get(j, m))){
 
-                        // If K has newer information about assignment of task j to  M, update info.
-                        // K has newer information about M if K IS M, or if its timestamp for M is greater than yours.
-                        //ORIGINAL (if) Skm > Sim (or) m = k
-                        //CHANGED (if) m = k (or) Skm > Sim
-                        //Because timestamp is null for yourself and thus incomparable
-                        if (m.equals(k) || !i.hasMoreRecentTimestampFor(m, timestamps.get(m))){
-                            // Update the information in your table, because k has better info.
-                            // Xijm = Xkjm
-                            i.updateBidValue(j, m, bids.get(j, m));
-                        }
+                    // If K has newer information about assignment of task j to  M, update info.
+                    // K has newer information about M if K IS M, or if its timestamp for M is greater than yours.
+                    //ORIGINAL (if) Skm > Sim (or) m = k
+                    //CHANGED (if) m = k (or) Skm > Sim
+                    //Because timestamp is null for yourself and thus incomparable
+                    if (m.equals(k) || !i.hasMoreRecentTimestampFor(m, timestamps.get(m))){
+                        // Update the information in your table, because k has better info.
+                        // Xijm = Xkjm
+                        i.updateBidValue(j, m, bids.get(j, m));
                     }
+                }
 //                }
             }
 
