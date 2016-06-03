@@ -56,6 +56,8 @@ public class CbgaAgent extends AbstractConsensusAgent {
         }
 
         setWinningBid(parcel, to, bid);
+
+        updateRoute();
     }
 
     /**
@@ -113,16 +115,16 @@ public class CbgaAgent extends AbstractConsensusAgent {
     @Override
     protected void addParcelToBidList(Parcel parcel) {
         // Initial case: no agent or parcels are in the table
-        if(this.X.cellSet().isEmpty()){
+        if(this.getX().cellSet().isEmpty()){
             // Get all parcels in pdpmodel, get all agents in pdpmodel
-            this.X.put(parcel, this, NO_BID);
+            this.updateBidValue(parcel, this, NO_BID);
         }
         else {
             // Addition to Table cause columnKeySet to be updated. This yields ConcurrentModificationExceptions.
             // Use an ImmutableList instead
             // http://code-o-matic.blogspot.be/2009/06/funny-concurrentmodificationexception.html
-            for (final AbstractConsensusAgent agent : ImmutableList.copyOf(this.X.columnKeySet())) {
-                this.X.put(parcel, agent, this.NO_BID);
+            for (final AbstractConsensusAgent agent : ImmutableList.copyOf(this.getX().columnKeySet())) {
+                updateBidValue(parcel,agent, this.NO_BID);
             }
         }
     }
@@ -136,7 +138,8 @@ public class CbgaAgent extends AbstractConsensusAgent {
                 parcel = ((SubParcel) parcel).getParent();
             }
             if(parcel instanceof MultiParcel
-                    && !this.unAllocatable.contains(parcel)
+                    && this.getP().contains(parcel)
+//                    && !this.unAllocatable.contains(parcel)
                     && this.getPDPModel().getContents(this).contains(((MultiParcel) parcel).getDelegateSubParcel(this))
                     ){
 
@@ -160,6 +163,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
             }
         }
         else {
+            // Actual removing of parcel from bidlist
             for (AbstractConsensusAgent agent : ImmutableList.copyOf(this.X.columnKeySet())) {
                 this.X.remove(parcel, agent);
             }
@@ -173,7 +177,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
 
     protected void addAgent(AbstractConsensusAgent k) {
         for(Parcel p : this.getX().rowKeySet()) {
-            this.X.put(p, k, NO_BID);
+            updateBidValue(p, k, NO_BID);
         }
     }
 
@@ -206,7 +210,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
             Stream<Map.Entry<Parcel, Long>> stream = c_ij.entrySet().stream()
                     // Remove all entries for which c_ij < max(y_ij)
                     .filter(entry -> {
-                                Optional<Long> bid = getHighestBid(entry.getKey());
+                                Optional<Long> bid = getHighestBidExcludingYourOwnBid(entry.getKey());
                                 return this.isBetterBidThan(
                                         // bid value of the entry
                                         entry.getValue(),
@@ -236,6 +240,20 @@ public class CbgaAgent extends AbstractConsensusAgent {
 
     }
 
+    private Optional<Long> getHighestBidExcludingYourOwnBid(Parcel parcel) {
+        HashMap<AbstractConsensusAgent, Long> notMyBids = new HashMap<>(this.getX().row(parcel));
+        notMyBids.remove(this);
+        Optional<Long> value = notMyBids
+                .values()
+                .stream()
+                .filter(p -> this.isValidBid(p))
+                .max(Long::compareTo);
+
+        return value;
+
+
+    }
+
     /**
      * Highest bid: the worst bid if all the bids that are not MAXVALUE
      * (otherwise we'd just ask the lowest bid)
@@ -243,13 +261,12 @@ public class CbgaAgent extends AbstractConsensusAgent {
      * @return
      */
     private Optional<Long> getHighestBid(Parcel parcel){
-        HashMap<AbstractConsensusAgent, Long> notMyBids = new HashMap<>(this.getX().row(parcel));
-        notMyBids.remove(this);
-        Optional<Long> value = notMyBids
+        HashMap<AbstractConsensusAgent, Long> validBids = new HashMap<>(this.getX().row(parcel));
+        Optional<Long> value = validBids
                 .values()
                 .stream()
                 .filter(p -> this.isValidBid(p))
-                .min(Long::compareTo);
+                .max(Long::compareTo);
 
         return value;
     }
@@ -318,10 +335,14 @@ public class CbgaAgent extends AbstractConsensusAgent {
             for(AbstractConsensusAgent m : bids.row(j).keySet()){
 
                 //ORIGINAL (if) m /= i (and) Xijm > 0 (and) Xkjm >= 0
-                //CHANGED (if) m /= i (and) Xkjm > 0 (and) Xkjm /= Xijm
-                //TODO laatste check mag weg wanneer we eindelijk consistentie hebben in X.
-                if(m.equals(i) || !this.isValidBid(snapshot.getWinningbids().get(j, m)) )
+                //CHANGED (if) m /= i (and) Xkjm > 0 (and) (Xkjm /= Xijm (or) Xijm == 0 )
+                if(m.equals(i)
+                        || !this.isValidBid(snapshot.getWinningbids().get(j, m))
+                        // i must not have an assignment for m on j yet
+                        || this.isValidBid(i.getX().get(j, m))
+                        ) {
                     continue;
+                }
 
                 // Number of agents assigned to J according to I
                 List<Long> bidsOnJ = getValidBidsForParcel(i.getX(), j);
@@ -333,29 +354,31 @@ public class CbgaAgent extends AbstractConsensusAgent {
                     //Xijm = Xkjm
                     i.setWinningBid(j, m, bids.get(j, m));
                 }
+                else{
 
-                // (Assumes the number of required agents is reached)
-                // Determine the maximum bid value and the associated agent N for task J
-                Optional<Long> worstBid = getHighestBid(j);
+                    // (Assumes the number of required agents is reached)
+                    // Determine the maximum bid value and the associated agent N for task J
+                    Optional<Long> worstBid = getHighestBid(j);
 
 
-                if(!worstBid.isPresent() ) {
-                    continue;
+                    if (!worstBid.isPresent()) {
+                        continue;
 //                    throw new IllegalArgumentException("No minimum bid found in bid table.");
-                }
+                    }
 
-                Long worstValue = worstBid.get();
+                    Long worstValue = worstBid.get();
 
-                AbstractConsensusAgent n = getAgentByBid(worstValue, p);
+                    AbstractConsensusAgent n = getAgentByBid(worstValue, p);
 
-                // If the maximum bid of N is higher than the bid of M for J, assign M instead of N
-                // (Max of all n: Xijn) > Xkjm
-                if(this.isBetterBidThan(bids.get(j, m), worstValue)){
-                    i.replaceWinningBid(j, n, m, bids.get(j, m));
-                }
-                // If the maximum bid of N is equal to the bid of M for J, the greatest ID (hashvalue) wins the assignment of J
-                else if(worstValue.equals(bids.get(j, m)) && i.hashCode() > m.hashCode()){
-                    i.replaceWinningBid(j, n, m, bids.get(j, m));
+                    // If the maximum bid of N is higher than the bid of M for J, assign M instead of N
+                    // (Max of all n: Xijn) > Xkjm
+                    if (this.isBetterBidThan(bids.get(j, m), worstValue)) {
+                        i.replaceWinningBid(j, n, m, bids.get(j, m));
+                    }
+                    // If the maximum bid of N is equal to the bid of M for J, the greatest ID (hashvalue) wins the assignment of J
+                    else if (worstValue.equals(bids.get(j, m)) && i.hashCode() > m.hashCode()) {
+                        i.replaceWinningBid(j, n, m, bids.get(j, m));
+                    }
                 }
             }
         }
