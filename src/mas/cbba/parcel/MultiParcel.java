@@ -154,7 +154,7 @@ public class MultiParcel extends MyParcel {
 
     @Override
     public boolean canBePickedUp(Vehicle v, long time) {
-        return this.getAllocations().keySet().size() == this.getRequiredAgents();
+        return this.getAllocations().keySet().contains(v);
     }
 //    public Parcel changeAllocation(Vehicle from, Vehicle to){
 //        List<SubParcel> matches;
@@ -193,10 +193,22 @@ public class MultiParcel extends MyParcel {
 
         int rank = this.getBidRank((CbgaAgent) v);
 
-        if(rank == this.getRequiredAgents()-1 || rank >= subParcels.size()){
-            return this;
+
+
+        Parcel result;
+
+        if(rank >= subParcels.size()){
+            result = this;
         }
-        return subParcels.get(rank);
+        else {
+            result = subParcels.get(rank);
+        }
+
+        LoggerFactory.getLogger(this.getClass()).info(
+                "Agent {}  Parcel {} Delegate {} Rank {} Subparcels {}, Path: {} ",
+                v, this, result, rank, subParcels.size(), ((CbgaAgent) v).getP());
+
+        return result;
     }
 
     @Override
