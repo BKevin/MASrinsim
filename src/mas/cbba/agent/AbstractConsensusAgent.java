@@ -113,8 +113,12 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
         calculateAverages(time);
 
-
+        if(this.getCurrentTime() > 704000) {
+            LoggerFactory.getLogger(this.getClass()).error(this.dumpState());
+        }
     }
+
+    protected abstract String dumpState();
 
     /**
      * Send a message to all agents in the simulator

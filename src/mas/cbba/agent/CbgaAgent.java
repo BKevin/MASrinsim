@@ -412,6 +412,8 @@ public class CbgaAgent extends AbstractConsensusAgent {
                 }
             }
         }
+
+        //Consistency checks
     }
 
     private boolean isValidBid(Long aLong) {
@@ -466,6 +468,39 @@ public class CbgaAgent extends AbstractConsensusAgent {
         //TODO move to util
 
         return x.row(p).values().stream().filter(l -> !NO_BID.equals(l)).collect(Collectors.toList());
+    }
+
+    public String dumpState(){
+        StringBuilder builder = new StringBuilder();
+        builder.append(this.getCurrentTime());
+        builder.append(" State for ");
+        builder.append(this);
+//        builder.append(" at ")
+        builder.append("\nBundle: ");
+        builder.append(this.getB());
+        builder.append("\nPath: ");
+        builder.append(this.getP());
+        builder.append("\nUnallocatable: ");
+        builder.append(this.getUnallocatable());
+        builder = printTable(builder, true);
+        return builder.toString();
+    }
+
+    public StringBuilder printTable(StringBuilder builder, boolean validBids){
+        builder.append("\n BidTable (");
+        builder.append(validBids?"valid-only":"all");
+        builder.append(")");
+        for(Parcel p : this.getX().rowKeySet()){
+            builder.append("\nParcel: ");
+            builder.append(p);
+            builder.append("/");
+            builder.append(((MyParcel) p).getRequiredAgents());
+            builder.append(" Values: ");
+            builder.append(validBids?this.getValidBidsForParcel(this.getX(), p):this.getX().row(p).values());
+//            builder.append();
+//            builder.append()
+        }
+        return builder;
     }
 
 }

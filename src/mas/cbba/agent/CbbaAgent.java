@@ -32,6 +32,11 @@ public class CbbaAgent extends AbstractConsensusAgent {
         this.z = new HashMap<>();
     }
 
+    @Override
+    protected String dumpState() {
+        return "";
+    }
+
 //    /**
 //     * Create single Parcel CbbaAgent based on CbgaAgent.
 //     * @param k Agent reference
