@@ -1,6 +1,5 @@
 package mas.cbba.agent;
 
-import com.github.rinde.rinsim.core.model.pdp.PDPModel;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
 import com.google.common.collect.HashBasedTable;
@@ -8,7 +7,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Table;
 import mas.MyParcel;
-import mas.cbba.Debug;
 import mas.cbba.parcel.MultiParcel;
 import mas.cbba.parcel.SubParcel;
 import mas.cbba.snapshot.CbgaSnapshot;
@@ -264,10 +262,36 @@ public class CbgaAgent extends AbstractConsensusAgent {
                 this.getB().add(bestEntry.getKey());
                 this.getP().add(this.calculateBestRouteIndexWith(bestEntry.getKey()), bestEntry.getKey());
 
-                this.setWinningBid(bestEntry.getKey(), this, bestEntry.getValue());
+                LoggerFactory.getLogger(this.getClass()).error("Table Pre: {}",
+                        this.printTable(this.getX(),new StringBuilder(), true).toString());
+                if(this.getValidBidsForParcel(this.getX(), bestEntry.getKey()).size() < ((MyParcel) bestEntry.getKey()).getRequiredAgents()) {
+                    this.setWinningBid(bestEntry.getKey(), this, bestEntry.getValue());
+                }else{
+                    this.replaceWinningBid(bestEntry.getKey(),
+                            getAgentByBid(this.getHighestBid(bestEntry.getKey()).get(), bestEntry.getKey()),
+                            this, bestEntry.getValue());
+                }
+
+
+                LoggerFactory.getLogger(this.getClass()).error("Table Post: {}",
+                        this.printTable(this.getX(),new StringBuilder(), true).toString());
+                MyParcel j = (MyParcel) bestEntry.getKey();
+                if(this.getValidBidsForParcel(this.getX(), j).size() > j.getRequiredAgents()){
+                    LoggerFactory.getLogger(this.getClass()).warn(
+                            "{} PostConstructBundleConsistencyCheck: {} has more bids for {} in Bidlist than required agents (bids: {} required:{}).",
+                            this.getCurrentTime(),
+                            this,
+                            j,
+                            this.getValidBidsForParcel(this.getX(), j).size(),
+                            j.getRequiredAgents());
+                    LoggerFactory.getLogger(this.getClass()).error(this.dumpState());
+//                    LoggerFactory.getLogger(this.getClass()).error("Snapshot Table: {}",
+//                            this.printTable(snapshot.getWinningbids(),new StringBuilder(), true).toString());
+//                    LoggerFactory.getLogger(this.getClass()).error(k.dumpState());
+                }
+
             }
         }
-
     }
 
     private Optional<Long> getHighestBidExcludingYourOwnBid(Parcel parcel) {
@@ -323,6 +347,21 @@ public class CbgaAgent extends AbstractConsensusAgent {
 
         for(Parcel p : bids.rowKeySet()){
             MyParcel j = (MyParcel) p;
+
+            //Consistency checks
+            if(this.getValidBidsForParcel(this.getX(), j).size() > j.getRequiredAgents()){
+                LoggerFactory.getLogger(this.getClass()).warn(
+                        "{} PreEvaluationConsistencyCheck: {} has more bids for {} in Bidlist than required agents (bids: {} required:{}).",
+                        this.getCurrentTime(),
+                        this,
+                        j,
+                        this.getValidBidsForParcel(this.getX(), j).size(),
+                        j.getRequiredAgents());
+                LoggerFactory.getLogger(this.getClass()).error(this.dumpState());
+                LoggerFactory.getLogger(this.getClass()).error("Snapshot Table: {}",
+                        this.printTable(snapshot.getWinningbids(),new StringBuilder(), true).toString());
+                LoggerFactory.getLogger(this.getClass()).error(k.dumpState());
+            }
 
 //            // (if) default number of agents required (==1)
 //            if(!(j instanceof MultiParcel)) {
@@ -414,12 +453,16 @@ public class CbgaAgent extends AbstractConsensusAgent {
             //Consistency checks
             if(this.getValidBidsForParcel(this.getX(), j).size() > j.getRequiredAgents()){
                 LoggerFactory.getLogger(this.getClass()).warn(
-                        "{} {} has more bids for {} in Bidlist than required agents (bids: {} required:{}).",
+                        "{} PostEvaluationConsistencyCheck: {} has more bids for {} in Bidlist than required agents (bids: {} required:{}).",
                         this.getCurrentTime(),
                         this,
                         j,
                         this.getValidBidsForParcel(this.getX(), j).size(),
                         j.getRequiredAgents());
+                LoggerFactory.getLogger(this.getClass()).error(this.dumpState());
+                LoggerFactory.getLogger(this.getClass()).error("Snapshot Table: {}",
+                        this.printTable(snapshot.getWinningbids(),new StringBuilder(), true).toString());
+                LoggerFactory.getLogger(this.getClass()).error(k.dumpState());
             }
         }
 
@@ -491,21 +534,21 @@ public class CbgaAgent extends AbstractConsensusAgent {
         builder.append(this.getP());
         builder.append("\nUnallocatable: ");
         builder.append(this.getUnallocatable());
-        builder = printTable(builder, true);
+        builder = printTable(this.getX(), builder, true);
         return builder.toString();
     }
 
-    public StringBuilder printTable(StringBuilder builder, boolean validBids){
+    public StringBuilder printTable(ImmutableTable<Parcel, AbstractConsensusAgent, Long> x, StringBuilder builder, boolean validBids){
         builder.append("\n BidTable (");
         builder.append(validBids?"valid-only":"all");
         builder.append(")");
-        for(Parcel p : this.getX().rowKeySet()){
+        for(Parcel p : x.rowKeySet()){
             builder.append("\nParcel: ");
             builder.append(p);
             builder.append("/");
             builder.append(((MyParcel) p).getRequiredAgents());
             builder.append(" Values: ");
-            builder.append(validBids?this.getValidBidsForParcel(this.getX(), p):this.getX().row(p).values());
+            builder.append(validBids?this.getValidBidsForParcel(x, p):x.row(p).values());
 //            builder.append();
 //            builder.append()
         }
