@@ -51,6 +51,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     private int numberOfConstructBundleCalls;
     private double averageAvailableParcels;
     private double averageClaimedParcels;
+    private long idleTime;
 
     public AbstractConsensusAgent(VehicleDTO vehicleDTO) {
         super(vehicleDTO);
@@ -63,6 +64,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         numberOfConstructBundleCalls = 0;
         averageAvailableParcels = 0;
         averageClaimedParcels = 0;
+        idleTime = 0;
     }
 
     protected void preTick(TimeLapse time) {
@@ -81,9 +83,9 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         boolean hasConsensus = false;
         while (!hasConsensus){
             numberOfConstructBundleCalls += 1;
-            LoggerFactory.getLogger(this.getClass()).info("Do ConstructBundle {}", this);
+            Debug.logConstructBundle(this);
             constructBundle();
-            LoggerFactory.getLogger(this.getClass()).info("FindConsensus {}", this);
+            Debug.logFindConsensus(this);
             hasConsensus = findConsensus();
 
 //            org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick %s, %s", this, this.getP().size());
@@ -105,7 +107,9 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
         calculateAverages(time);
 
-
+        if(this.getRoute().size() == 0){
+            idleTime += time.getTickLength();
+        }
     }
 
     private void calculateAverages(TimeLapse time) {
@@ -211,7 +215,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                 }
             }
 
-            LoggerFactory.getLogger(this.getClass()).info("Sent snapshot from {},  {}", this, snapshot);
+            Debug.logSentSnapshot(this, snapshot);
         };
     }
 
@@ -579,7 +583,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         for(Message snap : snapshots){
             this.setCommunicationTimestamp(snap);
 
-            LoggerFactory.getLogger(this.getClass()).info("Do evaluate snapshot of {}", snap.getSender());
+            Debug.logEvaluateSnapshot((AbstractConsensusAgent) snap.getSender());
             evaluateSnapshot((Snapshot) snap.getContents(), (AbstractConsensusAgent) snap.getSender());
 //                LoggerFactory.getLogger(this.getClass()).info("Received Snapshot from {} to {} : {}", sender, this, contents);
 
@@ -651,7 +655,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
             return;
         }
         if(myIdea == null){
-            update(parcel, myIdea, otherSnapshot);
+            update(parcel, sender, otherSnapshot);
             return;
         }
 
@@ -696,8 +700,10 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         if(sender.equals(myIdea)){
             if(otherHasNewerSnapshotForM)
                 update(parcel, myIdea, otherSnapshot);
-            else
+            else{
+                Debug.logResetHeThinksOtherIThinkHim(this,sender,otherIdea);
                 reset(parcel);
+            }
             return;
         }
         if(otherIdea.equals(myIdea)){
@@ -823,5 +829,8 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
         return routeTimes.getPickupTimes().get(parcel);
 
+    }
+    public long getIdleTime() {
+        return idleTime;
     }
 }
