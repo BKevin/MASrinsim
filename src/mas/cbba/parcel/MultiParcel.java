@@ -115,7 +115,7 @@ public class MultiParcel extends MyParcel {
      */
     public void removeSubParcel(Parcel parcel){
         this.subParcels.remove(parcel);
-        triggerRerankOfAllocatedAgents();
+//        triggerRerankOfAllocatedAgents();
     }
 
     /*
