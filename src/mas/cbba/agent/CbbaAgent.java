@@ -213,6 +213,8 @@ public class CbbaAgent extends AbstractConsensusAgent {
     protected void removeParcelFromBidList(Parcel parcel){
         super.removeParcelFromBidList(parcel);
 
+        this.getUnallocatable().remove(parcel);
+
         this.y.remove(parcel);
         this.z.remove(parcel);
     }

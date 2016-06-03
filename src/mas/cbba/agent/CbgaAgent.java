@@ -31,14 +31,12 @@ public class CbgaAgent extends AbstractConsensusAgent {
      * Xij is equal to the winning bid of agent i for task j or equal to  0 if no assignment has been made.
      */
     private Table<Parcel, AbstractConsensusAgent, Long> X; //sparse table
-    private Set<MyParcel> unAllocatable;
 
     public CbgaAgent(VehicleDTO vehicleDTO) {
         super(vehicleDTO);
 
         this.X = HashBasedTable.create();
 
-        this.unAllocatable = new HashSet<>();
     }
 
     /**
@@ -135,7 +133,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
             }
             if(parcel instanceof MultiParcel
                     && this.getP().contains(parcel)
-//                    && !this.unAllocatable.contains(parcel)
+//                    && !this.unallocatable.contains(parcel)
                     && this.getPDPModel().getContents(this).contains(((MultiParcel) parcel).getDelegateSubParcel(this))
                     ){
 
@@ -149,7 +147,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
                 updateBidValue(parcel, this, NO_BID);
 
                 // Make unallocateble in the next round
-                this.unAllocatable.add(parcel);
+                this.getUnallocatable().add(parcel);
 
                 // Remove parcel from multiparcel
                 ((MultiParcel) parcel).removeSubParcel(subParcel);
@@ -163,11 +161,10 @@ public class CbgaAgent extends AbstractConsensusAgent {
             for (AbstractConsensusAgent agent : ImmutableList.copyOf(this.X.columnKeySet())) {
                 this.X.remove(parcel, agent);
             }
-            this.unAllocatable.remove(parcel);
+            this.getUnallocatable().remove(parcel);
 
             super.removeParcelFromBidList(parcel);
         }
-
 
     }
 
@@ -186,7 +183,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
         Map<Parcel, PDPModel.ParcelState> states = parcels.stream().collect(Collectors.toMap(p -> p, p -> this.getPDPModel().getParcelState(p)));
         Collection<Parcel> availableParcels = parcels
                 .stream()
-                .filter(p -> !this.unAllocatable.contains(p) )
+                .filter(p -> !this.getUnallocatable().contains(p) )
                 .collect(Collectors.toList());
 
         Debug.logParcelListForAgent(this, states, availableParcels);
@@ -199,7 +196,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
             List<Parcel> notInB = parcels
                     .stream()
                     .filter(p -> !this.getB().contains(p)
-                            && !this.unAllocatable.contains(p)
+                            && !this.getUnallocatable().contains(p)
                             // FIXME should not use isAvailable here
                             /**
                              * We expect to know which parcels are available and which aren't based on communication
@@ -211,7 +208,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
             List<Parcel> regularNotInB = parcels
                     .stream()
                     .filter(p -> !this.getB().contains(p)
-                            && !this.unAllocatable.contains(p)
+                            && !this.getUnallocatable().contains(p)
                     )
                     .collect(Collectors.toList());
 

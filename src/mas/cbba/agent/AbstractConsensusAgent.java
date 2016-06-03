@@ -36,6 +36,8 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
     public static final Long NO_BID = Long.MAX_VALUE; //TODO check of dit overal klopt
 
+    private Set<Parcel> unallocatable;
+
 
     private LinkedList<Parcel> b;
     private ArrayList<Parcel> p;
@@ -64,6 +66,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         numberOfConstructBundleCalls = 0;
         averageAvailableParcels = 0;
         averageClaimedParcels = 0;
+        this.unallocatable = new HashSet<>();
     }
 
     protected void preTick(TimeLapse time) {
@@ -368,9 +371,20 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     protected abstract void addParcelToBidList(Parcel parcel);
 
     protected void removeParcelFromBidList(Parcel parcel){
+        // Fully remove all references
+
         // Remove a parcel from your route and bundle
         this.getB().remove(parcel);
         this.getP().remove(parcel);
+        // Remove from unallocatable list, should it reside there
+        /**
+         * /!\ Divergent cases: removeparcelfrombidlist:
+         * partial pickup - DO NOT remove parcel from unallocatable list
+         * partial pickup from my route - add parcel to unallocatable list
+         * full pickup - remove parcel from unallocatable list
+         * DO NOT CALL METHOD HERE
+         */
+//        this.getUnallocatable().remove(parcel);
         // Update the route, as it may have changed (only when you are the carrier of the parcel
         this.updateRoute();
     }
@@ -581,7 +595,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
             }
 
             if(contents instanceof LockParcelMessage){
-//                this.makeUnallocatable(((LockParcelMessage) contents).getParcel());
+                this.makeUnallocatable(((LockParcelMessage) contents).getParcel());
             }
             if(contents instanceof SoldParcelMessage){
                 this.removeParcelFromBidList(((ParcelMessage) contents).getParcel());
@@ -861,4 +875,16 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         return getProjectedPickupTime(parcel) < this.getCurrentTimeLapse().getEndTime() + 2*this.getCurrentTimeLapse().getTickLength();
     }
 
+
+    /**
+     * Add parcel to list of unallocatable parcels
+     * @param parcel
+     */
+    private void makeUnallocatable(Parcel parcel) {
+        this.getUnallocatable().add(parcel);
+    }
+
+    protected Set<Parcel> getUnallocatable(){
+        return this.unallocatable;
+    }
 }
