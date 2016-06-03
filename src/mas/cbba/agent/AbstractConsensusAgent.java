@@ -18,6 +18,7 @@ import mas.MyVehicle;
 import mas.cbba.Debug;
 import mas.cbba.parcel.MultiParcel;
 import mas.cbba.snapshot.Snapshot;
+import mas.comm.LockParcelMessage;
 import mas.comm.NewParcelMessage;
 import mas.comm.ParcelMessage;
 import mas.comm.SoldParcelMessage;
@@ -81,9 +82,9 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         boolean hasConsensus = false;
         while (!hasConsensus){
             numberOfConstructBundleCalls += 1;
-            LoggerFactory.getLogger(this.getClass()).info("Do ConstructBundle {}", this);
+//            LoggerFactory.getLogger(this.getClass()).info("Do ConstructBundle {}", this);
             constructBundle();
-            LoggerFactory.getLogger(this.getClass()).info("FindConsensus {}", this);
+//            LoggerFactory.getLogger(this.getClass()).info("FindConsensus {}", this);
             hasConsensus = findConsensus();
 
 //            org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick %s, %s", this, this.getP().size());
@@ -96,6 +97,10 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
             updateRoute();
         }
 
+        // Lock parcel just before pickup
+        if(!this.getP().isEmpty() && this.inRange(this.getP().get(0))) {
+            this.sendToAllAgents(new LockParcelMessage(this.getP().get(0)));
+        }
 //        org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick done for {}", this);
 
 //        LoggerFactory.getLogger(this.getClass()).info("Route size: {} for {} ", this.getRoute().size(), this);
@@ -105,6 +110,24 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
         calculateAverages(time);
 
+
+    }
+
+    /**
+     * Send a message to all agents in the simulator
+     */
+    private void sendToAllAgents(MessageContents contents) {
+
+        //TODO do not depend on pdpmodel for knowing all vehicles, but register vehicles by sending messages to each other
+        //TODO getVehicles: send to agent k with g_ik(t) = 1.
+
+        for(Vehicle c : this.getPDPModel().getVehicles()) {
+            if(c != this) {
+                MyVehicle v = (MyVehicle) c;
+                this.getCommDevice().get().send(contents, v);
+                this.numberOfSentMessages += 1;
+            }
+        }
 
     }
 
@@ -202,14 +225,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
             this.setSnapshot(snapshot);
 
-            //TODO getVehicles: send to agent k with g_ik(t) = 1.
-            for(Vehicle c : this.getPDPModel().getVehicles()) {
-                if(c != this) {
-                    MyVehicle v = (MyVehicle) c;
-                    this.getCommDevice().get().send(snapshot, v);
-                    this.numberOfSentMessages += 1;
-                }
-            }
+            this.sendToAllAgents(snapshot);
 
             LoggerFactory.getLogger(this.getClass()).info("Sent snapshot from {},  {}", this, snapshot);
         };
@@ -564,6 +580,9 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                 snapshots.add(message);
             }
 
+            if(contents instanceof LockParcelMessage){
+//                this.makeUnallocatable(((LockParcelMessage) contents).getParcel());
+            }
             if(contents instanceof SoldParcelMessage){
                 this.removeParcelFromBidList(((ParcelMessage) contents).getParcel());
                 LoggerFactory.getLogger(this.getClass()).info("Received SoldParcelMessage from {} to {} : {}", sender, this, contents);
@@ -579,14 +598,13 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         for(Message snap : snapshots){
             this.setCommunicationTimestamp(snap);
 
-            LoggerFactory.getLogger(this.getClass()).info("Do evaluate snapshot of {}", snap.getSender());
+//            LoggerFactory.getLogger(this.getClass()).info("Do evaluate snapshot of {}", snap.getSender());
             evaluateSnapshot((Snapshot) snap.getContents(), (AbstractConsensusAgent) snap.getSender());
 //                LoggerFactory.getLogger(this.getClass()).info("Received Snapshot from {} to {} : {}", sender, this, contents);
 
         }
 
     }
-
 
     /**
      * Evaluate a single snapshot message from another sender
@@ -681,6 +699,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
         throw new IllegalArgumentException("Something went wrong in senderThinksIWins: unreachable code.");
     }
+
     private void senderThinksSomeoneElseWins(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, AbstractConsensusAgent otherIdea, Snapshot otherSnapshot) {
 
         Long otherTimeStamp = otherSnapshot.getCommunicationTimestamps().get(otherIdea);
@@ -731,7 +750,6 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
         throw new IllegalArgumentException("Something went wrong in senderThinksSomeoneElseWins: unreachable code.");
     }
-
     private void senderThinksNododyWins(AbstractConsensusAgent sender, Parcel parcel, AbstractConsensusAgent myIdea, Snapshot otherSnapshot) {
         if(this.equals(myIdea)) {
             leave();
@@ -774,10 +792,21 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         //do nothing
     }
 
+    /**
+     * Reset the value of a bid for the given parcel
+     * @param parcel
+     */
     private void reset(Parcel parcel) {
         this.updateBidValue(parcel, this, NO_BID);
     }
 
+    /************************
+     * Statistics
+     *********************/
+
+    /**
+     * Statistics counter: Get number of sent messages
+     */
     public Integer getNumberOfSentMessages() {
         return numberOfSentMessages;
     }
@@ -802,7 +831,9 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         return averageClaimedParcels;
     }
 
-
+    /***************************
+     * OTHER
+     */
 
     public Long getProjectedPickupTime(Parcel parcel) {
 
@@ -824,4 +855,10 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         return routeTimes.getPickupTimes().get(parcel);
 
     }
+
+
+    public boolean inRange(Parcel parcel){
+        return getProjectedPickupTime(parcel) < this.getCurrentTimeLapse().getEndTime() + 2*this.getCurrentTimeLapse().getTickLength();
+    }
+
 }
