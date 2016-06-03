@@ -199,6 +199,10 @@ public class CbgaAgent extends AbstractConsensusAgent {
                     .stream()
                     .filter(p -> !this.getB().contains(p)
                             && !this.unAllocatable.contains(p)
+                            // FIXME should not use isAvailable here
+                            /**
+                             * We expect to know which parcels are available and which aren't based on communication
+                             */
                             && ((MyParcel) p).isAvailable()
                     )
                     .collect(Collectors.toList());
