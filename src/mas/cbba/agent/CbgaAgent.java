@@ -49,14 +49,9 @@ public class CbgaAgent extends AbstractConsensusAgent {
 
     @Override
     protected void replaceWinningBid(Parcel parcel, AbstractConsensusAgent from, AbstractConsensusAgent to, Long bid){
-        updateBidValue(parcel, from, this.NO_BID);
+        super.replaceWinningBid(parcel, from, to, bid);
 
-        if(from == this){
-            removeParcelAllocationFromYourself(parcel);
-        }
-
-        setWinningBid(parcel, to, bid);
-
+        // Update route because after setting a winning bid, your rank may have changed.
         updateRoute();
     }
 
