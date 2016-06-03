@@ -403,7 +403,6 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
 //        LoggerFactory.getLogger(this.getClass()).info("RouteUpdate for {} with {}", this, collect);
 
-
         // Update route
         List<Parcel> routeFrom = this.createRouteFrom(
                 collect);
@@ -411,7 +410,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
                 // Create route with double parcels
                 routeFrom);
 
-        Debug.logRouteForAgent(this, routeFrom.stream().collect(Collectors.toMap((Parcel p) -> p, p -> this.getPDPModel().getParcelState(p), (p1, p2) -> p1)));
+        Debug.logRouteForAgent(this.getCurrentTime(), this, routeFrom.stream().collect(Collectors.toMap((Parcel p) -> p, p -> this.getPDPModel().getParcelState(p), (p1, p2) -> p1)));
 
     }
 
@@ -872,7 +871,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
 
     public boolean inRange(Parcel parcel){
-        return getProjectedPickupTime(parcel) < this.getCurrentTimeLapse().getEndTime() + 2*this.getCurrentTimeLapse().getTickLength();
+        return getProjectedPickupTime(parcel) < this.getCurrentTimeLapse().getEndTime() + 5*this.getCurrentTimeLapse().getTickLength();
     }
 
 

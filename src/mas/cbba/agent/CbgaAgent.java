@@ -179,16 +179,23 @@ public class CbgaAgent extends AbstractConsensusAgent {
 
         Set<Parcel> parcels = X.column(this).keySet();
 
+        boolean bIsChanging = true;
+
         // Debugging
         Map<Parcel, PDPModel.ParcelState> states = parcels.stream().collect(Collectors.toMap(p -> p, p -> this.getPDPModel().getParcelState(p)));
-        Collection<Parcel> availableParcels = parcels
+        List<Parcel> available = parcels
                 .stream()
-                .filter(p -> !this.getUnallocatable().contains(p) )
+                .filter(p -> !this.getB().contains(p)
+                        && !this.getUnallocatable().contains(p)
+                        // FIXME should not use isAvailable here
+                        /**
+                         * We expect to know which parcels are available and which aren't based on communication
+                         */
+                        && ((MyParcel) p).isAvailable()
+                )
                 .collect(Collectors.toList());
-
-        Debug.logParcelListForAgent(this, states, availableParcels);
-
-        boolean bIsChanging = true;
+        Debug.logParcelListForAgent(this.getCurrentTime(), this, states, available);
+        // /debugging
 
         while(bIsChanging) {
 
@@ -204,6 +211,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
                             && ((MyParcel) p).isAvailable()
                     )
                     .collect(Collectors.toList());
+
 
             List<Parcel> regularNotInB = parcels
                     .stream()
@@ -221,7 +229,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
                         notInB,
                         regularNotInB.size(),
                         regularNotInB
-                        );
+                );
             }
 
             // Find best route values for every parcel currently not assigned to this vehicle

@@ -34,35 +34,37 @@ public class Debug {
 
     }
 
-    public static void logParcelListForAgent(CbgaAgent agent, Map<Parcel, PDPModel.ParcelState> states, Collection<Parcel> availableParcels){
+    public static void logParcelListForAgent(Long time, CbgaAgent agent, Map<Parcel, PDPModel.ParcelState> states, Collection<Parcel> allocatableParcels){
         Logger logger = LoggerFactory.getLogger(agent.getClass());
 
         Set<Parcel> parcels = agent.getX().rowKeySet();
 
-        logger.info("Parcels for {} (Parcels:{} - Available:{}):  \n{}",
+        logger.info("{} ConstructBundle Available parcels for {} (Parcels:{} - Allocatable:{}):  \n{}",
+                time,
                 agent,
                 parcels.size(),
-                availableParcels.size(),
+                allocatableParcels.size(),
                 agent.getX());
 
-        logger.info("Parcel states: {}", states);
+        logger.info("ConstructBundle Parcel states: {}", states);
 
 
     }
 
-    public static void logRouteForAgent(AbstractConsensusAgent agent, Map<Parcel, PDPModel.ParcelState> states){
+    public static void logRouteForAgent(Long time, AbstractConsensusAgent agent, Map<Parcel, PDPModel.ParcelState> states){
         if(agent instanceof CbbaAgent){
-            logRouteForAgent((CbbaAgent)agent, states);
+            logRouteForAgent(time, (CbbaAgent)agent, states);
         }
         else if(agent instanceof CbgaAgent) {
-            logRouteForAgent((CbgaAgent) agent, states);
+            logRouteForAgent(time, (CbgaAgent) agent, states);
         }
     }
 
-    public static void logRouteForAgent(CbbaAgent agent, Map<Parcel, PDPModel.ParcelState> states){
+    public static void logRouteForAgent(Long time, CbbaAgent agent, Map<Parcel, PDPModel.ParcelState> states){
         Logger logger = LoggerFactory.getLogger(agent.getClass());
 
-        logger.info("Route for {} (Parcels:{}) built from {}: \nRoute: {}",
+        logger.info("{} Route for {} (Parcels:{}) built from {}: \nRoute: {}",
+                time,
                 agent,
                 agent.getZ().keySet().size(),
                 agent.getZ().keySet(),
@@ -73,10 +75,11 @@ public class Debug {
 
     }
 
-    public static void logRouteForAgent(CbgaAgent agent, Map<Parcel, PDPModel.ParcelState> states){
+    public static void logRouteForAgent(Long time, CbgaAgent agent, Map<Parcel, PDPModel.ParcelState> states){
         Logger logger = LoggerFactory.getLogger(agent.getClass());
 
-        logger.info("Route for {} (Parcels:{}) built from {}: \nRoute: {}",
+        logger.info("{} Route for {} (Parcels:{}) built from {}: \nRoute: {}",
+                time,
                 agent,
                 agent.getX().rowKeySet().size(),
                 agent.getX().rowKeySet(),
