@@ -51,7 +51,7 @@ public class RunExperiments {
         //CBGA Mixed 0.3,0.2,0.5
         boolean batch = true;
         if (batch) {
-            batchExperiments();
+            batchExperiments(args);
             return;
         }
         else{
@@ -67,27 +67,81 @@ public class RunExperiments {
         System.out.println("Arguments not correct, we need: {CBBA,CBGA,BOTH} {Single,Multi,Mixed} distribution (optionalScenarioFile)");
     }
 
-    private static void batchExperiments(){
-        String mode = "BOTH";
+    private static void batchExperiments(String... args){
+        String mode = "CBBA";
         String type;
         int amountExperiments = 2;
+        long BASE_PARCEL_SPAWN = 3500000; //2500000 too big
+
         //efficiency experiments
         //voor elke n=1..10 doe experiment met 10scenarios met CBBA en CBGA  (Single)
-        for(int agents = 1; agents < 11; agents++){
-            MAX_AGENTS = agents;
-            long parcelInterArrival = 2500000/agents;
-            type = "Single";
-            String distribution = "1";
-            int numParcels = 10;
-            int numInitParcels = agents;
+        if("Single".equals(args[0])){
+            for(int agents = 1; agents < 11; agents++){
+                MAX_AGENTS = agents;
+                long parcelInterArrival = BASE_PARCEL_SPAWN/agents;
+                type = "Single";
+                String distribution = "1";
+                int numParcels = 300;
+                int numInitParcels = agents;
 
-            System.out.println("----------- Experiment with " + agents + " agents --------------");
-            runNewExperiments(agents,numParcels,numInitParcels,parcelInterArrival, amountExperiments,mode,type,distribution,"agent" + agents);
+                System.out.println("----------- Experiment Single with " + agents + " agents --------------");
+                runNewExperiments(agents, numParcels, numInitParcels, parcelInterArrival, amountExperiments, mode, type, distribution,"Single_"+agents+"_agent" );
+            }
         }
 
         //Mixed
         //voor elke 1, 2 3 en 4 doe 10 scenores met CBBA en CBGA
+        if("Mixed".equals(args[0])) {
+            for (int agentsPerParcel = 1; agentsPerParcel < 5; agentsPerParcel++) {
+                for( int agents = 1; agents < 4; agents++){
+                    int totalAgents = agents * agentsPerParcel;
+                    MAX_AGENTS = totalAgents;
+                    type = "Mixed";
+                    long parcelInterArrival = BASE_PARCEL_SPAWN / totalAgents;
+                    int t = 0;
+                    for(int k = 1; k <=agentsPerParcel; k++){
+                        t += k;
+                    }
+                    double tt = ((double) t) / agentsPerParcel;
+                    parcelInterArrival = (long) (tt * parcelInterArrival);
 
+                    String distribution = "" + 1.0 / ((double) agentsPerParcel);
+                    for (int j = 2; j <= agentsPerParcel; j++)
+                        distribution = distribution + "," + 1.0 / ((double) agentsPerParcel);
+                    int numParcels = 10;
+                    int numInitParcels = totalAgents;
+
+                    System.out.println("----------- Experiment Mixed with Multi of <= "+ agentsPerParcel + " and " + totalAgents + " agents --------------");
+                    runNewExperiments(totalAgents, numParcels, numInitParcels, parcelInterArrival, amountExperiments, mode, type, distribution, "Mixed_Multi" + agentsPerParcel +"_"+ totalAgents+ "agents");
+                }
+            }
+        }
+
+        if("Multi".equals(args[0])) {
+            for (int agentsPerParcel = 2; agentsPerParcel < 5; agentsPerParcel++) {
+                for( int agents = 1; agents < 4; agents++){
+                    int totalAgents = agents * agentsPerParcel;
+                    MAX_AGENTS = totalAgents;
+                    type = "Multi";
+                    long parcelInterArrival = BASE_PARCEL_SPAWN / totalAgents;
+                    int t = 0;
+                    for(int k = 2; k <=agentsPerParcel; k++){
+                        t += k;
+                    }
+                    double tt = ((double) t) / agentsPerParcel;
+                    parcelInterArrival = (long) (tt * parcelInterArrival);
+
+                    String distribution = "" + 0.0 / ((double) agentsPerParcel);
+                    for (int j = 2; j <= agentsPerParcel; j++)
+                        distribution = distribution + "," + 1.0 / ((double) agentsPerParcel - 1);
+                    int numParcels = 10;
+                    int numInitParcels = totalAgents;
+
+                    System.out.println("----------- Experiment Multi with Multi of <= "+ agentsPerParcel + " and " + totalAgents + " agents --------------");
+                    runNewExperiments(totalAgents, numParcels, numInitParcels, parcelInterArrival, amountExperiments, mode, type, distribution, "Multi_Multi" + agentsPerParcel + "_" + totalAgents + "agents");
+                }
+            }
+        }
     }
 
     private static void runExperimentWithScenario(String... args) {
