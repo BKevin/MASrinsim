@@ -25,6 +25,7 @@ public class Debug {
     private static boolean sentSnapshot = false;
     private static boolean route = false;
     private static boolean reset = true;
+    private static boolean parcelList = false;
 
     public static void logParcelListForAgent(CbbaAgent agent, Map<Parcel, PDPModel.ParcelState> states, Collection<Parcel> availableParcels){
         Logger logger = LoggerFactory.getLogger(agent.getClass());
@@ -42,19 +43,21 @@ public class Debug {
 
     }
 
-    public static void logParcelListForAgent(CbgaAgent agent, Map<Parcel, PDPModel.ParcelState> states, Collection<Parcel> availableParcels){
-        Logger logger = LoggerFactory.getLogger(agent.getClass());
+    public static void logParcelListForAgent(CbgaAgent agent, Map<Parcel, PDPModel.ParcelState> states, Collection<Parcel> availableParcels) {
+        if(parcelList)
+        {
+            Logger logger = LoggerFactory.getLogger(agent.getClass());
 
-        Set<Parcel> parcels = agent.getX().rowKeySet();
+            Set<Parcel> parcels = agent.getX().rowKeySet();
 
-        logger.info("Parcels for {} (Parcels:{} - Available:{}):  \n{}",
-                agent,
-                parcels.size(),
-                availableParcels.size(),
-                agent.getX());
+            logger.info("Parcels for {} (Parcels:{} - Available:{}):  \n{}",
+                    agent,
+                    parcels.size(),
+                    availableParcels.size(),
+                    agent.getX());
 
-        logger.info("Parcel states: {}", states);
-
+            logger.info("Parcel states: {}", states);
+        }
 
     }
 

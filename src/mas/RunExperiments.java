@@ -70,29 +70,46 @@ public class RunExperiments {
     private static void batchExperiments(String... args){
         String mode = "CBBA";
         String type;
-        int amountExperiments = 2;
+        int amountExperiments = 10;
         long BASE_PARCEL_SPAWN = 3500000; //2500000 too big
 
         //efficiency experiments
         //voor elke n=1..10 doe experiment met 10scenarios met CBBA en CBGA  (Single)
+        int retry = 0;
+        args[0] = "Single";
         if("Single".equals(args[0])){
-            for(int agents = 1; agents < 11; agents++){
+            for(int agents = 1; agents < 5; agents++){
                 MAX_AGENTS = agents;
                 long parcelInterArrival = BASE_PARCEL_SPAWN/agents;
                 type = "Single";
                 String distribution = "1";
-                int numParcels = 300;
+                int numParcels = 1000;
                 int numInitParcels = agents;
 
                 System.out.println("----------- Experiment Single with " + agents + " agents --------------");
-                runNewExperiments(agents, numParcels, numInitParcels, parcelInterArrival, amountExperiments, mode, type, distribution,"Single_"+agents+"_agent" );
+                try{
+                    runNewExperiments(agents, numParcels, numInitParcels, parcelInterArrival, amountExperiments, mode, type, distribution,"Single_"+agents+"_agent" );
+                    retry = 0;
+                }
+                catch (Exception e){
+                    e.printStackTrace();
+                    if(retry < 3) {
+                        agents--;
+                        retry++;
+                    }
+                    else{
+                        retry = 0;
+                    }
+                }
             }
         }
 
         //Mixed
         //voor elke 1, 2 3 en 4 doe 10 scenores met CBBA en CBGA
+        args[0] = "Mixed";
+        retry = 0;
         if("Mixed".equals(args[0])) {
-            for (int agentsPerParcel = 1; agentsPerParcel < 5; agentsPerParcel++) {
+            for (int agentsPerParcel = 1; agentsPerParcel < 4; agentsPerParcel++) {
                 for( int agents = 1; agents < 4; agents++){
                     int totalAgents = agents * agentsPerParcel;
                     MAX_AGENTS = totalAgents;
@@ -108,17 +125,32 @@ public class RunExperiments {
                     String distribution = "" + 1.0 / ((double) agentsPerParcel);
                     for (int j = 2; j <= agentsPerParcel; j++)
                         distribution = distribution + "," + 1.0 / ((double) agentsPerParcel);
-                    int numParcels = 10;
+                    int numParcels = 1000;
                     int numInitParcels = totalAgents;
 
                     System.out.println("----------- Experiment Mixed with Multi of <= "+ agentsPerParcel + " and " + totalAgents + " agents --------------");
-                    runNewExperiments(totalAgents, numParcels, numInitParcels, parcelInterArrival, amountExperiments, mode, type, distribution, "Mixed_Multi" + agentsPerParcel +"_"+ totalAgents+ "agents");
+                    try {
+                       runNewExperiments(totalAgents, numParcels, numInitParcels, parcelInterArrival, amountExperiments, mode, type, distribution, "Mixed_Multi" + agentsPerParcel + "_" + totalAgents + "agents");
+                       retry = 0;
+                    }
+                    catch (Exception e){
+                        e.printStackTrace();
+                        if(retry < 3) {
+                            agents--;
+                            retry++;
+                        }
+                        else{
+                            retry = 0;
+                        }
+                    }
                 }
             }
-        }
 
+
+        args[0] = "Multi";
+        retry = 0;      }
         if("Multi".equals(args[0])) {
-            for (int agentsPerParcel = 2; agentsPerParcel < 5; agentsPerParcel++) {
+            for (int agentsPerParcel = 2; agentsPerParcel < 4; agentsPerParcel++) {
                 for( int agents = 1; agents < 4; agents++){
                     int totalAgents = agents * agentsPerParcel;
                     MAX_AGENTS = totalAgents;
@@ -134,11 +166,24 @@ public class RunExperiments {
                     String distribution = "" + 0.0 / ((double) agentsPerParcel);
                     for (int j = 2; j <= agentsPerParcel; j++)
                         distribution = distribution + "," + 1.0 / ((double) agentsPerParcel - 1);
-                    int numParcels = 10;
+                    int numParcels = 1000;
                     int numInitParcels = totalAgents;
 
                     System.out.println("----------- Experiment Multi with Multi of <= "+ agentsPerParcel + " and " + totalAgents + " agents --------------");
-                    runNewExperiments(totalAgents, numParcels, numInitParcels, parcelInterArrival, amountExperiments, mode, type, distribution, "Multi_Multi" + agentsPerParcel + "_" + totalAgents + "agents");
+                    try{
+                        runNewExperiments(totalAgents, numParcels, numInitParcels, parcelInterArrival, amountExperiments, mode, type, distribution, "Multi_Multi" + agentsPerParcel + "_" + totalAgents + "agents");
+                        retry = 0;
+                    }
+                    catch (Exception e){
+                        e.printStackTrace();
+                        if(retry < 3) {
+                            agents--;
+                            retry++;
+                        }
+                        else{
+                            retry = 0;
+                        }
+                    }
                 }
             }
         }
