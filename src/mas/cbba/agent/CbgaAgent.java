@@ -284,7 +284,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
                             j,
                             this.getValidBidsForParcel(this.getX(), j).size(),
                             j.getRequiredAgents());
-                    LoggerFactory.getLogger(this.getClass()).error(this.dumpState());
+//                    LoggerFactory.getLogger(this.getClass()).error(this.dumpState());
 //                    LoggerFactory.getLogger(this.getClass()).error("Snapshot Table: {}",
 //                            this.printTable(snapshot.getWinningbids(),new StringBuilder(), true).toString());
 //                    LoggerFactory.getLogger(this.getClass()).error(k.dumpState());
@@ -357,10 +357,10 @@ public class CbgaAgent extends AbstractConsensusAgent {
                         j,
                         this.getValidBidsForParcel(this.getX(), j).size(),
                         j.getRequiredAgents());
-                LoggerFactory.getLogger(this.getClass()).error(this.dumpState());
-                LoggerFactory.getLogger(this.getClass()).error("Snapshot Table: {}",
-                        this.printTable(snapshot.getWinningbids(),new StringBuilder(), true).toString());
-                LoggerFactory.getLogger(this.getClass()).error(k.dumpState());
+//                LoggerFactory.getLogger(this.getClass()).error(this.dumpState());
+//                LoggerFactory.getLogger(this.getClass()).error("Snapshot Table: {}",
+//                        this.printTable(snapshot.getWinningbids(),new StringBuilder(), true).toString());
+//                LoggerFactory.getLogger(this.getClass()).error(k.dumpState());
             }
 
 //            // (if) default number of agents required (==1)
@@ -445,7 +445,7 @@ public class CbgaAgent extends AbstractConsensusAgent {
                         i.replaceWinningBid(j, n, m, bids.get(j, m));
                     }
                     // If the maximum bid of N is equal to the bid of M for J, the greatest ID (hashvalue) wins the assignment of J
-                    else if (worstValue.equals(bids.get(j, m)) && i.hashCode() > m.hashCode()) {
+                    else if (worstValue.equals(bids.get(j, m)) && n.hashCode() > m.hashCode()) {
                         i.replaceWinningBid(j, n, m, bids.get(j, m));
                     }
                 }
