@@ -5,6 +5,7 @@ import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import mas.cbba.agent.AbstractConsensusAgent;
 import mas.cbba.agent.CbbaAgent;
 import mas.cbba.agent.CbgaAgent;
+import mas.cbba.snapshot.Snapshot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +18,14 @@ import java.util.Set;
  * Created by pieter on 01.06.16.
  */
 public class Debug {
+
+    private static boolean construct =false;
+    private static boolean consensus =false;
+    private static boolean evalSnapshot = false;
+    private static boolean sentSnapshot = false;
+    private static boolean route = false;
+    private static boolean reset = true;
+    private static boolean parcelList = false;
 
     public static void logParcelListForAgent(CbbaAgent agent, Map<Parcel, PDPModel.ParcelState> states, Collection<Parcel> availableParcels){
         Logger logger = LoggerFactory.getLogger(agent.getClass());
@@ -35,9 +44,10 @@ public class Debug {
     }
 
     public static void logParcelListForAgent(Long time, CbgaAgent agent, Map<Parcel, PDPModel.ParcelState> states, Collection<Parcel> allocatableParcels){
-        Logger logger = LoggerFactory.getLogger(agent.getClass());
+        if(parcelList) {
+            Logger logger = LoggerFactory.getLogger(agent.getClass());
 
-        Set<Parcel> parcels = agent.getX().rowKeySet();
+            Set<Parcel> parcels = agent.getX().rowKeySet();
 
         logger.info("{} ConstructBundle Available parcels for {} (Parcels:{} - Allocatable:{}):  \n{}",
                 time,
@@ -46,12 +56,15 @@ public class Debug {
                 allocatableParcels.size(),
                 agent.getX());
 
-        logger.info("ConstructBundle Parcel states: {}", states);
+            logger.info("ConstructBundle Parcel states: {}", states);
 
-
+        }
     }
 
     public static void logRouteForAgent(Long time, AbstractConsensusAgent agent, Map<Parcel, PDPModel.ParcelState> states){
+        if(!route)
+            return;
+
         if(agent instanceof CbbaAgent){
             logRouteForAgent(time, (CbbaAgent)agent, states);
         }
@@ -87,6 +100,38 @@ public class Debug {
 
         logger.info("Parcel states: {}", states);
 
+
+    }
+
+    public static void logConstructBundle(AbstractConsensusAgent agent){
+        if(construct)
+            LoggerFactory.getLogger(agent.getClass()).info("Do ConstructBundle {}", agent);
+    }
+
+    public static void logFindConsensus(AbstractConsensusAgent agent){
+        if(consensus)
+            LoggerFactory.getLogger(agent.getClass()).info("FindConsensus {}", agent);
+    }
+
+    public static void logEvaluateSnapshot(AbstractConsensusAgent agent){
+        if(evalSnapshot)
+            LoggerFactory.getLogger(agent.getClass()).info("Do evaluate snapshot of {}", agent);
+    }
+
+
+    public static void logSentSnapshot(AbstractConsensusAgent agent, Snapshot snapshot) {
+        if(sentSnapshot)
+            LoggerFactory.getLogger(agent.getClass()).info("Sent snapshot from {},  {}", agent, snapshot);
+    }
+
+    public static void logResetHeThinksMeIThinkHim(AbstractConsensusAgent me, AbstractConsensusAgent sender) {
+        if(reset)
+            LoggerFactory.getLogger(me.getClass()).info("Reset HeThinksMeIThinkHim : {},  {}", me, sender);
+    }
+
+    public static void logResetHeThinksOtherIThinkHim(AbstractConsensusAgent me, AbstractConsensusAgent sender, AbstractConsensusAgent otherIdea) {
+        if(reset)
+            LoggerFactory.getLogger(me.getClass()).info("Reset HeThinksOtherIThinkHim : {},  {}  and other: {}", me, sender, otherIdea );
 
     }
 }

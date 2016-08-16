@@ -41,7 +41,7 @@ public class RunExperiments {
     static final Point MAX_POINT = new Point(10, 10);
 
     static final String seperator = ",";
-    private static final int MAX_AGENTS = 6;
+    private static int MAX_AGENTS = 10;
 
     public static void main(String[] args) {
         //args =  {CBBA,CBGA,BOTH} {Single,Multi,Mixed} distribution (optionalScenarioFile)
@@ -49,22 +49,150 @@ public class RunExperiments {
         //CBBA Single 1
         //CBBA Multi 0,0.5,0.5
         //CBGA Mixed 0.3,0.2,0.5
-
-        if(args.length == 3) {
-            runNewExperiments(args);
+        boolean batch = true;
+        if (batch) {
+            batchExperiments(args);
             return;
         }
-        if(args.length == 4) {
-            runExperimentWithScenario(args);
-            return;
+        else{
+            if (args.length == 3) {
+                runNewExperiments(MAX_AGENTS, 100, MAX_AGENTS, 0, 10, args);
+                return;
+            }
+            if (args.length == 4) {
+                runExperimentWithScenario(args);
+                return;
+            }
         }
-
         System.out.println("Arguments not correct, we need: {CBBA,CBGA,BOTH} {Single,Multi,Mixed} distribution (optionalScenarioFile)");
+    }
+
+    private static void batchExperiments(String... args){
+        String mode = "CBBA";
+        String type;
+        int amountExperiments = 10;
+        long BASE_PARCEL_SPAWN = 3500000; //2500000 too big
+
+        //efficiency experiments
+        //voor elke n=1..10 doe experiment met 10scenarios met CBBA en CBGA  (Single)
+        int retry = 0;
+        args[0] = "Single";
+        if("Single".equals(args[0])){
+            for(int agents = 1; agents < 5; agents++){
+                MAX_AGENTS = agents;
+                long parcelInterArrival = BASE_PARCEL_SPAWN/agents;
+                type = "Single";
+                String distribution = "1";
+                int numParcels = 1000;
+                int numInitParcels = agents;
+
+                System.out.println("----------- Experiment Single with " + agents + " agents --------------");
+                try{
+                    runNewExperiments(agents, numParcels, numInitParcels, parcelInterArrival, amountExperiments, mode, type, distribution,"Single_"+agents+"_agent" );
+                    retry = 0;
+                }
+                catch (Exception e){
+                    e.printStackTrace();
+                    if(retry < 3) {
+                        agents--;
+                        retry++;
+                    }
+                    else{
+                        retry = 0;
+                    }
+                }
+            }
+        }
+
+        //Mixed
+        //voor elke 1, 2 3 en 4 doe 10 scenores met CBBA en CBGA
+        args[0] = "Mixed";
+        retry = 0;
+        if("Mixed".equals(args[0])) {
+            for (int agentsPerParcel = 1; agentsPerParcel < 4; agentsPerParcel++) {
+                for( int agents = 1; agents < 4; agents++){
+                    int totalAgents = agents * agentsPerParcel;
+                    MAX_AGENTS = totalAgents;
+                    type = "Mixed";
+                    long parcelInterArrival = BASE_PARCEL_SPAWN / totalAgents;
+                    int t = 0;
+                    for(int k = 1; k <=agentsPerParcel; k++){
+                        t += k;
+                    }
+                    double tt = ((double) t) / agentsPerParcel;
+                    parcelInterArrival = (long) (tt * parcelInterArrival);
+
+                    String distribution = "" + 1.0 / ((double) agentsPerParcel);
+                    for (int j = 2; j <= agentsPerParcel; j++)
+                        distribution = distribution + "," + 1.0 / ((double) agentsPerParcel);
+                    int numParcels = 1000;
+                    int numInitParcels = totalAgents;
+
+                    System.out.println("----------- Experiment Mixed with Multi of <= "+ agentsPerParcel + " and " + totalAgents + " agents --------------");
+                    try {
+                       runNewExperiments(totalAgents, numParcels, numInitParcels, parcelInterArrival, amountExperiments, mode, type, distribution, "Mixed_Multi" + agentsPerParcel + "_" + totalAgents + "agents");
+                       retry = 0;
+                    }
+                    catch (Exception e){
+                        e.printStackTrace();
+                        if(retry < 3) {
+                            agents--;
+                            retry++;
+                        }
+                        else{
+                            retry = 0;
+                        }
+                    }
+                }
+            }
+
+
+        args[0] = "Multi";
+        retry = 0;      }
+        if("Multi".equals(args[0])) {
+            for (int agentsPerParcel = 2; agentsPerParcel < 4; agentsPerParcel++) {
+                for( int agents = 1; agents < 4; agents++){
+                    int totalAgents = agents * agentsPerParcel;
+                    MAX_AGENTS = totalAgents;
+                    type = "Multi";
+                    long parcelInterArrival = BASE_PARCEL_SPAWN / totalAgents;
+                    int t = 0;
+                    for(int k = 2; k <=agentsPerParcel; k++){
+                        t += k;
+                    }
+                    double tt = ((double) t) / agentsPerParcel;
+                    parcelInterArrival = (long) (tt * parcelInterArrival);
+
+                    String distribution = "" + 0.0 / ((double) agentsPerParcel);
+                    for (int j = 2; j <= agentsPerParcel; j++)
+                        distribution = distribution + "," + 1.0 / ((double) agentsPerParcel - 1);
+                    int numParcels = 1000;
+                    int numInitParcels = totalAgents;
+
+                    System.out.println("----------- Experiment Multi with Multi of <= "+ agentsPerParcel + " and " + totalAgents + " agents --------------");
+                    try{
+                        runNewExperiments(totalAgents, numParcels, numInitParcels, parcelInterArrival, amountExperiments, mode, type, distribution, "Multi_Multi" + agentsPerParcel + "_" + totalAgents + "agents");
+                        retry = 0;
+                    }
+                    catch (Exception e){
+                        e.printStackTrace();
+                        if(retry < 3) {
+                            agents--;
+                            retry++;
+                        }
+                        else{
+                            retry = 0;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private static void runExperimentWithScenario(String... args) {
         Experiment.Builder builder = Experiment.builder();
-        builder = makeMASConfig(builder, args);
+        Map<MASConfiguration, String> mapConfigs = new HashMap<>();
+        builder = makeMASConfig(builder, mapConfigs, args);
 
         LinkedList<Scenario> scenarios = new LinkedList<>();
         Scenario scenario = makeScenario(args[3]);
@@ -80,13 +208,15 @@ public class RunExperiments {
             System.out.println(result.getResultObject().toString());
         }
 
-        putResultsInFile(results,scenarios, "resources/experiments/singleExperiment/experiment_" + new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date()) +  ".txt");
+        putResultsInFile(results,scenarios,mapConfigs, "resources/experiments/singleExperiment/experiment_" + new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date()) +  ".txt");
     }
 
-    private static void runNewExperiments(String... args) {
+    private static void runNewExperiments(int agents, int numParcels, int numInitParcels, long parcelInterArrival, int amountExperiments, String... args) {
 
 
-        String mapName = "resources/experiments/experiment_" + new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date()) + "/";
+
+//        String mapName = "resources/experiments/experiment_" + new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date()) + "/";
+        String mapName = "resources/experiments/experiment_" + args[3] + "/";
 
         String[] split = args[2].split(",");
 
@@ -95,19 +225,25 @@ public class RunExperiments {
             distribution[i] = Double.parseDouble(split[i]);
         }
 
-        for(int i = 0; i < amountOfExperiments; i++){
+
+        //long parcelInterArrivalTime = Long.parseLong(args[3]);
+//        long parcelInterArrivalTime = 250000; //3750000  //250000
+        for(int i = 0; i < amountExperiments; i++){
 
             String filePath = mapName + "scene" + i + ".txt";
-            ScenarioGenerator.generateScenario(filePath, distribution);
+            ScenarioGenerator.generateScenario(filePath, agents, numParcels, numInitParcels, distribution, parcelInterArrival);
             System.out.println("Scene" + i + " is generated.");
+
+//            parcelInterArrivalTime += 25000;
         }
 
 
         Experiment.Builder builder = Experiment.builder();
-        builder = makeMASConfig(builder, args);
+        Map<MASConfiguration, String> mapConfigs = new HashMap<>();
+        builder = makeMASConfig(builder,mapConfigs,  args);
 
         LinkedList<Scenario> scenarios = new LinkedList<>();
-        for(int i = 0; i < amountOfExperiments; i++){
+        for(int i = 0; i < amountExperiments; i++){
 
             String filePath = mapName + "scene" + i + ".txt";
             Scenario scenario = makeScenario(filePath);
@@ -124,16 +260,16 @@ public class RunExperiments {
         System.out.println("Finish Experiment.");
 
 
-        for(Experiment.SimulationResult result : results.getResults()){
-            System.out.println(result.getResultObject().toString());
-        }
+//        for(Experiment.SimulationResult result : results.getResults()){
+//            System.out.println(result.getResultObject().toString());
+//        }
 
-        putResultsInFile(results, scenarios, mapName+"results.txt");
+        putResultsInFile(results, scenarios, mapConfigs, mapName+"results.txt");
 
 
     }
 
-    private static void putResultsInFile(ExperimentResults results, LinkedList<Scenario> scenarios, String... filenames) {
+    private static void putResultsInFile(ExperimentResults results, LinkedList<Scenario> scenarios, Map<MASConfiguration, String> mapConfigs, String... filenames) {
 
 //        String filename = filenames.length > 0 ? filenames[0] : "result"
 //                +"_"+new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date())
@@ -175,6 +311,9 @@ public class RunExperiments {
             }
             header += "totalMessagesReceived" + seperator;
             for(int i = 0; i < MAX_AGENTS; i++){
+                header += "idleTimeByAgent" + i + seperator;
+            }
+            for(int i = 0; i < MAX_AGENTS; i++){
                 header += "averageAvailableParcelsByAgent" + i + seperator;
             }
             for(int i = 0; i < MAX_AGENTS; i++){
@@ -199,7 +338,7 @@ public class RunExperiments {
 
                 Set<Vehicle> vehicleList = myResults.getVehicles();
 
-                br.write(String.valueOf(simResult.getSimArgs().getMasConfig().hashCode()) + seperator);
+                br.write(String.valueOf(mapConfigs.get(simResult.getSimArgs().getMasConfig())) + seperator);
                 br.write(String.valueOf(scenarios.indexOf(simResult.getSimArgs().getScenario())) + seperator);
                 br.write(String.valueOf(myResults.getStatistics().computationTime) + seperator);
                 br.write(String.valueOf(myResults.getStatistics().simulationTime) + seperator);
@@ -221,6 +360,9 @@ public class RunExperiments {
 
                 br.write(myResults.getTotalAmountOfMessagesReceivedByAgents() + seperator);
 
+                for(Vehicle v: vehicleList)
+                    br.write(myResults.getIdleTimeByAgent().get(v) + seperator);
+                setEmpty(br, vehicleList);
 
                 for(Vehicle v: vehicleList)
                     br.write(myResults.getAverageAvailableParcel().get(v) + seperator);
@@ -258,7 +400,7 @@ public class RunExperiments {
         }
     }
 
-    private static Experiment.Builder makeMASConfig(Experiment.Builder builder, String... args) {
+    private static Experiment.Builder makeMASConfig(Experiment.Builder builder, Map<MASConfiguration,String> map, String... args) {
 
         String vehicleMode = args[0];
         String parcelMode = args[1];
@@ -286,7 +428,9 @@ public class RunExperiments {
                 config = config.addEventHandler(NewParcelEvent.class, NewParcelEvent.defaultHandler());
                 config = config.addEventHandler(NewMultiParcelEvent.class, NewMultiParcelEvent.separateHandler());
             }
-            builder.addConfiguration(config.build());
+            MASConfiguration build = config.build();
+            builder.addConfiguration(build);
+            map.put(build,"CBBA");
         }
         if("CBGA".equals(vehicleMode) || "BOTH".equals(vehicleMode)){
             MASConfiguration.Builder config = MASConfiguration.builder()
@@ -312,7 +456,9 @@ public class RunExperiments {
                 config = config.addEventHandler(NewParcelEvent.class, NewParcelEvent.defaultHandler());
                 config = config.addEventHandler(NewMultiParcelEvent.class, NewMultiParcelEvent.defaultHandler());
             }
-            builder.addConfiguration(config.build());
+            MASConfiguration build = config.build();
+            builder.addConfiguration(build);
+            map.put(build, "CBGA");
         }
 
 
@@ -376,12 +522,27 @@ public class RunExperiments {
             result.setStatistics(extractStatistics(sim));
             result.setMessagesSentByAgent(extractMessagesSentByAgent(sim));
             result.setMessagesReceivedByAgent(extractMessagesReceivedByAgent(sim));
+            result.setIdleTimeByAgent(IdleTimeByAgent(sim));
             result.setRouteCostCalculationsByAgent(extractRouteCostCalculationsByAgent(sim));
             result.setConstructBundleCallsByAgent(extractConstructBundleCallsByAgent(sim));
             result.setAverageAvailableParcel(extractAverageAvailableParcel(sim));
             result.setAverageClaimedParcel(extractAverageClaimedParcel(sim));
 
             return result;
+        }
+
+        private HashMap<Vehicle, Long> IdleTimeByAgent(Simulator sim) {
+
+            HashMap<Vehicle, Long> map = new HashMap<>();
+
+            final Set<Vehicle> vehicles = sim.getModelProvider()
+                    .getModel(RoadModel.class).getObjectsOfType(Vehicle.class);
+            for(Vehicle vehicle : vehicles){
+                AbstractConsensusAgent agent = (AbstractConsensusAgent) vehicle;
+                map.put(vehicle, agent.getIdleTime());
+            }
+
+            return map;
         }
 
 
@@ -496,6 +657,7 @@ public class RunExperiments {
         HashMap<Vehicle,Double> averageClaimedParcel;
         //amount of calculate bestRoute (total)
         HashMap<Vehicle,Integer> routeCostCalculationsByAgent;
+        private HashMap<Vehicle, Long> idleTimeByAgent;
 
         public Set<Vehicle> getVehicles(){
             return messagesSentByAgent.keySet();
@@ -598,6 +760,14 @@ public class RunExperiments {
                     + "constructBundleCallsByAgent: " + getConstructBundleCallsByAgent() + "\n"
                     + "averageAvailableParcel: " + getAverageAvailableParcel() + "\n"
                     + "averageClaimedParcel: " + getAverageClaimedParcel() + "\n";
+        }
+
+        public void setIdleTimeByAgent(HashMap<Vehicle,Long> idleTimeByAgent) {
+            this.idleTimeByAgent = idleTimeByAgent;
+        }
+
+        public HashMap<Vehicle, Long> getIdleTimeByAgent() {
+            return idleTimeByAgent;
         }
     }
 }

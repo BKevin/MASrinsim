@@ -20,10 +20,10 @@ public class ScenarioGenerator {
     private static double width = 10;
     private static double height = 10;
 
-    private static int amountVehiclesAtStart = 6;
-    private static int amountParcelsAtStart = 6;
+    private static int amountVehiclesAtStart = 10;
+    private static int amountParcelsAtStart = 5;
     private static int amountNewVehicles = 0;
-    private static int amountNewParcels = 10;
+    private static int amountNewParcels = 100;
 
 
     private static long vehicleAverageInterArrivalTime; //ms
@@ -32,19 +32,19 @@ public class ScenarioGenerator {
     private static int vehicleSpeed = 10;
 
 
-    private static long parcelAverageInterArrivalTime = 1000000; //ms //doubled
-    private static long parcelInterArrivalTimeVariation = 200000; //ms
+    private static long parcelAverageInterArrivalTime = 3750000/10; //ms //doubled
+    private static long parcelInterArrivalTimeVariation = 100000; //ms
     private static long parcelAverageTimeWindowVariation = 10000; //ms
     private static int parcelServiceDuration = 0;
     private static int parcelCapacity = 1;
     //Distribution (chances) of required agents: p_1, p_2, p_3
-    private static double[] parcelDistribution = {0,1};
+    private static double[] parcelDistribution = {1};
 
     private static double expectedTravelTime = 255555; //from center to a corner
     private static double travelTimeVariation = 50000;
 
     public static void main(String[] args) {
-        generateScenario(generateFileName(args), parcelDistribution);
+        generateScenario(generateFileName(args), amountVehiclesAtStart, amountParcelsAtStart, amountNewParcels, parcelDistribution, parcelAverageInterArrivalTime);
     }
 
     @NotNull
@@ -57,7 +57,7 @@ public class ScenarioGenerator {
     }
 
 
-    public static void generateScenario(String filePath, double[] distribution) {
+    public static void generateScenario(String filePath, int maxAgents, int numParcels, int numInitParcels, double[] distribution, long parcelAverageInterArrivalTime) {
         currentTime = 0;
 
         File file = Paths.get(filePath).toFile();
@@ -77,12 +77,12 @@ public class ScenarioGenerator {
             br.write(depotEvent);
             br.newLine();
 
-            for(int i = 0; i < amountVehiclesAtStart; i++){
+            for(int i = 0; i < maxAgents; i++){
                 String vehicleEvent = makeVehicleEventAtStart();
                 br.write(vehicleEvent);
                 br.newLine();
             }
-            for(int i = 0; i < amountParcelsAtStart; i++){
+            for(int i = 0; i < numInitParcels; i++){
                 String parcelEvent = makeParcelEventAtStart(distribution);
                 br.write(parcelEvent);
                 br.newLine();
@@ -93,8 +93,8 @@ public class ScenarioGenerator {
                 br.write(vehicleEvent);
                 br.newLine();
             }
-            for(int i = 0; i < amountNewParcels; i++){
-                String parcelEvent = makeNewParcelEvent(distribution);
+            for(int i = 0; i < numParcels; i++){
+                String parcelEvent = makeNewParcelEvent(distribution, parcelAverageInterArrivalTime);
                 br.write(parcelEvent);
                 br.newLine();
             }
@@ -151,9 +151,9 @@ public class ScenarioGenerator {
                     + requiredAgents;
     }
 
-    private static String makeNewParcelEvent(double[] distribution) {
+    private static String makeNewParcelEvent(double[] distribution, long parcelAverageInterArrivalTime) {
         int requiredAgents = getRequiredAgents(distribution);
-        long rngTime = (long) (currentTime + parcelAverageInterArrivalTime  + ((2*rng.nextDouble() - 1) * parcelInterArrivalTimeVariation));
+        long rngTime = (long) (currentTime + parcelAverageInterArrivalTime + ((2*rng.nextDouble() - 1) * parcelInterArrivalTimeVariation));
         currentTime = rngTime;
         if (requiredAgents == 1)
             return "NewParcel "
