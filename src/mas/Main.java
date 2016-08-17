@@ -11,6 +11,7 @@ import com.github.rinde.rinsim.ui.View;
 import com.github.rinde.rinsim.ui.renderers.CommRenderer;
 import com.github.rinde.rinsim.ui.renderers.PlaneRoadModelRenderer;
 import com.github.rinde.rinsim.ui.renderers.RoadUserRenderer;
+import mas.cbba.agent.Deadlocked;
 import mas.scenario.*;
 import org.slf4j.LoggerFactory;
 
@@ -90,10 +91,11 @@ public class Main {
             }
         }
 
-        Simulator.builder()
+        Simulator sim = Simulator.builder()
                 .addModel(builder)
-                 .build()
-                .start();
+                .build();
+        sim.register(Deadlocked.getInstance());
+        sim.start();
     }
 
     private static Scenario makeScenario(View.Builder viewBuilder, int id, String... filenames) {
