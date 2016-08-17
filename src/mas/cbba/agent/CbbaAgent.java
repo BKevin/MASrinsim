@@ -34,7 +34,18 @@ public class CbbaAgent extends AbstractConsensusAgent {
 
     @Override
     protected String dumpState() {
-        return "";
+        StringBuilder builder = new StringBuilder();
+        builder.append(this.getCurrentTime());
+        builder.append(" State for ");
+        builder.append(this);
+//        builder.append(" at ")
+        builder.append("\nBundle: ");
+        builder.append(this.getB());
+        builder.append("\nPath: ");
+        builder.append(this.getP());
+        builder.append("\nUnallocatable: ");
+        builder.append(this.getUnallocatable());
+        return builder.toString();
     }
 
 //    /**
