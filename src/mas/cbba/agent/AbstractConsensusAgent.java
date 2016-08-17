@@ -96,6 +96,8 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 //            org.slf4j.LoggerFactory.getLogger(this.getClass()).warn("Pretick %s, %s", this, this.getP().size());
         }
 
+        this.sendSnapshot(this.generateSnapshot());
+
         //Route mending
 
         if(!this.getPDPModel().getContents(this).isEmpty()
@@ -351,6 +353,14 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
      * @param bid
      */
     protected void replaceWinningBid(Parcel parcel, AbstractConsensusAgent from, AbstractConsensusAgent to, Long bid){
+        long deadlock_check = getWinningBidBy(parcel) - bid; //current winning bid - new winning bid
+        if(deadlock_check == getCurrentTimeLapse().getTickLength()){
+            //TODO kleiner dan ipv equals?
+
+            Deadlocked.getInstance().addParcel(parcel, this);
+
+        }
+
         updateBidValue(parcel, from, this.NO_BID);
 
         if(from == this){
@@ -577,7 +587,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         //TODO kan ook via this.getCurrentTime(), geeft rechtstreeks long value.
         boolean hasNewInformation = this.getCommDevice().get().getUnreadCount() > 0;
 
-        this.sendSnapshot(this.generateSnapshot());
+//        this.sendSnapshot(this.generateSnapshot());
 
         this.evaluateMessages();
 

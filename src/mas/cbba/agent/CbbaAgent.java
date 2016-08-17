@@ -39,12 +39,16 @@ public class CbbaAgent extends AbstractConsensusAgent {
         builder.append(" State for ");
         builder.append(this);
 //        builder.append(" at ")
-        builder.append("\nBundle: ");
+        builder.append("\nBundle (B): ");
         builder.append(this.getB());
-        builder.append("\nPath: ");
+        builder.append("\nPath (P): ");
         builder.append(this.getP());
         builder.append("\nUnallocatable: ");
         builder.append(this.getUnallocatable());
+        builder.append("\nWinners (Z_: ");
+        builder.append(this.getZ());
+        builder.append("\nBids (Y): ");
+        builder.append(this.getY());
         return builder.toString();
     }
 
@@ -93,7 +97,7 @@ public class CbbaAgent extends AbstractConsensusAgent {
         // Get all parcels not already in B
         // And remove unavailable parcels
         List<Parcel> notInBAndAvailable = parcels.stream()
-                .filter(p -> !this.getB().contains(p) && ((MyParcel) p).isAvailable())
+                .filter(p -> !this.getB().contains(p) && ((MyParcel) p).isAvailable() && !this.getUnallocatable().contains(p))
                 .collect(Collectors.toList());
 
         boolean bIsChanging = true;
