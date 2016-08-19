@@ -115,7 +115,7 @@ public class Main {
 
         String filename = filenames.length > 2 ? filenames[2] : "scene.txt";
 
-        File file = Paths.get("resources/scenario/" + filename).toFile();
+        File file = Paths.get(filename).toFile();
 
         LoggerFactory.getLogger(Main.class).info("Reading from {} - {}", file.getPath(), file.canRead());
         long lastEventTime = -1;

@@ -24,7 +24,7 @@ public class Debug {
     private static boolean evalSnapshot = false;
     private static boolean sentSnapshot = false;
     private static boolean route = false;
-    private static boolean reset = true;
+    private static boolean reset = false;
     private static boolean parcelList = false;
 
     public static void logParcelListForAgent(CbbaAgent agent, Map<Parcel, PDPModel.ParcelState> states, Collection<Parcel> availableParcels){

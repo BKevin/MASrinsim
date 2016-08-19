@@ -78,27 +78,30 @@ public class RunExperiments {
         int retry = 0;
         args[0] = "Single";
         if("Single".equals(args[0])){
-            for(int agents = 1; agents < 5; agents++){
+            for(int agents = 2; agents < 6; agents++){
                 MAX_AGENTS = agents;
                 long parcelInterArrival = BASE_PARCEL_SPAWN/agents;
                 type = "Single";
                 String distribution = "1";
-                int numParcels = 1000;
+                int numParcels = 250;
                 int numInitParcels = agents;
 
-                System.out.println("----------- Experiment Single with " + agents + " agents --------------");
-                try{
-                    runNewExperiments(agents, numParcels, numInitParcels, parcelInterArrival, amountExperiments, mode, type, distribution,"Single_"+agents+"_agent" );
-                    retry = 0;
-                }
-                catch (Exception e){
-                    e.printStackTrace();
-                    if(retry < 3) {
-                        agents--;
-                        retry++;
-                    }
-                    else{
+                long start = parcelInterArrival * 3 / 4;
+                long diff = (parcelInterArrival - start) / 5;
+                for(long IAT = start + 4*diff; IAT <= start + 7*diff; IAT+=diff) {
+
+                    System.out.println("----------- Experiment Single with " + agents + " agents and IAT of "+IAT+" --------------");
+                    try {
+                        runNewExperiments(agents, numParcels, numInitParcels, IAT, amountExperiments, mode, type, distribution, "CBGA_Single_" + agents + "_agent_" + IAT);
                         retry = 0;
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        if (retry < 3) {
+                            agents--;
+                            retry++;
+                        } else {
+                            retry = 0;
+                        }
                     }
                 }
             }
@@ -106,7 +109,7 @@ public class RunExperiments {
 
         //Mixed
         //voor elke 1, 2 3 en 4 doe 10 scenores met CBBA en CBGA
-        args[0] = "Mixed";
+        //args[0] = "Mixed";
         retry = 0;
         if("Mixed".equals(args[0])) {
             for (int agentsPerParcel = 1; agentsPerParcel < 4; agentsPerParcel++) {
@@ -147,7 +150,7 @@ public class RunExperiments {
             }
 
 
-        args[0] = "Multi";
+        //args[0] = "Multi";
         retry = 0;      }
         if("Multi".equals(args[0])) {
             for (int agentsPerParcel = 2; agentsPerParcel < 4; agentsPerParcel++) {
@@ -216,7 +219,7 @@ public class RunExperiments {
 
 
 //        String mapName = "resources/experiments/experiment_" + new SimpleDateFormat("yyyy.MM.dd.HH.mm").format(new Date()) + "/";
-        String mapName = "resources/experiments/experiment_" + args[3] + "/";
+        String mapName = "resources/experiments4/experiment_" + args[3] + "/";
 
         String[] split = args[2].split(",");
 
@@ -324,6 +327,10 @@ public class RunExperiments {
             }
             header += "totalRouteCostCalculations" + seperator;
             for(int i = 0; i < MAX_AGENTS; i++){
+                header += "numberOfSuccesfullDeadlockedByAgent" + i + seperator;
+            }
+            header += "totalNumberOfSuccesfullDeadlockedByAgent" + seperator;
+            for(int i = 0; i < MAX_AGENTS; i++){
                 header += "constructBundleCalculationsByAgent" + i + seperator;
             }
             header += "totalConstructBundleCalculations";
@@ -371,12 +378,18 @@ public class RunExperiments {
                     br.write(myResults.getAverageClaimedParcel().get(v) + seperator);
                 setEmpty(br, vehicleList);
 
-
                 for(Vehicle v: vehicleList)
                     br.write(myResults.getRouteCostCalculationsByAgent().get(v) + seperator);
                 setEmpty(br, vehicleList);
 
                 br.write(myResults.getTotalAmountOfRouteCostCalculationsByAgents() + seperator);
+
+
+                for(Vehicle v: vehicleList)
+                    br.write(myResults.getNumberOfSuccesfullDeadlockedByAgent().get(v) + seperator);
+                setEmpty(br, vehicleList);
+
+                br.write(myResults.getTotalAmountOfNumberOfSuccesfullDeadlockedByAgent() + seperator);
 
                 for(Vehicle v: vehicleList)
                     br.write(myResults.getConstructBundleCallsByAgent().get(v) + seperator);
@@ -524,6 +537,7 @@ public class RunExperiments {
             result.setMessagesReceivedByAgent(extractMessagesReceivedByAgent(sim));
             result.setIdleTimeByAgent(IdleTimeByAgent(sim));
             result.setRouteCostCalculationsByAgent(extractRouteCostCalculationsByAgent(sim));
+            result.setNumberOfSuccesfullDeadlockedByAgent(extractNumberOfSuccesfullDeadlockedByAgent(sim));
             result.setConstructBundleCallsByAgent(extractConstructBundleCallsByAgent(sim));
             result.setAverageAvailableParcel(extractAverageAvailableParcel(sim));
             result.setAverageClaimedParcel(extractAverageClaimedParcel(sim));
@@ -594,6 +608,20 @@ public class RunExperiments {
             return map;
         }
 
+        private HashMap<Vehicle,Integer> extractNumberOfSuccesfullDeadlockedByAgent(Simulator sim) {
+
+            HashMap<Vehicle, Integer> map = new HashMap<>();
+
+            final Set<Vehicle> vehicles = sim.getModelProvider()
+                    .getModel(RoadModel.class).getObjectsOfType(Vehicle.class);
+            for (Vehicle vehicle : vehicles) {
+                AbstractConsensusAgent agent = (AbstractConsensusAgent) vehicle;
+                map.put(vehicle, agent.getNumberOfSuccesfullDeadlocked());
+            }
+
+            return map;
+        }
+
         private HashMap<Vehicle, Integer> extractConstructBundleCallsByAgent(Simulator sim) {
 
             HashMap<Vehicle, Integer> map = new HashMap<>();
@@ -657,6 +685,8 @@ public class RunExperiments {
         HashMap<Vehicle,Double> averageClaimedParcel;
         //amount of calculate bestRoute (total)
         HashMap<Vehicle,Integer> routeCostCalculationsByAgent;
+        //amount of succesfull deadlocked(total)
+        HashMap<Vehicle,Integer> numberOfSuccesfullDeadlockedByAgent;
         private HashMap<Vehicle, Long> idleTimeByAgent;
 
         public Set<Vehicle> getVehicles(){
@@ -712,6 +742,20 @@ public class RunExperiments {
         public int getTotalAmountOfRouteCostCalculationsByAgents(){
             int value = 0;
             for(int v : routeCostCalculationsByAgent.values())
+                value += v;
+            return value;
+        }
+
+        public HashMap<Vehicle, Integer> getNumberOfSuccesfullDeadlockedByAgent() {
+            return numberOfSuccesfullDeadlockedByAgent;
+        }
+
+        public void setNumberOfSuccesfullDeadlockedByAgent(HashMap<Vehicle, Integer> numberOfSuccesfullDeadlockedByAgent) {
+            this.numberOfSuccesfullDeadlockedByAgent = numberOfSuccesfullDeadlockedByAgent;
+        }
+        public int getTotalAmountOfNumberOfSuccesfullDeadlockedByAgent(){
+            int value = 0;
+            for(int v : numberOfSuccesfullDeadlockedByAgent.values())
                 value += v;
             return value;
         }

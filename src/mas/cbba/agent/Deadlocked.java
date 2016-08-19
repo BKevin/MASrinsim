@@ -5,6 +5,7 @@ import com.github.rinde.rinsim.core.model.time.TickListener;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -28,19 +29,22 @@ public class Deadlocked implements TickListener{
 
     }
 
-    public void addParcel(Parcel p, AbstractConsensusAgent a){
+    public boolean addParcel(Parcel p, AbstractConsensusAgent a){
         if(!deadlocked_parcel.containsKey(p)) {
             deadlocked_parcel.put(p, a);
             a.getUnallocatable().add(p);
             a.removeParcelAllocationFromYourself(p);
+            return true;
         }
+        return false;
     }
-    private void release() {
-
-        for(Parcel p : deadlocked_parcel.keySet()){
+    private synchronized void release() {
+        Iterator it = deadlocked_parcel.entrySet().iterator();
+        while(it.hasNext()){
             if(ThreadLocalRandom.current().nextInt(0,5) == 0){
+                Parcel p = (Parcel) ((Map.Entry)it.next()).getKey();
                 deadlocked_parcel.get(p).getUnallocatable().remove(p);
-                deadlocked_parcel.remove(p);
+                it.remove();
             };
         }
     }

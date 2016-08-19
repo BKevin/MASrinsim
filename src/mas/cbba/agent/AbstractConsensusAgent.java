@@ -53,6 +53,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
     private int numberOfReceivedMessages;
     private int numberOfRouteCostCalculations;
     private int numberOfConstructBundleCalls;
+    private int numberOfSuccesfullDeadlocked;
     private double averageAvailableParcels;
     private double averageClaimedParcels;
     private long idleTime;
@@ -66,6 +67,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         numberOfReceivedMessages = 0;
         numberOfRouteCostCalculations = 0;
         numberOfConstructBundleCalls = 0;
+        numberOfSuccesfullDeadlocked = 0;
         averageAvailableParcels = 0;
         averageClaimedParcels = 0;
         this.unallocatable = new HashSet<>();
@@ -121,9 +123,9 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         if(this.getRoute().size() == 0){
             idleTime += time.getTickLength();
         }
-        if(this.getCurrentTime() > 704000) {
+/*        if(this.getCurrentTime() > 704000) {
             LoggerFactory.getLogger(this.getClass()).error(this.dumpState());
-        }
+        }*/
     }
 
     protected abstract String dumpState();
@@ -267,11 +269,11 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
             parcel.allocateTo(this);
 
             updateRoute();
-        }else{
+/*        }else{
             LoggerFactory.getLogger(this.getClass()).error(
                     "Trying to reallocate unavailable parcel {} (state: {}). Allocated to {}",
                     parcel, this.getPDPModel().getParcelState(parcel),
-                    parcel.getAllocatedVehicle());
+                    parcel.getAllocatedVehicle());*/
         }
     }
 
@@ -357,8 +359,10 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         if(deadlock_check == getCurrentTimeLapse().getTickLength()){
             //TODO kleiner dan ipv equals?
 
-            Deadlocked.getInstance().addParcel(parcel, this);
-
+            boolean added = Deadlocked.getInstance().addParcel(parcel, this);
+            if (added){
+                numberOfSuccesfullDeadlocked += 1;
+            }
         }
 
         updateBidValue(parcel, from, this.NO_BID);
@@ -601,7 +605,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
         List<Message> snapshots = new LinkedList<>();
         for (Message message : this.getCommDevice().get().getUnreadMessages()) {
-            this.numberOfReceivedMessages += 1;
+
 
             //if AuctionedParcelMessage then calculate bid and send BidMessage
             final MessageContents contents = message.getContents();
@@ -610,6 +614,7 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
             // Received snapshot, update bid values.
             if (contents instanceof Snapshot) {
+                this.numberOfReceivedMessages += 1;
                 snapshots.add(message);
             }
 
@@ -868,6 +873,10 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
         return numberOfConstructBundleCalls;
     }
 
+    public int getNumberOfSuccesfullDeadlocked() {
+        return numberOfSuccesfullDeadlocked;
+    }
+
     public double getAverageAvailableParcels() {
         return averageAvailableParcels;
     }
@@ -882,12 +891,12 @@ public abstract class AbstractConsensusAgent extends MyVehicle {
 
     public Long getProjectedPickupTime(Parcel parcel) {
 
-        if(!this.getB().contains(parcel)){
+/*        if(!this.getB().contains(parcel)){
             LoggerFactory.getLogger(this.getClass()).error(
                     "{} cannot project pickup time for parcel not in B. B:{}",
                     this,
                     this.getB());
-        }
+        }*/
 
         RouteTimes routeTimes = new RouteTimes(
                 this.getPDPModel(),
